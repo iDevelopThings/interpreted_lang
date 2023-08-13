@@ -1,7 +1,4 @@
-object User {
-   body string
-   request string
-}
+import "imports.sl"
 
 route POST "/data" {
     from body as user User;

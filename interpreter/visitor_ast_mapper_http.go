@@ -1,18 +1,19 @@
-package ast
+package interpreter
 
 import (
+	"interpreted_lang/ast"
 	"interpreted_lang/grammar"
 )
 
 func (self *AstMapper) VisitHttpServerConfig(ctx *grammar.HttpServerConfigContext) interface{} {
-	confDict := self.Visit(ctx.Dict()).(*DictionaryInstantiation)
+	confDict := self.Visit(ctx.Dict()).(*ast.DictionaryInstantiation)
 
-	config := &HttpServerConfig{
-		AstNode: NewAstNode(ctx),
+	config := &ast.HttpServerConfig{
+		AstNode: ast.NewAstNode(ctx),
 	}
 
 	if port, ok := confDict.Fields["port"]; ok {
-		config.Port = port.(*Literal)
+		config.Port = port.(*ast.Literal)
 	}
 
 	return config
@@ -20,24 +21,24 @@ func (self *AstMapper) VisitHttpServerConfig(ctx *grammar.HttpServerConfigContex
 
 func (self *AstMapper) VisitHttpRoute(ctx *grammar.HttpRouteContext) interface{} {
 	pathValue := self.VisitAnyValue(ctx.GetPath())
-	var path *Literal
-	if pv, ok := pathValue.(*Literal); ok {
+	var path *ast.Literal
+	if pv, ok := pathValue.(*ast.Literal); ok {
 		path = pv
 	} else {
 		panic("path must be literal")
 	}
 
-	routeDecl := &HttpRouteDeclaration{
-		AstNode:    NewAstNode(ctx),
-		Method:     HttpMethod(ctx.GetMethod().GetText()),
+	routeDecl := &ast.HttpRouteDeclaration{
+		AstNode:    ast.NewAstNode(ctx),
+		Method:     ast.HttpMethod(ctx.GetMethod().GetText()),
 		Path:       path,
-		Body:       self.Visit(ctx.GetBody()).(*Block),
-		Injections: []*HttpRouteBodyInjection{},
+		Body:       self.Visit(ctx.GetBody()).(*ast.Block),
+		Injections: []*ast.HttpRouteBodyInjection{},
 	}
 
 	if injections := ctx.GetBody().GetInjections(); injections != nil {
 		for _, injection := range injections {
-			routeDecl.Injections = append(routeDecl.Injections, self.Visit(injection).(*HttpRouteBodyInjection))
+			routeDecl.Injections = append(routeDecl.Injections, self.Visit(injection).(*ast.HttpRouteBodyInjection))
 		}
 	}
 
@@ -74,32 +75,32 @@ func (self *AstMapper) VisitHttpResponseData(ctx *grammar.HttpResponseDataContex
 }
 
 func (self *AstMapper) VisitHttpResponse(ctx *grammar.HttpResponseContext) interface{} {
-	res := &HttpResponseData{
-		AstNode:      NewAstNode(ctx),
-		Kind:         HttpResponseKindNone,
+	res := &ast.HttpResponseData{
+		AstNode:      ast.NewAstNode(ctx),
+		Kind:         ast.HttpResponseKindNone,
 		ResponseCode: nil,
 		Data:         nil,
 	}
 
 	if status := ctx.HttpStatus(); status != nil {
-		res.ResponseCode = self.Visit(status).(*Literal)
+		res.ResponseCode = self.Visit(status).(*ast.Literal)
 	} else {
-		res.ResponseCode = NewLiteral(ctx, 200)
+		res.ResponseCode = ast.NewLiteral(ctx, 200)
 	}
 
 	if responseData := ctx.HttpResponseData(); responseData != nil {
-		res.Data = self.Visit(responseData).(Expr)
+		res.Data = self.Visit(responseData).(ast.Expr)
 
 		if dataType := responseData.GetDataType(); dataType != nil {
 			if dataType.TEXT() != nil {
-				res.Kind = HttpResponseKindText
+				res.Kind = ast.HttpResponseKindText
 			} else if dataType.JSON() != nil {
-				res.Kind = HttpResponseKindJson
+				res.Kind = ast.HttpResponseKindJson
 			} else {
 				panic("unknown http response data type")
 			}
 		} else {
-			res.Kind = HttpResponseKindJson
+			res.Kind = ast.HttpResponseKindJson
 		}
 	}
 
@@ -112,9 +113,9 @@ func (self *AstMapper) VisitHttpRouteBodyInjection(ctx *grammar.HttpRouteBodyInj
 		panic("unknown http route injection type")
 	}
 
-	return &HttpRouteBodyInjection{
-		AstNode: NewAstNode(ctx),
+	return &ast.HttpRouteBodyInjection{
+		AstNode: ast.NewAstNode(ctx),
 		From:    kind,
-		Var:     self.Visit(ctx.TypedIdentifier()).(*TypedIdentifier),
+		Var:     self.Visit(ctx.TypedIdentifier()).(*ast.TypedIdentifier),
 	}
 }

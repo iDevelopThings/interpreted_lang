@@ -26,6 +26,12 @@ func (s *BaseSimpleLangParserListener) EnterProgram(ctx *ProgramContext) {}
 // ExitProgram is called when production program is exited.
 func (s *BaseSimpleLangParserListener) ExitProgram(ctx *ProgramContext) {}
 
+// EnterImportStatement is called when production importStatement is entered.
+func (s *BaseSimpleLangParserListener) EnterImportStatement(ctx *ImportStatementContext) {}
+
+// ExitImportStatement is called when production importStatement is exited.
+func (s *BaseSimpleLangParserListener) ExitImportStatement(ctx *ImportStatementContext) {}
+
 // EnterTypedIdentifier is called when production typedIdentifier is entered.
 func (s *BaseSimpleLangParserListener) EnterTypedIdentifier(ctx *TypedIdentifierContext) {}
 

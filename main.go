@@ -28,7 +28,9 @@ func main() {
 
 	engine := interpreter.Engine
 	// engine.LoadScript("test_data/http_basic_test.sl")
-	engine.LoadScript("test_data/http.sl")
+	// engine.LoadScript("test_data/http.sl")
+	// engine.LoadScript("test_data/type_checking.sl")
+	engine.LoadScript("test_data/imports.sl")
 	// engine.LoadScript("test_data/loops.sl")
 	// engine.LoadScript("test_data/dictionaries.sl")
 	// engine.LoadScript("test_data/input.sl")

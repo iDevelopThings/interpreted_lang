@@ -13,9 +13,11 @@ type Script struct {
 	Path   string
 
 	InputStream *antlr.InputStream
-	Tree        grammar.IProgramContext
+	Stream      *antlr.CommonTokenStream
 
-	Mapper  *ast.AstMapper
+	Tree grammar.IProgramContext
+
+	Mapper  *AstMapper
 	Program *ast.Program
 
 	Env    *Environment

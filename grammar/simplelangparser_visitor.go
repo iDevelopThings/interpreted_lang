@@ -10,6 +10,9 @@ type SimpleLangParserVisitor interface {
 	// Visit a parse tree produced by SimpleLangParser#program.
 	VisitProgram(ctx *ProgramContext) interface{}
 
+	// Visit a parse tree produced by SimpleLangParser#importStatement.
+	VisitImportStatement(ctx *ImportStatementContext) interface{}
+
 	// Visit a parse tree produced by SimpleLangParser#typedIdentifier.
 	VisitTypedIdentifier(ctx *TypedIdentifierContext) interface{}
 

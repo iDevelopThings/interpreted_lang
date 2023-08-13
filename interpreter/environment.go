@@ -114,7 +114,7 @@ func (self *Environment) SetFunction(function *ast.FunctionDeclaration) {
 
 	self.functions[fnName] = function
 
-	log.Debugf("SetFunction: %s(%s)", function.Name, fnName)
+	// log.Debugf("SetFunction: %s(%s)", function.Name, fnName)
 }
 
 func (self *Environment) SetObject(object *ast.ObjectDeclaration) {
@@ -125,7 +125,7 @@ func (self *Environment) SetObject(object *ast.ObjectDeclaration) {
 
 	self.objects[object.Name] = object
 
-	log.Debugf("SetObject: %s", object.Name)
+	// log.Debugf("SetObject: %s", object.Name)
 }
 
 func (self *Environment) DefineCustomFunctionWithReceiver(receiver *ast.TypedIdentifier, name string, cb FunctionTypeCallback) *ast.FunctionDeclaration {

@@ -31,6 +31,7 @@ FOR: 'for';
 AS: 'as';
 STEP: 'step';
 DELETE: 'delete';
+IMPORT: 'import';
 
 // Type names
 //TYPE_I8: 'i8';

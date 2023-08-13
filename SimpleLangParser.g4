@@ -7,13 +7,16 @@ options {
     language = Go;
 }
 
-program: (
+program:
+(imports += importStatement)*
+(
     objectDeclaration |
     funcDeclaration |
     httpRoute |
     httpServerConfig
 )* EOF;
 
+importStatement: IMPORT importPath=string SEMICOLON?;
 
 typedIdentifier: name=identifier typeName=type;
 
@@ -123,10 +126,6 @@ ifStmt
 returnStmt: RETURN expression SEMICOLON;
 breakStmt: BREAK SEMICOLON;
 
-//from: {!p.isHttpKeyword()}? 'from';
-//as: {!p.isHttpKeyword()}? 'as';
-//injectionType: {!p.isHttpKeyword()}? 'path' | 'query' | 'body';
-
 httpRoute:
     ROUTE
     method=HTTP_METHOD
@@ -159,10 +158,12 @@ httpResponse: RESPOND WITH httpResponseData? (httpStatus)? SEMICOLON?;
 // object -> fmt, function -> println, arguments -> "Hello World"
 // ex: someFunc(1, 2, 3)
 // object -> null, function -> someFunc, arguments -> 1, 2, 3
-argumentList: LPAREN (arguments += expression (COMMA arguments += expression)*)? RPAREN;
+
+argumentList: LPAREN arguments+=expression (COMMA arguments+=expression)* RPAREN
+            | LPAREN RPAREN // for no arguments
+            ;
 
 expression
-//    : primary (accessChain)*
     : primary
     | assignmentExpression
     ;
@@ -213,38 +214,9 @@ unaryExpressionNP
 
 postFixExpression: (identifier|value) op=(PLUSPLUS | MINUSMINUS);
 
-//callExpr
-//    : callee=identifier COLON_COLON functionName=identifier argumentList
-//    | callee=identifier DOT functionName=identifier argumentList
-//    ;
-
-//callExpr
-//    : base=primary COLON_COLON functionName=identifier argumentList # ScopedFunctionCall
-//    | base=primary DOT functionName=identifier argumentList # MemberFunctionCall
-//    ;
-
-//memberAccess
-//    : base=primary DOT memberName=ID #MemberDotAccess
-//    | base=primary COLON_COLON memberName=ID #MemberScopedAccess
-//    ;
-//primary
-//    : callExpr
-//    | memberAccess
-//    | simplePrimary
-//    ;
-//
-//simplePrimary
-//    : identifier
-//    | value
-//    | postFixExpression
-//    | objectInstantiation
-//    | lhs=primary DOTDOT rhs=primary
-//    | LPAREN expression RPAREN
-//    ;
-
-//  # ObjectInstantiationPrimary
 primary
-    : value                                                             # ValuePrimary
+    : functionName=identifier argumentList                              # FunctionCall
+    | value                                                             # ValuePrimary
     | postFixExpression                                                 # PostfixPrimary
     | LPAREN expression RPAREN                                          # ParenExpressionPrimary
     | primary LBRACK start=expression (isSlice=COLON (end=expression)?)? RBRACK  # ArrayPrimary
@@ -252,15 +224,8 @@ primary
     | primary COLON_COLON functionName=identifier argumentList          # StaticFunctionCall
     | primary DOT identifier                                            # MemberDotAccess
     | primary COLON_COLON identifier                                    # MemberScopedAccess
-    | functionName=identifier argumentList                              # FunctionCall
     | lhs=primary DOTDOT rhs=primary                                    # RangePrimary
     ;
 
-
-//accessChain
-//    : callExpr
-//    | DOT memberName=ID
-//    | COLON_COLON memberName=ID
-//    ;
 
 identifier: ID | IDENTIFIER;

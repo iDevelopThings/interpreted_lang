@@ -1,21 +1,24 @@
-package ast
+package interpreter
 
 import (
 	"reflect"
 
 	"github.com/antlr4-go/antlr/v4"
+	"github.com/charmbracelet/log"
 
+	"interpreted_lang/ast"
 	"interpreted_lang/grammar"
 )
 
 type AstMapper struct {
 	*grammar.BaseSimpleLangParserVisitor
 
-	Functions []*FunctionDeclaration
-	Objects   []*ObjectDeclaration
+	Functions []*ast.FunctionDeclaration
+	Objects   []*ast.ObjectDeclaration
+	Program   *ast.Program
 }
 
-func NewAstMapper(tree grammar.IProgramContext) (*AstMapper, *Program) {
+func NewAstMapper(tree grammar.IProgramContext) (*AstMapper, *ast.Program) {
 	v := &AstMapper{
 		BaseSimpleLangParserVisitor: &grammar.BaseSimpleLangParserVisitor{
 			BaseParseTreeVisitor: &antlr.BaseParseTreeVisitor{},
@@ -25,9 +28,9 @@ func NewAstMapper(tree grammar.IProgramContext) (*AstMapper, *Program) {
 	// var x any = v
 	// _ = x.(grammar.BaseSimpleLangParserVisitor)
 
-	val := v.VisitProgram(tree.(*grammar.ProgramContext))
+	val := v.PrepareProgram(tree)
 
-	return v, val.(*Program)
+	return v, val.(*ast.Program)
 }
 
 func (self *AstMapper) VisitChildren(node antlr.RuleNode) interface{} {
@@ -62,10 +65,34 @@ func (self *AstMapper) Visit(tree antlr.ParseTree) interface{} {
 	return tree.Accept(self)
 }
 
+func (self *AstMapper) PrepareProgram(tree antlr.ParseTree) interface{} {
+	if tree == nil {
+		return nil
+	}
+	programCtx, ok := tree.(*grammar.ProgramContext)
+	if !ok {
+		log.Fatalf("Tree is not a program context: %v", reflect.TypeOf(tree))
+	}
+	program := &ast.Program{
+		AstNode:    ast.NewAstNode(programCtx),
+		Statements: make([]ast.TopLevelStatement, 0),
+		Imports:    make([]*ast.ImportStatement, 0),
+	}
+
+	self.Program = program
+
+	importCtx := programCtx.AllImportStatement()
+	for _, importCtx := range importCtx {
+		importStmt := importCtx.Accept(self).(*ast.ImportStatement)
+		program.Imports = append(program.Imports, importStmt)
+	}
+
+	return program
+}
+
 func (self *AstMapper) VisitProgram(ctx *grammar.ProgramContext) interface{} {
-	program := &Program{
-		AstNode:    NewAstNode(ctx),
-		Statements: make([]TopLevelStatement, 0),
+	if self.Program == nil {
+		log.Fatalf("Program is not constructed.")
 	}
 
 	for _, childCtx := range ctx.GetChildren() {
@@ -76,20 +103,24 @@ func (self *AstMapper) VisitProgram(ctx *grammar.ProgramContext) interface{} {
 			}
 		}
 
+		if _, ok := childCtx.(*grammar.ImportStatementContext); ok {
+			continue
+		}
+
 		visitResult := self.Visit(childCtx.(antlr.ParseTree))
 		if visitResult == nil {
 			panic("Visit result is nil")
 		}
 
-		stmt, ok := visitResult.(TopLevelStatement)
+		stmt, ok := visitResult.(ast.TopLevelStatement)
 		if !ok {
 			panic("Visit result is not a statement")
 		}
 
-		program.Statements = append(program.Statements, stmt)
+		self.Program.Statements = append(self.Program.Statements, stmt)
 	}
 
-	return program
+	return self.Program
 }
 
 // <editor-fold desc="Declarations">
@@ -97,18 +128,18 @@ func (self *AstMapper) VisitProgram(ctx *grammar.ProgramContext) interface{} {
 // <editor-fold desc="Object">
 
 func (self *AstMapper) VisitObjectDeclaration(ctx *grammar.ObjectDeclarationContext) interface{} {
-	decl := &ObjectDeclaration{
-		AstNode: NewAstNode(ctx),
+	decl := &ast.ObjectDeclaration{
+		AstNode: ast.NewAstNode(ctx),
 		Name:    ctx.GetName().GetText(),
-		Fields:  make([]*TypedIdentifier, 0),
-		Methods: make(map[string]*FunctionDeclaration),
+		Fields:  make([]*ast.TypedIdentifier, 0),
+		Methods: make(map[string]*ast.FunctionDeclaration),
 	}
 
 	if body := ctx.ObjectBody(); body != nil {
 		for _, field := range body.AllObjectFieldDeclaration() {
 			if tiCtx := field.TypedIdentifier(); tiCtx != nil {
 				ti := self.Visit(tiCtx)
-				decl.Fields = append(decl.Fields, ti.(*TypedIdentifier))
+				decl.Fields = append(decl.Fields, ti.(*ast.TypedIdentifier))
 				continue
 			}
 		}
@@ -132,23 +163,23 @@ func (self *AstMapper) VisitObjectFieldDeclaration(ctx *grammar.ObjectFieldDecla
 func (self *AstMapper) VisitObjectFieldAssignment(ctx *grammar.ObjectFieldAssignmentContext) interface{} {
 	return []any{
 		ctx.GetName().GetText(),
-		self.Visit(ctx.GetVal()).(Expr),
+		self.Visit(ctx.GetVal()).(ast.Expr),
 	}
 }
 
 func (self *AstMapper) VisitObjectInstantiation(ctx *grammar.ObjectInstantiationContext) interface{} {
 
-	obj := &ObjectInstantiation{
-		AstNode:  NewAstNode(ctx),
+	obj := &ast.ObjectInstantiation{
+		AstNode:  ast.NewAstNode(ctx),
 		TypeName: ctx.GetName().GetText(),
-		Fields:   make(map[string]Expr),
+		Fields:   make(map[string]ast.Expr),
 	}
 
 	if fields := ctx.AllObjectFieldAssignment(); fields != nil && len(fields) > 0 {
 		for _, field := range fields {
 			expr := self.Visit(field)
 			if fieldData, ok := expr.([]any); ok {
-				obj.Fields[fieldData[0].(string)] = fieldData[1].(Expr)
+				obj.Fields[fieldData[0].(string)] = fieldData[1].(ast.Expr)
 				continue
 			} else {
 				panic("Unknown field type")
@@ -166,34 +197,34 @@ func (self *AstMapper) VisitObjectInstantiation(ctx *grammar.ObjectInstantiation
 // <editor-fold desc="Functions">
 
 func (self *AstMapper) VisitFuncDeclaration(ctx *grammar.FuncDeclarationContext) interface{} {
-	inst := &FunctionDeclaration{
-		AstNode:    NewAstNode(ctx),
-		Name:       ctx.GetName().GetText(),
-		Args:       make([]*TypedIdentifier, 0),
-		ReturnType: "",
-		Receiver:   nil,
-		Body:       &Block{},
+
+	inst := &ast.FunctionDeclaration{
+		AstNode:  ast.NewAstNode(ctx),
+		Name:     ctx.GetName().GetText(),
+		Args:     make([]*ast.TypedIdentifier, 0),
+		Receiver: nil,
+		Body:     &ast.Block{},
 	}
 
 	if ctx.GetReturnType() == nil {
-		inst.ReturnType = "void"
+		inst.ReturnType = ast.NewIdentifierWithValue(nil, "void")
 	} else {
-		inst.ReturnType = ctx.GetReturnType().GetText()
+		inst.ReturnType = ast.NewIdentifier(ctx.GetReturnType())
 	}
 
 	if ctx.GetReceiver() != nil {
-		inst.Receiver = self.Visit(ctx.GetReceiver()).(*TypedIdentifier)
+		inst.Receiver = self.Visit(ctx.GetReceiver()).(*ast.TypedIdentifier)
 
 		if inst.Receiver != nil {
-			var receiverObj *ObjectDeclaration
+			var receiverObj *ast.ObjectDeclaration
 			for _, object := range self.Objects {
-				if object.Name == inst.Receiver.Type {
+				if object.Name == inst.Receiver.TypeReference.Type {
 					receiverObj = object
 					break
 				}
 			}
 			if receiverObj == nil {
-				panic("Unknown receiver type")
+				NewErrorAtToken(ctx.GetReceiver().GetTypeName(), "Unknown receiver type `%s`", inst.Receiver.TypeReference.Type)
 			}
 
 			receiverObj.Methods[inst.Name] = inst
@@ -202,12 +233,12 @@ func (self *AstMapper) VisitFuncDeclaration(ctx *grammar.FuncDeclarationContext)
 
 	if args := ctx.GetArguments().AllTypedIdentifier(); len(args) > 0 {
 		for _, arg := range args {
-			inst.Args = append(inst.Args, self.Visit(arg).(*TypedIdentifier))
+			inst.Args = append(inst.Args, self.Visit(arg).(*ast.TypedIdentifier))
 		}
 	}
 
 	if body := ctx.BlockBody(); body != nil {
-		inst.Body = self.Visit(body).(*Block)
+		inst.Body = self.Visit(body).(*ast.Block)
 		inst.Body.Function = inst
 	}
 
@@ -221,9 +252,9 @@ func (self *AstMapper) VisitArgumentDeclarationList(ctx *grammar.ArgumentDeclara
 }
 
 func (self *AstMapper) VisitArgumentList(ctx *grammar.ArgumentListContext) interface{} {
-	args := make([]Expr, 0)
+	args := make([]ast.Expr, 0)
 	for _, arg := range ctx.AllExpression() {
-		args = append(args, self.Visit(arg).(Expr))
+		args = append(args, self.Visit(arg).(ast.Expr))
 	}
 	return args
 }
@@ -233,7 +264,7 @@ func (self *AstMapper) VisitArgumentList(ctx *grammar.ArgumentListContext) inter
 // </editor-fold>
 
 func (self *AstMapper) VisitTypedIdentifier(ctx *grammar.TypedIdentifierContext) interface{} {
-	return NewTypedIdentifierFromCtx(ctx)
+	return ast.NewTypedIdentifierFromCtx(ctx)
 }
 
 func (self *AstMapper) VisitType(ctx *grammar.TypeContext) interface{} {
@@ -245,32 +276,36 @@ func (self *AstMapper) VisitVariableDeclaration(ctx *grammar.VariableDeclaration
 		return nil
 	}
 
-	typedIdent := NewTypedIdentifier(ctx, "", "")
+	typedIdent := ast.NewTypedIdentifier(ctx, "", "")
 
 	if ti := ctx.TypedIdentifier(); ti != nil {
 		typedIdent.Name = ti.GetName().GetText()
-		typedIdent.SetType(ti.Type_())
+		typedIdent.TypeReference.SetType(ti.Type_())
 	} else {
 		typedIdent.Name = ctx.GetName().GetText()
 	}
 
-	v := &AssignmentStatement{
-		AstNode:         NewAstNode(ctx),
+	v := &ast.AssignmentStatement{
+		AstNode:         ast.NewAstNode(ctx),
 		TypedIdentifier: typedIdent,
 	}
 
 	if expr := ctx.Expression(); expr != nil {
 		resultValue := self.Visit(expr)
 		switch val := resultValue.(type) {
-		case *ArrayInstantiation:
+		case *ast.ArrayInstantiation:
 			v.Value = val
 			val.Type = typedIdent
-		case *ObjectInstantiation:
+			v.TypeReference.Type = val.Type.TypeReference.Type
+			v.TypeReference.IsArray = true
+		case *ast.ObjectInstantiation:
 			v.Value = val
-		case Expr:
+			v.TypeReference.Type = val.TypeName
+
+		case ast.Expr:
 			v.Value = val
-			if lit, ok := v.Value.(*Literal); ok && v.Type == "" {
-				v.Type = string(lit.Kind)
+			if lit, ok := v.Value.(*ast.Literal); ok && v.TypeReference.Type == "" {
+				v.TypeReference.Type = string(lit.Kind)
 			}
 		default:
 			panic("Unknown expression type: " + reflect.TypeOf(resultValue).String())
@@ -280,10 +315,10 @@ func (self *AstMapper) VisitVariableDeclaration(ctx *grammar.VariableDeclaration
 	return v
 }
 
-func (self *AstMapper) VisitBlock(ctx antlr.ParserRuleContext) *Block {
-	body := &Block{
-		AstNode:    NewAstNode(ctx),
-		Statements: make([]Statement, 0),
+func (self *AstMapper) VisitBlock(ctx antlr.ParserRuleContext) *ast.Block {
+	body := &ast.Block{
+		AstNode:    ast.NewAstNode(ctx),
+		Statements: make([]ast.Statement, 0),
 	}
 
 	children := ctx.GetChildren()
@@ -298,7 +333,7 @@ func (self *AstMapper) VisitBlock(ctx antlr.ParserRuleContext) *Block {
 				panic("Statement is nil")
 			}
 
-			if stmt, ok := vResult.(Statement); ok {
+			if stmt, ok := vResult.(ast.Statement); ok {
 				body.Statements = append(body.Statements, stmt)
 			} else {
 				panic("Unknown statement type")
@@ -314,14 +349,14 @@ func (self *AstMapper) VisitBlockBody(ctx *grammar.BlockBodyContext) interface{}
 }
 
 func (self *AstMapper) VisitIdentifier(ctx *grammar.IdentifierContext) interface{} {
-	return NewIdentifier(ctx)
+	return ast.NewIdentifier(ctx)
 }
 
 func (self *AstMapper) VisitRangePrimary(ctx *grammar.RangePrimaryContext) interface{} {
-	return &RangeExpression{
-		AstNode: NewAstNode(ctx),
-		Left:    self.Visit(ctx.GetLhs()).(Expr),
-		Right:   self.Visit(ctx.GetRhs()).(Expr),
+	return &ast.RangeExpression{
+		AstNode: ast.NewAstNode(ctx),
+		Left:    self.Visit(ctx.GetLhs()).(ast.Expr),
+		Right:   self.Visit(ctx.GetRhs()).(ast.Expr),
 	}
 }
 

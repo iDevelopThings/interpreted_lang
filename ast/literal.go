@@ -38,8 +38,14 @@ type Literal struct {
 func (self *Literal) MarshalJSON() ([]byte, error) {
 	return json.Marshal(self.Value)
 }
-
 func (self *Literal) IsExpression() {}
+func (self *Literal) TypeName() string {
+	t, ok := BasicTypes[string(self.Kind)]
+	if !ok {
+		return ""
+	}
+	return t.TypeName()
+}
 
 func NewLiteral(ctx antlr.ParserRuleContext, value any) *Literal {
 	lit := &Literal{

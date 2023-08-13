@@ -1,6 +1,8 @@
 package ast
 
 import (
+	"github.com/antlr4-go/antlr/v4"
+
 	"interpreted_lang/ast/operators"
 )
 
@@ -88,7 +90,9 @@ type CallExpression struct {
 	*AstNode
 	FunctionName string
 	Receiver     Expr
-	Args         []Expr
+
+	ArgsToken antlr.ParserRuleContext
+	Args      []Expr
 }
 
 func (self *CallExpression) IsStatement()  {}

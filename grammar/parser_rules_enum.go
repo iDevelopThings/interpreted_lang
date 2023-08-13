@@ -4,67 +4,70 @@ type ParserRule int
 
 const (
 	ParserRuleProgram                    ParserRule = 0
-	ParserRuleTypedIdentifier            ParserRule = 1
-	ParserRuleObjectDeclaration          ParserRule = 2
-	ParserRuleObjectBody                 ParserRule = 3
-	ParserRuleObjectFieldDeclaration     ParserRule = 4
-	ParserRuleObjectFieldAssignment      ParserRule = 5
-	ParserRuleDict                       ParserRule = 6
-	ParserRuleDictFieldKey               ParserRule = 7
-	ParserRuleDictFieldAssignment        ParserRule = 8
-	ParserRuleList                       ParserRule = 9
-	ParserRuleListElement                ParserRule = 10
-	ParserRuleObjectInstantiation        ParserRule = 11
-	ParserRuleString                     ParserRule = 12
-	ParserRuleInt                        ParserRule = 13
-	ParserRuleFloat                      ParserRule = 14
-	ParserRuleBool                       ParserRule = 15
-	ParserRuleNull                       ParserRule = 16
-	ParserRuleValue                      ParserRule = 17
-	ParserRuleType                       ParserRule = 18
-	ParserRuleBlockBody                  ParserRule = 19
-	ParserRuleFuncDeclaration            ParserRule = 20
-	ParserRuleArgumentDeclarationList    ParserRule = 21
-	ParserRuleVariableDeclaration        ParserRule = 22
-	ParserRuleLoopStatement              ParserRule = 23
-	ParserRuleBaseStatement              ParserRule = 24
-	ParserRuleStatement                  ParserRule = 25
-	ParserRuleHttpStatement              ParserRule = 26
-	ParserRuleDeleteStmt                 ParserRule = 27
-	ParserRuleElseStmt                   ParserRule = 28
-	ParserRuleIfStmt                     ParserRule = 29
-	ParserRuleReturnStmt                 ParserRule = 30
-	ParserRuleBreakStmt                  ParserRule = 31
-	ParserRuleHttpRoute                  ParserRule = 32
-	ParserRuleHttpRouteBody              ParserRule = 33
-	ParserRuleHttpRouteBodyInjection     ParserRule = 34
-	ParserRuleHttpServerConfig           ParserRule = 35
-	ParserRuleHttpStatus                 ParserRule = 36
-	ParserRuleHttpResponseDataType       ParserRule = 37
-	ParserRuleHttpResponseData           ParserRule = 38
-	ParserRuleHttpResponse               ParserRule = 39
-	ParserRuleArgumentList               ParserRule = 40
-	ParserRuleExpression                 ParserRule = 41
-	ParserRuleAssignmentExpression       ParserRule = 42
-	ParserRuleNonParenExpression         ParserRule = 43
-	ParserRuleLogicalOrExpressionNP      ParserRule = 44
-	ParserRuleLogicalAndExpressionNP     ParserRule = 45
-	ParserRuleEqualityExpressionNP       ParserRule = 46
-	ParserRuleRelationalExpressionNP     ParserRule = 47
-	ParserRuleShiftExpressionNP          ParserRule = 48
-	ParserRuleAdditiveExpressionNP       ParserRule = 49
-	ParserRuleMultiplicativeExpressionNP ParserRule = 50
-	ParserRulePowerExpressionNP          ParserRule = 51
-	ParserRuleUnaryExpressionNP          ParserRule = 52
-	ParserRulePostFixExpression          ParserRule = 53
-	ParserRulePrimary                    ParserRule = 54
-	ParserRuleIdentifier                 ParserRule = 55
+	ParserRuleImportStatement            ParserRule = 1
+	ParserRuleTypedIdentifier            ParserRule = 2
+	ParserRuleObjectDeclaration          ParserRule = 3
+	ParserRuleObjectBody                 ParserRule = 4
+	ParserRuleObjectFieldDeclaration     ParserRule = 5
+	ParserRuleObjectFieldAssignment      ParserRule = 6
+	ParserRuleDict                       ParserRule = 7
+	ParserRuleDictFieldKey               ParserRule = 8
+	ParserRuleDictFieldAssignment        ParserRule = 9
+	ParserRuleList                       ParserRule = 10
+	ParserRuleListElement                ParserRule = 11
+	ParserRuleObjectInstantiation        ParserRule = 12
+	ParserRuleString                     ParserRule = 13
+	ParserRuleInt                        ParserRule = 14
+	ParserRuleFloat                      ParserRule = 15
+	ParserRuleBool                       ParserRule = 16
+	ParserRuleNull                       ParserRule = 17
+	ParserRuleValue                      ParserRule = 18
+	ParserRuleType                       ParserRule = 19
+	ParserRuleBlockBody                  ParserRule = 20
+	ParserRuleFuncDeclaration            ParserRule = 21
+	ParserRuleArgumentDeclarationList    ParserRule = 22
+	ParserRuleVariableDeclaration        ParserRule = 23
+	ParserRuleLoopStatement              ParserRule = 24
+	ParserRuleBaseStatement              ParserRule = 25
+	ParserRuleStatement                  ParserRule = 26
+	ParserRuleHttpStatement              ParserRule = 27
+	ParserRuleDeleteStmt                 ParserRule = 28
+	ParserRuleElseStmt                   ParserRule = 29
+	ParserRuleIfStmt                     ParserRule = 30
+	ParserRuleReturnStmt                 ParserRule = 31
+	ParserRuleBreakStmt                  ParserRule = 32
+	ParserRuleHttpRoute                  ParserRule = 33
+	ParserRuleHttpRouteBody              ParserRule = 34
+	ParserRuleHttpRouteBodyInjection     ParserRule = 35
+	ParserRuleHttpServerConfig           ParserRule = 36
+	ParserRuleHttpStatus                 ParserRule = 37
+	ParserRuleHttpResponseDataType       ParserRule = 38
+	ParserRuleHttpResponseData           ParserRule = 39
+	ParserRuleHttpResponse               ParserRule = 40
+	ParserRuleArgumentList               ParserRule = 41
+	ParserRuleExpression                 ParserRule = 42
+	ParserRuleAssignmentExpression       ParserRule = 43
+	ParserRuleNonParenExpression         ParserRule = 44
+	ParserRuleLogicalOrExpressionNP      ParserRule = 45
+	ParserRuleLogicalAndExpressionNP     ParserRule = 46
+	ParserRuleEqualityExpressionNP       ParserRule = 47
+	ParserRuleRelationalExpressionNP     ParserRule = 48
+	ParserRuleShiftExpressionNP          ParserRule = 49
+	ParserRuleAdditiveExpressionNP       ParserRule = 50
+	ParserRuleMultiplicativeExpressionNP ParserRule = 51
+	ParserRulePowerExpressionNP          ParserRule = 52
+	ParserRuleUnaryExpressionNP          ParserRule = 53
+	ParserRulePostFixExpression          ParserRule = 54
+	ParserRulePrimary                    ParserRule = 55
+	ParserRuleIdentifier                 ParserRule = 56
 )
 
 func (self ParserRule) String() string {
 	switch self {
 	case ParserRuleProgram:
 		return "ParserRuleProgram"
+	case ParserRuleImportStatement:
+		return "ParserRuleImportStatement"
 	case ParserRuleTypedIdentifier:
 		return "ParserRuleTypedIdentifier"
 	case ParserRuleObjectDeclaration:

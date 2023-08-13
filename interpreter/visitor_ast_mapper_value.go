@@ -1,34 +1,35 @@
-package ast
+package interpreter
 
 import (
 	"strconv"
 
 	"github.com/antlr4-go/antlr/v4"
 
+	"interpreted_lang/ast"
 	"interpreted_lang/grammar"
 )
 
 func (self *AstMapper) VisitDictFieldKey(ctx *grammar.DictFieldKeyContext) interface{} {
 	if v := ctx.ID(); v != nil {
-		return NewIdentifier(ctx)
+		return ast.NewIdentifier(ctx)
 	} else if v := ctx.String_(); v != nil {
-		str := self.VisitAnyValue(v).(*Literal)
-		return NewIdentifierWithValue(ctx, str.Value.(string))
+		str := self.VisitAnyValue(v).(*ast.Literal)
+		return ast.NewIdentifierWithValue(ctx, str.Value.(string))
 	} else {
 		panic("unknown dict field key")
 	}
 }
 
 func (self *AstMapper) VisitDict(ctx *grammar.DictContext) interface{} {
-	dict := &DictionaryInstantiation{
-		AstNode: NewAstNode(ctx),
-		Fields:  map[string]Expr{},
+	dict := &ast.DictionaryInstantiation{
+		AstNode: ast.NewAstNode(ctx),
+		Fields:  map[string]ast.Expr{},
 	}
 
 	for _, field := range ctx.AllDictFieldAssignment() {
 		assignment := self.Visit(field.GetVal())
-		key := self.Visit(field.GetKey()).(*Identifier)
-		dict.Fields[key.Name] = assignment.(Expr)
+		key := self.Visit(field.GetKey()).(*ast.Identifier)
+		dict.Fields[key.Name] = assignment.(ast.Expr)
 	}
 
 	return dict
@@ -68,16 +69,16 @@ func (self *AstMapper) VisitAnyValue(ctx antlr.ParserRuleContext) any {
 	case grammar.SimpleLangLexerDOUBLE_QUOUTE_STRING,
 		grammar.SimpleLangLexerSINGLE_QUOUTE_STRING,
 		grammar.SimpleLangLexerBACKTICK_STRING:
-		return &Literal{
-			NewAstNode(ctx),
-			LiteralKindString,
+		return &ast.Literal{
+			ast.NewAstNode(ctx),
+			ast.LiteralKindString,
 			ctx.GetText()[1 : len(ctx.GetText())-1],
 		}
 
 	case grammar.SimpleLangLexerVALUE_BOOL:
-		return &Literal{
-			NewAstNode(ctx),
-			LiteralKindBoolean,
+		return &ast.Literal{
+			ast.NewAstNode(ctx),
+			ast.LiteralKindBoolean,
 			ctx.GetText() == "true",
 		}
 
@@ -86,9 +87,9 @@ func (self *AstMapper) VisitAnyValue(ctx antlr.ParserRuleContext) any {
 		if err != nil {
 			panic(err)
 		}
-		return &Literal{
-			NewAstNode(ctx),
-			LiteralKindInteger,
+		return &ast.Literal{
+			ast.NewAstNode(ctx),
+			ast.LiteralKindInteger,
 			integer,
 		}
 
@@ -97,22 +98,22 @@ func (self *AstMapper) VisitAnyValue(ctx antlr.ParserRuleContext) any {
 		if err != nil {
 			panic(err)
 		}
-		return &Literal{
-			NewAstNode(ctx),
-			LiteralKindFloat,
+		return &ast.Literal{
+			ast.NewAstNode(ctx),
+			ast.LiteralKindFloat,
 			float,
 		}
 
 	case grammar.SimpleLangLexerVALUE_NULL:
-		return &Literal{
-			NewAstNode(ctx),
-			LiteralKindNull,
+		return &ast.Literal{
+			ast.NewAstNode(ctx),
+			ast.LiteralKindNull,
 			nil,
 		}
 
 	case grammar.SimpleLangParserID:
-		return &VarReference{
-			NewAstNode(ctx),
+		return &ast.VarReference{
+			ast.NewAstNode(ctx),
 			ctx.GetText(),
 		}
 
@@ -131,15 +132,15 @@ func (self *AstMapper) VisitValuePrimary(ctx *grammar.ValuePrimaryContext) inter
 }
 
 func (self *AstMapper) VisitList(ctx *grammar.ListContext) interface{} {
-	arr := &ArrayInstantiation{
-		AstNode: NewAstNode(ctx),
-		Values:  make([]Expr, 0),
+	arr := &ast.ArrayInstantiation{
+		AstNode: ast.NewAstNode(ctx),
+		Values:  make([]ast.Expr, 0),
 	}
 
 	for _, value := range ctx.AllListElement() {
 		listElement := self.Visit(value.GetVal())
 
-		arr.Values = append(arr.Values, listElement.(Expr))
+		arr.Values = append(arr.Values, listElement.(ast.Expr))
 	}
 
 	return arr

@@ -8,9 +8,12 @@ import (
 
 type Node interface {
 	GetRuleType() grammar.ParserRule
+	GetRule() antlr.ParserRuleContext
+	Accept(visitor NodeVisitor)
 }
 
 type Statement interface {
+	Node
 	GetRuleType() grammar.ParserRule
 	IsStatement()
 }
@@ -21,6 +24,7 @@ type TopLevelStatement interface {
 }
 
 type Expr interface {
+	Node
 	IsExpression()
 }
 
@@ -42,9 +46,14 @@ func (self *AstNode) GetRuleType() grammar.ParserRule {
 	return grammar.ParserRule(self.Token.GetRuleIndex())
 }
 
+func (self *AstNode) GetRule() antlr.ParserRuleContext {
+	return self.Token
+}
+
 type Program struct {
 	*AstNode
 	Statements []TopLevelStatement
+	Imports    []*ImportStatement
 }
 
 type Block struct {
@@ -82,6 +91,8 @@ func NewIdentifierWithValue(ctx antlr.ParserRuleContext, value string) *Identifi
 }
 
 type TypeReference struct {
+	*AstNode
+
 	Type      string
 	IsPointer bool
 	IsArray   bool
@@ -92,17 +103,35 @@ func (self *TypeReference) SetType(typ any) {
 	case *grammar.SimpleTypeIdentifierContext:
 		self.Type = typeCtx.GetTypeName().GetText()
 		self.IsPointer = typeCtx.GetIsPointer() != nil
+		if self.AstNode == nil {
+			self.AstNode = NewAstNode(typeCtx.GetTypeName())
+		}
 
 	case *grammar.ArrayTypeIdentifierContext:
 		self.Type = typeCtx.GetTypeName().GetText()
 		self.IsPointer = typeCtx.GetIsPointer() != nil
 		self.IsArray = true
+		if self.AstNode == nil {
+			self.AstNode = NewAstNode(typeCtx.GetTypeName())
+		}
 	}
+}
+
+func (self *TypeReference) TypeName() string {
+	return self.Type
+}
+
+func (self *TypeReference) GetBasicType() Type {
+	t, ok := BasicTypes[self.Type]
+	if !ok {
+		return nil
+	}
+	return t
 }
 
 type TypedIdentifier struct {
 	*Identifier
-	*TypeReference
+	TypeReference *TypeReference
 }
 
 func NewTypedIdentifierCustom(name, typ string) *TypedIdentifier {

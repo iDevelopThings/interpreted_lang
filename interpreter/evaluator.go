@@ -259,7 +259,7 @@ func (self *Evaluator) evalArrayInstantiation(node *ast.ArrayInstantiation) *Res
 		log.Fatalf("Array does not have a type identifier associated with it: %v", node)
 	}
 
-	decl := self.Env.LookupObject(node.Type.Type)
+	decl := self.Env.LookupObject(node.Type.TypeReference.Type)
 	inst := ast.NewRuntimeArray(decl)
 
 	var values []*ast.RuntimeValue

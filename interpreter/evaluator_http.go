@@ -64,6 +64,24 @@ func NewHttpRequestObject(
 				log.Fatalf("Error parsing form: %v", err)
 			}
 
+			bodyDict, err := UnmarshalRuntimeValue(env, r.Form)
+			if err != nil {
+				log.Fatalf("Error decoding request body: %v", err)
+			}
+
+			request.SetField("body", bodyDict)
+
+			if injection := route.GetInjection("body"); injection != nil {
+				objDecl := env.LookupObject(injection.Var.TypeReference.Type)
+				if objDecl == nil {
+					log.Fatalf("Unknown object type: %v", injection.Var.TypeReference.Type)
+				}
+
+				if result := UnmarshalRuntimeObjectFromDictionary(objDecl, env, bodyDict); result != nil {
+					request.SetField(injection.Var.Name, result)
+					env.SetVar(injection.Var.Name, result)
+				}
+			}
 
 		}
 
@@ -72,6 +90,7 @@ func NewHttpRequestObject(
 			if err := r.ParseMultipartForm(int64(env.HttpEnv.Options.FormMaxMemory.Value.(int))); err != nil {
 				log.Fatalf("Error parsing multipart form: %v", err)
 			}
+			print("")
 		}
 	}
 

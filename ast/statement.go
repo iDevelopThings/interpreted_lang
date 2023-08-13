@@ -1,5 +1,13 @@
 package ast
 
+type ImportStatement struct {
+	*AstNode
+	Path *Literal
+}
+
+func (self *ImportStatement) IsStatement()         {}
+func (self *ImportStatement) IsTopLevelStatement() {}
+
 type IfStatement struct {
 	*AstNode
 	Condition Expr
@@ -54,4 +62,3 @@ type DeleteStatement struct {
 }
 
 func (self *DeleteStatement) IsStatement() {}
-

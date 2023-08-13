@@ -41,7 +41,7 @@ func newRuntimeValue(decl Declaration) *RuntimeValue {
 	}
 
 	if decl != nil {
-		rv.TypeName = decl.GetTypeName()
+		rv.TypeName = decl.TypeName()
 		rv.Decl = decl
 	}
 
@@ -56,7 +56,7 @@ func NewRuntimeArray(elementType Declaration) *RuntimeValue {
 
 	rv.Methods["length"] = &FunctionDeclaration{
 		Name:       "length",
-		ReturnType: "int",
+		ReturnType: NewIdentifierWithValue(nil, "int"),
 		CustomFuncCb: func(args ...any) any {
 			l := NewLiteral(nil, len(rv.Value.([]*RuntimeValue)))
 			return NewRuntimeValueFromLiteral(
@@ -67,7 +67,7 @@ func NewRuntimeArray(elementType Declaration) *RuntimeValue {
 
 	rv.Methods["add"] = &FunctionDeclaration{
 		Name:       "add",
-		ReturnType: "void",
+		ReturnType: NewIdentifierWithValue(nil, "void"),
 		CustomFuncCb: func(args ...any) any {
 			if len(args) == 0 {
 				log.Fatalf("Expected >= 1 argument, got %d", len(args))
@@ -83,7 +83,7 @@ func NewRuntimeArray(elementType Declaration) *RuntimeValue {
 
 	rv.Methods["remove"] = &FunctionDeclaration{
 		Name:       "remove",
-		ReturnType: "bool",
+		ReturnType: NewIdentifierWithValue(nil, "bool"),
 		CustomFuncCb: func(args ...any) any {
 			if len(args) == 0 {
 				log.Fatalf("Expected >= 1 argument, got %d", len(args))
@@ -302,29 +302,3 @@ type ObjectFieldGetter interface {
 	GetField(fieldName string) *RuntimeValue
 	SetField(fieldName string, value *RuntimeValue)
 }
-
-type ArrayInstantiation struct {
-	*AstNode
-
-	Type   *TypedIdentifier
-	Values []Expr
-}
-
-func (self *ArrayInstantiation) IsExpression() {}
-func (self *ArrayInstantiation) IsStatement()  {}
-
-type ObjectInstantiation struct {
-	*AstNode
-
-	TypeName string
-	Fields   map[string]Expr
-}
-
-func (self *ObjectInstantiation) IsExpression() {}
-
-type DictionaryInstantiation struct {
-	*AstNode
-	Fields map[string]Expr
-}
-
-func (self *DictionaryInstantiation) IsExpression() {}

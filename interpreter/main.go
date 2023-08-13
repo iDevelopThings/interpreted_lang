@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"strconv"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 
-	"interpreted_lang/ast"
 	"interpreted_lang/grammar"
 	"interpreted_lang/http_server"
 	"interpreted_lang/utilities"
@@ -79,7 +79,7 @@ func NewTestingInterpreterEngine() *InterpreterEngine {
 
 var Engine = NewInterpreterEngine()
 
-func (self *InterpreterEngine) LoadScript(path string) {
+func (self *InterpreterEngine) LoadScript(path string) *Script {
 	script := &Script{
 		Path: path,
 	}
@@ -98,6 +98,8 @@ func (self *InterpreterEngine) LoadScript(path string) {
 	self.Scripts = append(self.Scripts, script)
 
 	fmt.Printf("Loaded script: %s\n", path)
+
+	return script
 }
 
 func (self *InterpreterEngine) LoadScriptFromString(scriptSrc string) {
@@ -124,6 +126,12 @@ func (self *InterpreterEngine) setScriptLogger(script *Script) {
 			script.Logger.SetPrefix(fmt.Sprintf("[%s]", script.Path))
 		}
 
+		ErrorManager.SetSource(
+			script.Path,
+			script.Source,
+			script.Stream,
+		)
+
 		log.SetDefault(script.Logger)
 	} else {
 		log.SetDefault(globalLogger)
@@ -135,27 +143,65 @@ func (self *InterpreterEngine) parseAll() {
 	defer parseTimer.StopAndLog()
 
 	for _, script := range self.Scripts {
-		self.setScriptLogger(script)
-		lexer := grammar.NewSimpleLangLexer(script.InputStream)
-		stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
-		parser := grammar.NewSimpleLangParser(stream)
-		script.Tree = parser.Program()
+		self.parseScript(script)
 	}
+}
 
+func (self *InterpreterEngine) parseScript(script *Script) {
+	self.setScriptLogger(script)
 	defer self.setScriptLogger(nil)
+
+	lexer := grammar.NewSimpleLangLexer(script.InputStream)
+	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
+	script.Stream = stream
+	parser := grammar.NewSimpleLangParser(stream)
+	script.Tree = parser.Program()
 }
 
 func (self *InterpreterEngine) constructASTs() {
 	timer := utilities.NewTimer("Construct All Script ASTs")
 	defer timer.StopAndLog()
 
-	for _, script := range self.Scripts {
+	importedScripts := make(map[string]*Script)
+
+	scriptsToParse := utilities.NewStack[*Script]()
+
+	processScript := func(script *Script) {
 		self.setScriptLogger(script)
 
-		mapper, program := ast.NewAstMapper(script.Tree)
+		importedScripts[script.Path] = script
+
+		mapper, program := NewAstMapper(script.Tree)
 
 		script.Mapper = mapper
 		script.Program = program
+
+		if len(script.Program.Imports) > 0 {
+			for _, importPath := range script.Program.Imports {
+				ip := importPath.Path.Value.(string)
+				relativePath := path.Join(path.Dir(script.Path), ip)
+				if _, ok := importedScripts[relativePath]; !ok {
+					log.Debugf("Queueing imported script for processing : %s", relativePath)
+					scriptsToParse.Push(self.LoadScript(relativePath))
+				}
+			}
+		}
+	}
+
+	for _, script := range self.Scripts {
+		processScript(script)
+	}
+
+	for scriptsToParse.Len() > 0 {
+		script := scriptsToParse.Pop()
+		log.Debugf("Processing queued script : %s", script.Path)
+		self.parseScript(script)
+		processScript(script)
+	}
+
+	for _, script := range self.Scripts {
+		self.setScriptLogger(script)
+		script.Mapper.VisitProgram(script.Tree.(*grammar.ProgramContext))
 	}
 
 	defer self.setScriptLogger(nil)
@@ -183,6 +229,27 @@ func (self *InterpreterEngine) linkScript(script *Script) {
 		for _, fn := range script.Mapper.Functions {
 			self.Env.SetFunction(fn)
 		}
+	}
+}
+
+func (self *InterpreterEngine) typeCheck() {
+	timer := utilities.NewTimer("TypeCheck All Scripts")
+	defer timer.StopAndLog()
+
+	for _, script := range self.Scripts {
+		self.typeCheckScript(script)
+	}
+}
+
+func (self *InterpreterEngine) typeCheckScript(script *Script) {
+	// Populate the GlobalSymbols table based on global declarations in the tree
+	// For example, if a tree declares a global function, add it to the symbol table
+	self.setScriptLogger(script)
+	defer self.setScriptLogger(nil)
+
+	checker := NewTypeCheckingVisitor(script.Program, self.Env)
+	if checker != nil {
+
 	}
 }
 
@@ -219,8 +286,8 @@ func (self *InterpreterEngine) prepareToEvaluate() {
 
 	self.parseAll()
 	self.constructASTs()
-
 	self.link()
+	self.typeCheck()
 }
 
 func (self *InterpreterEngine) Run() {

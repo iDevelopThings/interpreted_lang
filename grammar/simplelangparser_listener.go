@@ -10,6 +10,9 @@ type SimpleLangParserListener interface {
 	// EnterProgram is called when entering the program production.
 	EnterProgram(c *ProgramContext)
 
+	// EnterImportStatement is called when entering the importStatement production.
+	EnterImportStatement(c *ImportStatementContext)
+
 	// EnterTypedIdentifier is called when entering the typedIdentifier production.
 	EnterTypedIdentifier(c *TypedIdentifierContext)
 
@@ -210,6 +213,9 @@ type SimpleLangParserListener interface {
 
 	// ExitProgram is called when exiting the program production.
 	ExitProgram(c *ProgramContext)
+
+	// ExitImportStatement is called when exiting the importStatement production.
+	ExitImportStatement(c *ImportStatementContext)
 
 	// ExitTypedIdentifier is called when exiting the typedIdentifier production.
 	ExitTypedIdentifier(c *TypedIdentifierContext)

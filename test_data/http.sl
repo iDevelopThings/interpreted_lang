@@ -1,3 +1,7 @@
+import "imports.sl"
+import "dictionaries.sl"
+import "http_basic_test.sl"
+
 object Account {
 	isAdmin bool
 }
@@ -9,11 +13,13 @@ object User {
 route POST "/data/json" {
 	from body as user User;
 
-	fmt::printf("\n\n");
-	fmt::printf("RequestBody: %v\n", user);
-	fmt::printf("Name: %s\n", user.name);
-	fmt::printf("IsAdmin: %v\n", user.account.isAdmin);
-	fmt::printf("\n\n");
+    var testing = "..";
+
+	// fmt::printf("\n\n");
+	// fmt::printf("RequestBody: %v\n", user);
+	// fmt::printf("Name: %s\n", user.name);
+	// fmt::printf("IsAdmin: %v\n", user.account.isAdmin);
+	// fmt::printf("\n\n");
 
 	respond with user;
 }
@@ -37,7 +43,10 @@ route POST "/data/multipart_form" {
 	//respond with user;
 }
 
-func main(){}
+
+func main(){
+
+}
 
 // route GET "/" {
 //     respond with text "Hello world"

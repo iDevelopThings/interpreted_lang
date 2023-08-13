@@ -11,6 +11,10 @@ func (v *BaseSimpleLangParserVisitor) VisitProgram(ctx *ProgramContext) interfac
 	return v.VisitChildren(ctx)
 }
 
+func (v *BaseSimpleLangParserVisitor) VisitImportStatement(ctx *ImportStatementContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
 func (v *BaseSimpleLangParserVisitor) VisitTypedIdentifier(ctx *TypedIdentifierContext) interface{} {
 	return v.VisitChildren(ctx)
 }

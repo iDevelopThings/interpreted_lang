@@ -9,9 +9,9 @@ import (
 )
 
 func RegisterRuntimeFunctions(env *Environment) {
-	for _, kind := range ast.AllLiteralKinds {
-		env.SetObject(&ast.ObjectDeclaration{Name: string(kind)})
-	}
+	// for _, kind := range ast.AllLiteralKinds {
+	// 	env.SetObject(&ast.ObjectDeclaration{Name: string(kind)})
+	// }
 
 	env.DefineCustomFunctionWithReceiver(
 		ast.NewTypedIdentifierCustom("fmt", "fmt"),
@@ -34,11 +34,10 @@ func RegisterRuntimeFunctions(env *Environment) {
 				for _, arg := range args {
 					switch rv := arg.(type) {
 					case *ast.RuntimeValue:
-						// if _, ok := rv.Value.(*ast.RuntimeValue); !ok {
-						// 	argValues = append(argValues, rv.Value)
-						// 	continue
-						// }
-
+						if rv == nil {
+							argValues = append(argValues, nil)
+							continue
+						}
 						v, err := MarshalRuntimeValue(env, rv)
 						if err != nil {
 							log.Fatalf("Cannot marshal runtime value: %v", err)

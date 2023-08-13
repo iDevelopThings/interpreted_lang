@@ -1,4 +1,4 @@
-package ast
+package interpreter
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/charmbracelet/log"
 
+	"interpreted_lang/ast"
 	"interpreted_lang/ast/operators"
 	"interpreted_lang/grammar"
 )
@@ -18,11 +19,11 @@ type grammarBinaryExpr interface {
 }
 
 func (self *AstMapper) processBinaryExpr(ctx grammarBinaryExpr) interface{} {
-	expr := &BinaryExpression{
-		AstNode: NewAstNode(ctx.GetRuleContext().(antlr.ParserRuleContext)),
-		Left:    self.Visit(ctx.GetLhs()).(Expr),
+	expr := &ast.BinaryExpression{
+		AstNode: ast.NewAstNode(ctx.GetRuleContext().(antlr.ParserRuleContext)),
+		Left:    self.Visit(ctx.GetLhs()).(ast.Expr),
 		Op:      operators.ToOperator(ctx.GetOperator().GetText()),
-		Right:   self.Visit(ctx.GetRhs()).(Expr),
+		Right:   self.Visit(ctx.GetRhs()).(ast.Expr),
 	}
 
 	return expr
@@ -39,7 +40,11 @@ func (self *AstMapper) VisitExpression(ctx *grammar.ExpressionContext) interface
 
 	// Otherwise we're processing a member access expression
 
-	base := self.Visit(ctx.Primary())
+	p := ctx.Primary()
+	if p == nil {
+		return nil
+	}
+	base := self.Visit(p)
 	fmt.Printf("base: %v\n", base)
 
 	// chain := ctx.AllAccessChain()
@@ -81,60 +86,63 @@ func (self *AstMapper) VisitExpression(ctx *grammar.ExpressionContext) interface
 }
 
 func (self *AstMapper) VisitFunctionCall(ctx *grammar.FunctionCallContext) interface{} {
-	expr := &CallExpression{
-		AstNode:      NewAstNode(ctx),
+	expr := &ast.CallExpression{
+		AstNode:      ast.NewAstNode(ctx),
 		FunctionName: ctx.GetFunctionName().GetText(),
-		Args:         make([]Expr, 0),
+		Args:         make([]ast.Expr, 0),
 	}
 
-	if ctx.ArgumentList() != nil {
-		for _, arg := range ctx.ArgumentList().AllExpression() {
+	if argList := ctx.ArgumentList(); argList != nil {
+		for _, arg := range argList.AllExpression() {
 			argExpr := self.Visit(arg)
 			if argExpr == nil {
 				self.Visit(arg)
 			}
-			expr.Args = append(expr.Args, argExpr.(Expr))
+			expr.Args = append(expr.Args, argExpr.(ast.Expr))
 		}
+		expr.ArgsToken = argList
 	}
 
 	return expr
 }
 
 func (self *AstMapper) VisitStaticFunctionCall(ctx *grammar.StaticFunctionCallContext) interface{} {
-	expr := &CallExpression{
-		AstNode:      NewAstNode(ctx),
+	expr := &ast.CallExpression{
+		AstNode:      ast.NewAstNode(ctx),
 		FunctionName: ctx.GetFunctionName().GetText(),
-		Args:         make([]Expr, 0),
+		Args:         make([]ast.Expr, 0),
 	}
 
-	if ctx.ArgumentList() != nil {
-		for _, arg := range ctx.ArgumentList().AllExpression() {
+	if argList := ctx.ArgumentList(); argList != nil {
+		for _, arg := range argList.AllExpression() {
 			argExpr := self.Visit(arg)
 			if argExpr == nil {
 				self.Visit(arg)
 			}
-			expr.Args = append(expr.Args, argExpr.(Expr))
+			expr.Args = append(expr.Args, argExpr.(ast.Expr))
 		}
+		expr.ArgsToken = argList
 	}
 
 	return expr
 }
 
 func (self *AstMapper) VisitMemberFunctionCall(ctx *grammar.MemberFunctionCallContext) interface{} {
-	expr := &CallExpression{
-		AstNode:      NewAstNode(ctx),
+	expr := &ast.CallExpression{
+		AstNode:      ast.NewAstNode(ctx),
 		FunctionName: ctx.GetFunctionName().GetText(),
-		Args:         make([]Expr, 0),
+		Args:         make([]ast.Expr, 0),
 	}
 
-	if ctx.ArgumentList() != nil {
-		for _, arg := range ctx.ArgumentList().AllExpression() {
+	if argList := ctx.ArgumentList(); argList != nil {
+		for _, arg := range argList.AllExpression() {
 			argExpr := self.Visit(arg)
-			expr.Args = append(expr.Args, argExpr.(Expr))
+			expr.Args = append(expr.Args, argExpr.(ast.Expr))
 		}
+		expr.ArgsToken = argList
 	}
 
-	receiver := self.Visit(ctx.Primary()).(Expr)
+	receiver := self.Visit(ctx.Primary()).(ast.Expr)
 	expr.Receiver = receiver
 
 	return expr
@@ -162,11 +170,11 @@ func (self *AstMapper) VisitAssignmentExpression(ctx *grammar.AssignmentExpressi
 		return self.Visit(ctx.NonParenExpression())
 	}
 
-	return &AssignmentExpression{
-		AstNode: NewAstNode(ctx),
-		Left:    self.Visit(ctx.GetLhs()).(Expr),
+	return &ast.AssignmentExpression{
+		AstNode: ast.NewAstNode(ctx),
+		Left:    self.Visit(ctx.GetLhs()).(ast.Expr),
 		Op:      operators.ToOperator(ctx.GetOp().GetText()),
-		Value:   self.Visit(ctx.GetRhs()).(Expr),
+		Value:   self.Visit(ctx.GetRhs()).(ast.Expr),
 	}
 }
 
@@ -179,12 +187,12 @@ func (self *AstMapper) VisitLogicalOrExpressionNP(ctx *grammar.LogicalOrExpressi
 		return self.Visit(ctx.LogicalAndExpressionNP())
 	}
 
-	return &BinaryExpression{
-		AstNode: NewAstNode(ctx),
-		Kind:    BinaryExpressionKindLogicalOr,
-		Left:    self.Visit(ctx.GetLhs()).(Expr),
+	return &ast.BinaryExpression{
+		AstNode: ast.NewAstNode(ctx),
+		Kind:    ast.BinaryExpressionKindLogicalOr,
+		Left:    self.Visit(ctx.GetLhs()).(ast.Expr),
 		Op:      operators.ToOperator(ctx.GetOp().GetText()),
-		Right:   self.Visit(ctx.GetRhs()).(Expr),
+		Right:   self.Visit(ctx.GetRhs()).(ast.Expr),
 	}
 }
 
@@ -193,12 +201,12 @@ func (self *AstMapper) VisitLogicalAndExpressionNP(ctx *grammar.LogicalAndExpres
 		return self.Visit(ctx.EqualityExpressionNP())
 	}
 
-	return &BinaryExpression{
-		AstNode: NewAstNode(ctx),
-		Kind:    BinaryExpressionKindLogicalAnd,
-		Left:    self.Visit(ctx.GetLhs()).(Expr),
+	return &ast.BinaryExpression{
+		AstNode: ast.NewAstNode(ctx),
+		Kind:    ast.BinaryExpressionKindLogicalAnd,
+		Left:    self.Visit(ctx.GetLhs()).(ast.Expr),
 		Op:      operators.ToOperator(ctx.GetOp().GetText()),
-		Right:   self.Visit(ctx.GetRhs()).(Expr),
+		Right:   self.Visit(ctx.GetRhs()).(ast.Expr),
 	}
 }
 
@@ -207,12 +215,12 @@ func (self *AstMapper) VisitEqualityExpressionNP(ctx *grammar.EqualityExpression
 		return self.Visit(ctx.RelationalExpressionNP())
 	}
 
-	return &BinaryExpression{
-		AstNode: NewAstNode(ctx),
-		Kind:    BinaryExpressionKindEquality,
-		Left:    self.Visit(ctx.GetLhs()).(Expr),
+	return &ast.BinaryExpression{
+		AstNode: ast.NewAstNode(ctx),
+		Kind:    ast.BinaryExpressionKindEquality,
+		Left:    self.Visit(ctx.GetLhs()).(ast.Expr),
 		Op:      operators.ToOperator(ctx.GetOp().GetText()),
-		Right:   self.Visit(ctx.GetRhs()).(Expr),
+		Right:   self.Visit(ctx.GetRhs()).(ast.Expr),
 	}
 }
 
@@ -221,12 +229,12 @@ func (self *AstMapper) VisitRelationalExpressionNP(ctx *grammar.RelationalExpres
 		return self.Visit(ctx.ShiftExpressionNP())
 	}
 
-	return &BinaryExpression{
-		AstNode: NewAstNode(ctx),
-		Kind:    BinaryExpressionKindRelational,
-		Left:    self.Visit(ctx.GetLhs()).(Expr),
+	return &ast.BinaryExpression{
+		AstNode: ast.NewAstNode(ctx),
+		Kind:    ast.BinaryExpressionKindRelational,
+		Left:    self.Visit(ctx.GetLhs()).(ast.Expr),
 		Op:      operators.ToOperator(ctx.GetOp().GetText()),
-		Right:   self.Visit(ctx.GetRhs()).(Expr),
+		Right:   self.Visit(ctx.GetRhs()).(ast.Expr),
 	}
 }
 
@@ -235,12 +243,12 @@ func (self *AstMapper) VisitShiftExpressionNP(ctx *grammar.ShiftExpressionNPCont
 		return self.Visit(ctx.AdditiveExpressionNP())
 	}
 
-	return &BinaryExpression{
-		AstNode: NewAstNode(ctx),
-		Kind:    BinaryExpressionKindShift,
-		Left:    self.Visit(ctx.GetLhs()).(Expr),
+	return &ast.BinaryExpression{
+		AstNode: ast.NewAstNode(ctx),
+		Kind:    ast.BinaryExpressionKindShift,
+		Left:    self.Visit(ctx.GetLhs()).(ast.Expr),
 		Op:      operators.ToOperator(ctx.GetOp().GetText()),
-		Right:   self.Visit(ctx.GetRhs()).(Expr),
+		Right:   self.Visit(ctx.GetRhs()).(ast.Expr),
 	}
 }
 
@@ -249,12 +257,12 @@ func (self *AstMapper) VisitAdditiveExpressionNP(ctx *grammar.AdditiveExpression
 		return self.Visit(ctx.MultiplicativeExpressionNP())
 	}
 
-	return &BinaryExpression{
-		AstNode: NewAstNode(ctx),
-		Kind:    BinaryExpressionKindAdditive,
-		Left:    self.Visit(ctx.GetLhs()).(Expr),
+	return &ast.BinaryExpression{
+		AstNode: ast.NewAstNode(ctx),
+		Kind:    ast.BinaryExpressionKindAdditive,
+		Left:    self.Visit(ctx.GetLhs()).(ast.Expr),
 		Op:      operators.ToOperator(ctx.GetOp().GetText()),
-		Right:   self.Visit(ctx.GetRhs()).(Expr),
+		Right:   self.Visit(ctx.GetRhs()).(ast.Expr),
 	}
 }
 
@@ -263,12 +271,12 @@ func (self *AstMapper) VisitMultiplicativeExpressionNP(ctx *grammar.Multiplicati
 		return self.Visit(ctx.PowerExpressionNP())
 	}
 
-	return &BinaryExpression{
-		AstNode: NewAstNode(ctx),
-		Kind:    BinaryExpressionKindMultiplicative,
-		Left:    self.Visit(ctx.GetLhs()).(Expr),
+	return &ast.BinaryExpression{
+		AstNode: ast.NewAstNode(ctx),
+		Kind:    ast.BinaryExpressionKindMultiplicative,
+		Left:    self.Visit(ctx.GetLhs()).(ast.Expr),
 		Op:      operators.ToOperator(ctx.GetOp().GetText()),
-		Right:   self.Visit(ctx.GetRhs()).(Expr),
+		Right:   self.Visit(ctx.GetRhs()).(ast.Expr),
 	}
 }
 
@@ -277,12 +285,12 @@ func (self *AstMapper) VisitPowerExpressionNP(ctx *grammar.PowerExpressionNPCont
 		return self.Visit(ctx.UnaryExpressionNP())
 	}
 
-	return &BinaryExpression{
-		AstNode: NewAstNode(ctx),
-		Kind:    BinaryExpressionKindPower,
-		Left:    self.Visit(ctx.GetLhs()).(Expr),
+	return &ast.BinaryExpression{
+		AstNode: ast.NewAstNode(ctx),
+		Kind:    ast.BinaryExpressionKindPower,
+		Left:    self.Visit(ctx.GetLhs()).(ast.Expr),
 		Op:      operators.ToOperator(ctx.GetOp().GetText()),
-		Right:   self.Visit(ctx.GetRhs()).(Expr),
+		Right:   self.Visit(ctx.GetRhs()).(ast.Expr),
 	}
 }
 
@@ -291,10 +299,10 @@ func (self *AstMapper) VisitUnaryExpressionNP(ctx *grammar.UnaryExpressionNPCont
 		return self.Visit(ctx.Primary())
 	}
 
-	return &UnaryExpression{
-		AstNode: NewAstNode(ctx),
+	return &ast.UnaryExpression{
+		AstNode: ast.NewAstNode(ctx),
 		Op:      operators.ToOperator(ctx.GetOp().GetText()),
-		Expr:    self.Visit(ctx.GetRhs()).(Expr),
+		Expr:    self.Visit(ctx.GetRhs()).(ast.Expr),
 	}
 }
 
@@ -304,21 +312,21 @@ func (self *AstMapper) VisitPostFixExpression(ctx *grammar.PostFixExpressionCont
 	// 	Kind:    BinaryExpressionKindPostFix,
 	// }
 
-	expr := &PostfixExpression{
-		AstNode: NewAstNode(ctx),
+	expr := &ast.PostfixExpression{
+		AstNode: ast.NewAstNode(ctx),
 	}
 
 	if l := ctx.Identifier(); l != nil {
-		ident := self.Visit(l).(*Identifier)
+		ident := self.Visit(l).(*ast.Identifier)
 		if ident == nil {
 			log.Fatalf("unexpected identifier in postfix expression: %s", ctx.GetText())
 		}
-		expr.Left = &VarReference{
-			AstNode: NewAstNode(ctx),
+		expr.Left = &ast.VarReference{
+			AstNode: ast.NewAstNode(ctx),
 			Name:    ident.Name,
 		}
 	} else if l := ctx.Value(); l != nil {
-		expr.Left = self.Visit(l).(Expr)
+		expr.Left = self.Visit(l).(ast.Expr)
 	}
 
 	expr.Op = operators.ToOperator(ctx.GetOp().GetText())
@@ -331,34 +339,34 @@ func (self *AstMapper) VisitPostFixExpression(ctx *grammar.PostFixExpressionCont
 
 func (self *AstMapper) VisitMemberDotAccess(ctx *grammar.MemberDotAccessContext) interface{} {
 
-	expr := &FieldAccessExpression{
-		AstNode: NewAstNode(ctx),
+	expr := &ast.FieldAccessExpression{
+		AstNode: ast.NewAstNode(ctx),
 	}
 
 	if member := ctx.Identifier(); member != nil {
-		expr.FieldName = self.Visit(member).(*Identifier).Name
+		expr.FieldName = self.Visit(member).(*ast.Identifier).Name
 	}
 
 	if l := ctx.Primary(); l != nil {
-		expr.StructInstance = self.Visit(l).(Expr)
+		expr.StructInstance = self.Visit(l).(ast.Expr)
 	}
 
 	return expr
 }
 
 func (self *AstMapper) VisitArrayPrimary(ctx *grammar.ArrayPrimaryContext) interface{} {
-	expr := &ArrayAccessExpression{
-		AstNode: NewAstNode(ctx),
+	expr := &ast.ArrayAccessExpression{
+		AstNode: ast.NewAstNode(ctx),
 	}
 
 	if l := ctx.Primary(); l != nil {
-		expr.Instance = self.Visit(l).(Expr)
+		expr.Instance = self.Visit(l).(ast.Expr)
 	}
 
 	expr.IsSlice = ctx.GetIsSlice() != nil
-	expr.StartIndex = self.Visit(ctx.GetStart_()).(Expr)
+	expr.StartIndex = self.Visit(ctx.GetStart_()).(ast.Expr)
 	if expr.IsSlice && ctx.GetEnd() != nil {
-		expr.EndIndex = self.Visit(ctx.GetEnd()).(Expr)
+		expr.EndIndex = self.Visit(ctx.GetEnd()).(ast.Expr)
 	}
 
 	return expr
