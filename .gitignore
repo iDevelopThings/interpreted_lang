@@ -1,0 +1,5 @@
+cpu.prof
+mem.mprof
+gen
+# Project exclude paths
+/grammar/test/
