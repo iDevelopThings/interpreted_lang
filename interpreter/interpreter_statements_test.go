@@ -9,9 +9,9 @@ import (
 
 	"testing"
 
-	"interpreted_lang/ast"
-	"interpreted_lang/grammar"
-	"interpreted_lang/utilities"
+	"arc/ast"
+	"arc/lexer"
+	"arc/utilities"
 )
 
 type TestInterpreterStatementsTestSuite struct {
@@ -69,13 +69,13 @@ func main() {
 		scriptSrcFinal += scriptSrc
 		scriptSrcFinal += "\n}"
 		engine.LoadScriptFromString(scriptSrcFinal)
-		engine.prepareToEvaluate()
+		engine.ProcessScripts()
 
-		script := engine.Scripts[0]
+		script := engine.SourceFiles[0]
 		main := script.GetMainFunc()
 
 		ifStatement := main.Body.Statements[2].(*ast.IfStatement)
-		assert.Equal(suite.T(), ifStatement.GetRuleType(), grammar.ParserRuleIfStmt)
+		assert.Contains(suite.T(), ifStatement.GetTokenTypes(), lexer.TokenKeywordIf)
 
 		assert.IsType(suite.T(), &ast.IfStatement{}, ifStatement.Else)
 		assert.IsType(suite.T(), &ast.IfStatement{}, ifStatement.Else.(*ast.IfStatement).Else)
@@ -103,13 +103,13 @@ func main() {
 
 	engine := NewTestingInterpreterEngine()
 	engine.LoadScriptFromString(scriptSrc)
-	engine.prepareToEvaluate()
+	engine.ProcessScripts()
 
-	script := engine.Scripts[0]
+	script := engine.SourceFiles[0]
 	main := script.GetMainFunc()
 
 	whileLoop := main.Body.Statements[1].(*ast.LoopStatement)
-	assert.Equal(suite.T(), whileLoop.GetRuleType(), grammar.ParserRuleLoopStatement)
+	assert.Contains(suite.T(), whileLoop.GetTokenTypes(), lexer.TokenKeywordFor)
 	assert.Nil(suite.T(), whileLoop.Range)
 	assert.Nil(suite.T(), whileLoop.As)
 	assert.Nil(suite.T(), whileLoop.Step)
@@ -133,13 +133,13 @@ func main() {
 
 	engine := NewTestingInterpreterEngine()
 	engine.LoadScriptFromString(scriptSrc)
-	engine.prepareToEvaluate()
+	engine.ProcessScripts()
 
-	script := engine.Scripts[0]
+	script := engine.SourceFiles[0]
 	main := script.GetMainFunc()
 
 	forLoop := main.Body.Statements[1].(*ast.LoopStatement)
-	assert.Equal(suite.T(), forLoop.GetRuleType(), grammar.ParserRuleLoopStatement)
+	assert.Contains(suite.T(), forLoop.GetTokenTypes(), lexer.TokenKeywordFor)
 	assert.Nil(suite.T(), forLoop.As)
 	assert.Nil(suite.T(), forLoop.Step)
 	assert.IsType(suite.T(), &ast.RangeExpression{}, forLoop.Range)
@@ -166,13 +166,13 @@ func main() {
 
 	engine := NewTestingInterpreterEngine()
 	engine.LoadScriptFromString(scriptSrc)
-	engine.prepareToEvaluate()
+	engine.ProcessScripts()
 
-	script := engine.Scripts[0]
+	script := engine.SourceFiles[0]
 	main := script.GetMainFunc()
 
 	loop := main.Body.Statements[1].(*ast.LoopStatement)
-	assert.Equal(suite.T(), loop.GetRuleType(), grammar.ParserRuleLoopStatement)
+	assert.Contains(suite.T(), loop.GetTokenTypes(), lexer.TokenKeywordFor)
 	assert.Nil(suite.T(), loop.As)
 	assert.IsType(suite.T(), &ast.Literal{}, loop.Step)
 	assert.IsType(suite.T(), &ast.RangeExpression{}, loop.Range)
@@ -196,13 +196,13 @@ func main() {
 
 	engine := NewTestingInterpreterEngine()
 	engine.LoadScriptFromString(scriptSrc)
-	engine.prepareToEvaluate()
+	engine.ProcessScripts()
 
-	script := engine.Scripts[0]
+	script := engine.SourceFiles[0]
 	main := script.GetMainFunc()
 
 	loop := main.Body.Statements[0].(*ast.LoopStatement)
-	assert.Equal(suite.T(), loop.GetRuleType(), grammar.ParserRuleLoopStatement)
+	assert.Contains(suite.T(), loop.GetTokenTypes(), lexer.TokenKeywordFor)
 	assert.IsType(suite.T(), &ast.Identifier{}, loop.As)
 	assert.IsType(suite.T(), &ast.Literal{}, loop.Step)
 	assert.IsType(suite.T(), &ast.RangeExpression{}, loop.Range)
@@ -266,9 +266,9 @@ func main() {
 
 	engine := NewTestingInterpreterEngine()
 	engine.LoadScriptFromString(scriptSrc)
-	engine.prepareToEvaluate()
+	engine.ProcessScripts()
 
-	script := engine.Scripts[0]
+	script := engine.SourceFiles[0]
 	main := script.GetMainFunc()
 
 	timer := utilities.NewTimer("Eval")

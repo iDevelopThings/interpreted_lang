@@ -6,9 +6,9 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/goccy/go-json"
 
-	"interpreted_lang/ast"
-	"interpreted_lang/http_server"
-	"interpreted_lang/utilities"
+	"arc/ast"
+	"arc/http_server"
+	"arc/utilities"
 )
 
 func NewHttpRequestObject(
@@ -90,7 +90,6 @@ func NewHttpRequestObject(
 			if err := r.ParseMultipartForm(int64(env.HttpEnv.Options.FormMaxMemory.Value.(int))); err != nil {
 				log.Fatalf("Error parsing multipart form: %v", err)
 			}
-			print("")
 		}
 	}
 

@@ -3,8 +3,7 @@ package interpreter
 import (
 	"github.com/charmbracelet/log"
 
-	"interpreted_lang/ast"
-	"interpreted_lang/grammar"
+	"arc/ast"
 )
 
 type FunctionTypeCallback = func(args ...any) any
@@ -23,8 +22,6 @@ type Environment struct {
 	objects map[string]*ast.ObjectDeclaration
 	// objectInstances map[string]*ObjectInstantiation
 	functions map[string]*ast.FunctionDeclaration
-
-	Program grammar.IProgramContext
 }
 
 func NewEnvironment() *Environment {
@@ -77,6 +74,14 @@ func (self *Environment) LookupObject(name string) *ast.ObjectDeclaration {
 	if self.parent != nil {
 		return self.parent.LookupObject(name)
 	}
+
+	if bt, ok := ast.BasicTypes[name]; ok {
+		return &ast.ObjectDeclaration{
+			AstNode: bt.GetAstNode(),
+			Name:    ast.NewIdentifierWithValue(nil, bt.TypeName()),
+		}
+	}
+
 	return nil
 }
 
@@ -118,12 +123,12 @@ func (self *Environment) SetFunction(function *ast.FunctionDeclaration) {
 }
 
 func (self *Environment) SetObject(object *ast.ObjectDeclaration) {
-	if _, found := self.objects[object.Name]; found {
-		log.Errorf("Object already defined: %s - object will be ignored", object.Name)
+	if _, found := self.objects[object.Name.Name]; found {
+		log.Errorf("Object already defined: %s - object will be ignored", object.Name.Name)
 		return
 	}
 
-	self.objects[object.Name] = object
+	self.objects[object.Name.Name] = object
 
 	// log.Debugf("SetObject: %s", object.Name)
 }

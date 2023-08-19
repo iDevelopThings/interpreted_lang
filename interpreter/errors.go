@@ -5,12 +5,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/antlr4-go/antlr/v4"
 	"github.com/charmbracelet/log"
 
-	"interpreted_lang/ast"
-	"interpreted_lang/interpreter/errors"
+	"arc/ast"
+	"arc/interpreter/errors"
 )
+
+type PresenterHookFn = func(presenter *errors.ErrorPresenter) error
 
 var ErrorManager = &CompilerErrorTracking{
 	CurrentSourceFilePath:    "",
@@ -21,26 +22,27 @@ type CompilerErrorTracking struct {
 	CurrentNode              ast.Node
 	CurrentSourceFilePath    string
 	CurrentSourceFileContent string
-	CurrentTokenStream       *antlr.CommonTokenStream
-	Presenter                *errors.ErrorPresenter
+	// CurrentTokenStream       *antlr.CommonTokenStream
+	Presenter *errors.ErrorPresenter
+	hooks     []PresenterHookFn
 }
 
-func (self *CompilerErrorTracking) SetSource(path string, content string, stream *antlr.CommonTokenStream) {
+func (self *CompilerErrorTracking) SetSource(path string, content string) {
 	self.CurrentSourceFileContent = content
 	self.CurrentSourceFilePath = path
-	self.CurrentTokenStream = stream
 	if self.CurrentNode != nil {
-		self.Presenter = errors.NewErrorPresenter(content, self.CurrentNode.GetRule())
+		self.Presenter = errors.NewErrorPresenter(content, self.CurrentNode.GetRuleRange())
 	}
 }
 
 func (self *CompilerErrorTracking) SetNode(node ast.Node) {
-	self.Presenter = errors.NewErrorPresenter(self.CurrentSourceFileContent, node.GetRule())
+	self.Presenter = errors.NewErrorPresenter(self.CurrentSourceFileContent, node.GetRuleRange())
 	self.CurrentNode = node
 }
-func (self *CompilerErrorTracking) SetRule(rule antlr.ParserRuleContext) {
-	self.Presenter = errors.NewErrorPresenter(self.CurrentSourceFileContent, rule)
-}
+
+// func (self *CompilerErrorTracking) SetToken(token *lexer.Token) {
+// 	self.Presenter = errors.NewErrorPresenter(self.CurrentSourceFileContent, token)
+// }
 
 func (self *CompilerErrorTracking) Error(format string, a ...any) {
 	if self.CurrentNode == nil {
@@ -60,7 +62,20 @@ func (self *CompilerErrorTracking) ErrorAtNode(node ast.Node, format string, a .
 		panic("node is nil")
 	}
 
-	Errors().AddAtToken(node.GetRule(), format, a...)
+	// Errors().AddAtToken(node.GetRuleRange(), format, a...)
+	Errors().AddAtNode(node, format, a...)
+
+	if len(self.hooks) > 0 {
+		for _, hook := range self.hooks {
+			log.Debugf("running presenter hook for error : %s", fmt.Sprintf(format, a...))
+
+			err := hook(Errors())
+			if err != nil {
+				log.Errorf("Error hook failed: %s", err)
+			}
+		}
+		return
+	}
 
 	log.Helper()
 	self.Print()
@@ -85,6 +100,11 @@ func (self *CompilerErrorTracking) Print() {
 	os.Exit(1)
 }
 
+func (self *CompilerErrorTracking) AddProcessor(cb PresenterHookFn) {
+	self.hooks = append(self.hooks, cb)
+
+}
+
 func NewError(format string, a ...any) {
 	ErrorManager.Error(format, a...)
 }
@@ -96,9 +116,9 @@ func NewErrorAtNode(node ast.Node, format string, a ...any) {
 
 }
 
-func NewErrorAtToken(node antlr.ParserRuleContext, format string, a ...any) {
-	log.Helper()
-	ErrorManager.SetRule(node)
-	Errors().AddAtToken(node, format, a...)
-	ErrorManager.Print()
-}
+// func NewErrorAtToken(node *lexer.Token, format string, a ...any) {
+// 	log.Helper()
+// 	ErrorManager.SetToken(node)
+// 	Errors().AddAtNode(node, format, a...)
+// 	ErrorManager.Print()
+// }

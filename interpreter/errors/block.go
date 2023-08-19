@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/antlr4-go/antlr/v4"
+	"arc/ast"
+	"arc/lexer"
 )
 
 type ErrorDisplayKind string
@@ -21,13 +22,11 @@ type SourceErrorPosition struct {
 	Width  int
 }
 
-func NewSourceErrorPosition(rule antlr.ParserRuleContext, token antlr.Token) SourceErrorPosition {
+func NewSourceErrorPosition(token *lexer.Position) SourceErrorPosition {
 	sp := SourceErrorPosition{
 		Line:   token.GetLine(),
 		Column: token.GetColumn(),
-		Abs:    token.GetStart(),
-		Width:  len(rule.GetText()),
-		// Width:  token.GetStop() - token.GetStart(),
+		Abs:    token.GetAbs(),
 	}
 	sp.Line--
 	// sp.Column--
@@ -64,22 +63,55 @@ type CodeError struct {
 	DidAddReasonBlock bool
 }
 
-func NewCodeError(rule antlr.ParserRuleContext) *CodeError {
+//	func NewCodeError(rule *ast.ParserRuleRange) *CodeError {
+//		pos := &CodeError{
+//			Kind:  SingleLineError,
+//			Start: NewSourceErrorPosition(rule),
+//			End:   NewSourceErrorPosition(rule),
+//		}
+//
+//		// if rule.GetStart() != rule.GetStop() {
+//		// 	// pos.Start.Column += len(rule.GetStart().GetText())
+//		// 	// pos.End.Column += len(rule.GetStop().GetText())
+//		// } else {
+//		// 	pos.End.Column += len(rule.GetStop().GetText())
+//		// }
+//
+//		pos.HighlightBounds = &TokenHighlightBounds{
+//			StartColumn: pos.Start.Column,
+//			EndColumn:   pos.Start.Column + pos.Start.Width,
+//			Length:      pos.Start.Width,
+//		}
+//
+//		if pos.End.Line-pos.Start.Line > 1 {
+//			pos.Kind = MultiLineError
+//			return pos
+//		}
+//
+//		pos.HighlightBounds.EndColumn = max(pos.End.Column, pos.HighlightBounds.EndColumn)
+//		pos.HighlightBounds.Length = pos.HighlightBounds.EndColumn - pos.HighlightBounds.StartColumn
+//
+//		return pos
+//	}
+func NewCodeErrorAtNode(node ast.Node) *CodeError {
+	rng := node.GetRuleRange()
 	pos := &CodeError{
 		Kind:  SingleLineError,
-		Start: NewSourceErrorPosition(rule, rule.GetStart()),
-		End:   NewSourceErrorPosition(rule, rule.GetStop()),
+		Start: NewSourceErrorPosition(rng.Start.GetStart()),
+		End:   NewSourceErrorPosition(rng.End.GetStart()),
 	}
+	pos.Start.Width = rng.Start.Pos.Length
+	pos.End.Width = rng.End.Pos.Length
 
-	if rule.GetStart() != rule.GetStop() {
-		// pos.Start.Column += len(rule.GetStart().GetText())
-		// pos.End.Column += len(rule.GetStop().GetText())
-	} else {
-		pos.End.Column += len(rule.GetStop().GetText())
-	}
+	// if rule.GetStart() != rule.GetStop() {
+	// 	// pos.Start.Column += len(rule.GetStart().GetText())
+	// 	// pos.End.Column += len(rule.GetStop().GetText())
+	// } else {
+	// 	pos.End.Column += len(rule.GetStop().GetText())
+	// }
 
 	pos.HighlightBounds = &TokenHighlightBounds{
-		StartColumn: pos.Start.Column - 1,
+		StartColumn: pos.Start.Column,
 		EndColumn:   pos.Start.Column + pos.Start.Width,
 		Length:      pos.Start.Width,
 	}
@@ -118,7 +150,7 @@ func (self *CodeError) AddMessage(str string, args ...any) *CodeError {
 	return self
 }
 
-func (self *CodeError) AddMessageAtToken(rule antlr.ParserRuleContext, str string, args ...any) *CodeError {
+func (self *CodeError) AddMessageAtToken(str string, args ...any) *CodeError {
 	// self.Messages = append(self.Messages, CodeErrorMessage{
 	// 	Message: formatMessage(str, args...),
 	// 	Line:    rule.GetStart().GetLine(),

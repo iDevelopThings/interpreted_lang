@@ -2,11 +2,13 @@ package errors
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
-	"github.com/antlr4-go/antlr/v4"
 	"github.com/fatih/color"
+
+	"arc/ast"
 )
 
 const contextRadius = 3
@@ -23,30 +25,39 @@ var (
 type ErrorPresenter struct {
 	Errors               []*CodeError
 	Lines                []string
-	Rule                 antlr.ParserRuleContext
+	TokenRuleRange       *ast.ParserRuleRange
 	firstErrorLineNumber int
 }
 
-func NewErrorPresenter(input string, rule antlr.ParserRuleContext) *ErrorPresenter {
+func NewErrorPresenter(input string, token *ast.ParserRuleRange) *ErrorPresenter {
 	presenter := &ErrorPresenter{
-		Lines: strings.Split(input, "\n"),
-		Rule:  rule,
+		Lines:          strings.Split(input, "\n"),
+		TokenRuleRange: token,
 	}
 
 	return presenter
 }
-func (self *ErrorPresenter) Multi() *CodeError {
-	e := NewCodeError(self.Rule)
-	self.Errors = append(self.Errors, e)
-	return e
-}
-func (self *ErrorPresenter) Add(str string, args ...any) *ErrorPresenter {
-	self.Errors = append(self.Errors, NewCodeError(self.Rule).AddMessage(str, args...))
-	return self
-}
-func (self *ErrorPresenter) AddAtToken(rule antlr.ParserRuleContext, str string, args ...any) *ErrorPresenter {
-	err := NewCodeError(rule)
-	err.AddMessageAtToken(rule, str, args...)
+
+// func (self *ErrorPresenter) Multi() *CodeError {
+// 	e := NewCodeError(self.TokenRuleRange)
+// 	self.Errors = append(self.Errors, e)
+// 	return e
+// }
+// func (self *ErrorPresenter) Add(str string, args ...any) *ErrorPresenter {
+// 	self.Errors = append(self.Errors, NewCodeError(self.TokenRuleRange).AddMessage(str, args...))
+// 	return self
+// }
+// func (self *ErrorPresenter) AddAtToken(rule *ast.ParserRuleRange, str string, args ...any) *ErrorPresenter {
+// 	err := NewCodeError(rule)
+// 	err.AddMessageAtToken(str, args...)
+// 	self.Errors = append(self.Errors, err)
+//
+// 	return self
+// }
+
+func (self *ErrorPresenter) AddAtNode(node ast.Node, format string, a ...any) *ErrorPresenter {
+	err := NewCodeErrorAtNode(node)
+	err.AddMessageAtToken(format, a...)
 	self.Errors = append(self.Errors, err)
 
 	return self
@@ -55,12 +66,14 @@ func (self *ErrorPresenter) AddAtToken(rule antlr.ParserRuleContext, str string,
 func (self *ErrorPresenter) Print(filePath string) {
 	lines, _, _ := self.process()
 
-	fmt.Printf("\n  --> %s:%d\n\n", filePath, self.firstErrorLineNumber+1)
+	// panic(fmt.Sprintf("ErrorPresenter.Print() is not implemented yet."))
+
+	log.Printf("\n  --> %s:%d\n\n", filePath, self.firstErrorLineNumber+1)
 
 	for _, line := range lines {
-		println(line)
+		log.Println(line)
 	}
-	println(strings.Repeat("-", 80))
+	log.Println(strings.Repeat("-", 80))
 
 	// for i, line := range self.Lines {
 	//
@@ -241,8 +254,8 @@ func (self *ErrorPresenter) prepareErrorBounds() (
 	errorLineNumbers map[int]bool,
 	hasBlockError bool,
 ) {
-	startLine := self.Rule.GetStart().GetLine()
-	stopLine := self.Rule.GetStop().GetLine()
+	startLine := self.TokenRuleRange.Start.GetLine()
+	stopLine := self.TokenRuleRange.End.GetLine()
 	radius := min(contextRadius, len(self.Lines))
 	hasBlockError = false
 

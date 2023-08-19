@@ -9,8 +9,8 @@ import (
 
 	"testing"
 
-	"interpreted_lang/http_server"
-	"interpreted_lang/utilities"
+	"arc/http_server"
+	"arc/utilities"
 )
 
 type TestInterpreterHttpTestSuite struct {

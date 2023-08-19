@@ -9,7 +9,7 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/goccy/go-json"
 
-	"interpreted_lang/ast"
+	"arc/ast"
 )
 
 var (

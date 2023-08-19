@@ -3,6 +3,7 @@ package interpreter
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/signal"
@@ -10,21 +11,23 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/antlr4-go/antlr/v4"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 
-	"interpreted_lang/grammar"
-	"interpreted_lang/http_server"
-	"interpreted_lang/utilities"
+	"arc/http_server"
+	"arc/lexer"
+	"arc/parser"
+	"arc/utilities"
 )
 
 type InterpreterEngine struct {
-	Scripts   []*Script
-	Env       *Environment
-	Evaluator *Evaluator
+	SourceFiles []*SourceFile
+	Env         *Environment
+	Evaluator   *Evaluator
 
-	IsTesting bool
+	IsTesting      bool
+	loggingEnabled bool
+	loggingWriter  io.Writer
 }
 
 var globalLogger *log.Logger
@@ -32,9 +35,11 @@ var globalLogger *log.Logger
 func NewInterpreterEngine() *InterpreterEngine {
 	env := NewEnvironment()
 	engine := &InterpreterEngine{
-		Scripts:   make([]*Script, 0),
-		Env:       env,
-		Evaluator: NewEvaluator(env),
+		loggingEnabled: true,
+
+		SourceFiles: make([]*SourceFile, 0),
+		Env:         env,
+		Evaluator:   NewEvaluator(env),
 	}
 
 	logger := log.Default()
@@ -74,13 +79,29 @@ func NewInterpreterEngine() *InterpreterEngine {
 func NewTestingInterpreterEngine() *InterpreterEngine {
 	engine := NewInterpreterEngine()
 	engine.IsTesting = true
+
+	Engine = engine
+
 	return engine
 }
 
 var Engine = NewInterpreterEngine()
 
-func (self *InterpreterEngine) LoadScript(path string) *Script {
-	script := &Script{
+func (self *InterpreterEngine) FinishLoadingScript(script *SourceFile) *SourceFile {
+	// script.InputStream = antlr.NewInputStream(script.Source)
+
+	self.setScriptLogger(script)
+	defer self.setScriptLogger(nil)
+
+	self.SourceFiles = append(self.SourceFiles, script)
+
+	log.Debugf("Loaded script: %s\n", script.Path)
+
+	return script
+}
+
+func (self *InterpreterEngine) LoadScript(path string) *SourceFile {
+	script := &SourceFile{
 		Path: path,
 	}
 
@@ -90,38 +111,35 @@ func (self *InterpreterEngine) LoadScript(path string) *Script {
 	}
 
 	script.Source = string(src)
-	script.InputStream = antlr.NewInputStream(script.Source)
 
-	self.setScriptLogger(script)
-	defer self.setScriptLogger(nil)
-
-	self.Scripts = append(self.Scripts, script)
-
-	fmt.Printf("Loaded script: %s\n", path)
-
-	return script
+	return self.FinishLoadingScript(script)
 }
 
 func (self *InterpreterEngine) LoadScriptFromString(scriptSrc string) {
-	script := &Script{
+	script := &SourceFile{
 		Path: "stdin",
 	}
 
 	script.Source = scriptSrc
-	script.InputStream = antlr.NewInputStream(script.Source)
+	// script.InputStream = antlr.NewInputStream(script.Source)
 
 	self.setScriptLogger(script)
 	defer self.setScriptLogger(nil)
 
-	self.Scripts = append(self.Scripts, script)
+	self.SourceFiles = append(self.SourceFiles, script)
 }
 
-func (self *InterpreterEngine) setScriptLogger(script *Script) {
+func (self *InterpreterEngine) setScriptLogger(script *SourceFile) {
 	if script != nil {
 		if script.Logger == nil {
 			script.Logger = log.New(os.Stderr)
 			script.Logger.SetReportTimestamp(false)
-			script.Logger.SetLevel(log.DebugLevel)
+			if self.loggingEnabled {
+				script.Logger.SetLevel(log.DebugLevel)
+			} else {
+				script.Logger.SetLevel(log.ErrorLevel)
+				script.Logger.SetOutput(self.loggingWriter)
+			}
 			script.Logger.SetReportCaller(true)
 			script.Logger.SetPrefix(fmt.Sprintf("[%s]", script.Path))
 		}
@@ -129,7 +147,6 @@ func (self *InterpreterEngine) setScriptLogger(script *Script) {
 		ErrorManager.SetSource(
 			script.Path,
 			script.Source,
-			script.Stream,
 		)
 
 		log.SetDefault(script.Logger)
@@ -139,42 +156,49 @@ func (self *InterpreterEngine) setScriptLogger(script *Script) {
 }
 
 func (self *InterpreterEngine) parseAll() {
-	parseTimer := utilities.NewTimer("Parse All Scripts")
+	parseTimer := utilities.NewTimer("Parse All SourceFiles")
 	defer parseTimer.StopAndLog()
 
-	for _, script := range self.Scripts {
+	for _, script := range self.SourceFiles {
 		self.parseScript(script)
 	}
 }
 
-func (self *InterpreterEngine) parseScript(script *Script) {
+func (self *InterpreterEngine) parseScript(script *SourceFile) {
 	self.setScriptLogger(script)
 	defer self.setScriptLogger(nil)
 
-	lexer := grammar.NewSimpleLangLexer(script.InputStream)
-	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
-	script.Stream = stream
-	parser := grammar.NewSimpleLangParser(stream)
-	script.Tree = parser.Program()
+	timer := utilities.NewTimer("Parse Source: " + script.Path)
+	defer timer.StopAndLog()
+
+	// lexer := grammar.NewSimpleLangLexer(script.InputStream)
+	// stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
+	// script.Stream = stream
+	// parser := grammar.NewSimpleLangParser(stream)
+	// script.Tree = parser.Program()
+
+	l := lexer.NewLexer(script.Source)
+	p := parser.NewParser(l)
+
+	script.Program = p.Parse()
 }
 
 func (self *InterpreterEngine) constructASTs() {
-	timer := utilities.NewTimer("Construct All Script ASTs")
+	timer := utilities.NewTimer("Construct All SourceFile ASTs")
 	defer timer.StopAndLog()
 
-	importedScripts := make(map[string]*Script)
+	importedScripts := make(map[string]*SourceFile)
 
-	scriptsToParse := utilities.NewStack[*Script]()
+	scriptsToParse := utilities.NewStack[*SourceFile]()
 
-	processScript := func(script *Script) {
+	processScript := func(script *SourceFile) {
 		self.setScriptLogger(script)
 
 		importedScripts[script.Path] = script
 
-		mapper, program := NewAstMapper(script.Tree)
-
-		script.Mapper = mapper
-		script.Program = program
+		// mapper, program := NewAstMapper(script.Tree)
+		// script.Mapper = mapper
+		// script.Program = program
 
 		if len(script.Program.Imports) > 0 {
 			for _, importPath := range script.Program.Imports {
@@ -188,7 +212,7 @@ func (self *InterpreterEngine) constructASTs() {
 		}
 	}
 
-	for _, script := range self.Scripts {
+	for _, script := range self.SourceFiles {
 		processScript(script)
 	}
 
@@ -199,49 +223,52 @@ func (self *InterpreterEngine) constructASTs() {
 		processScript(script)
 	}
 
-	for _, script := range self.Scripts {
+	for _, script := range self.SourceFiles {
 		self.setScriptLogger(script)
-		script.Mapper.VisitProgram(script.Tree.(*grammar.ProgramContext))
+		// script.Mapper.VisitProgram(script.Tree.(*grammar.ProgramContext))
 	}
 
 	defer self.setScriptLogger(nil)
 }
 
 func (self *InterpreterEngine) link() {
-	for _, script := range self.Scripts {
+	for _, script := range self.SourceFiles {
 		self.linkScript(script)
 	}
 }
 
-func (self *InterpreterEngine) linkScript(script *Script) {
+func (self *InterpreterEngine) linkScript(script *SourceFile) {
 	// Populate the GlobalSymbols table based on global declarations in the tree
 	// For example, if a tree declares a global function, add it to the symbol table
 	self.setScriptLogger(script)
 	defer self.setScriptLogger(nil)
 
-	if len(script.Mapper.Objects) > 0 {
-		for _, obj := range script.Mapper.Objects {
+	if len(script.Program.Objects) > 0 {
+		for _, obj := range script.Program.Objects {
 			self.Env.SetObject(obj)
 		}
 	}
 
-	if len(script.Mapper.Functions) > 0 {
-		for _, fn := range script.Mapper.Functions {
+	if len(script.Program.Functions) > 0 {
+		for _, fn := range script.Program.Functions {
 			self.Env.SetFunction(fn)
 		}
 	}
 }
 
 func (self *InterpreterEngine) typeCheck() {
-	timer := utilities.NewTimer("TypeCheck All Scripts")
+	timer := utilities.NewTimer("TypeCheck All SourceFiles")
 	defer timer.StopAndLog()
 
-	for _, script := range self.Scripts {
+	TypeChecker.IsTypeChecking(true)
+	defer TypeChecker.IsTypeChecking(false)
+
+	for _, script := range self.SourceFiles {
 		self.typeCheckScript(script)
 	}
 }
 
-func (self *InterpreterEngine) typeCheckScript(script *Script) {
+func (self *InterpreterEngine) typeCheckScript(script *SourceFile) {
 	// Populate the GlobalSymbols table based on global declarations in the tree
 	// For example, if a tree declares a global function, add it to the symbol table
 	self.setScriptLogger(script)
@@ -254,15 +281,15 @@ func (self *InterpreterEngine) typeCheckScript(script *Script) {
 }
 
 func (self *InterpreterEngine) evaluateAll() {
-	timer := utilities.NewTimer("Evaluate All Scripts")
+	timer := utilities.NewTimer("Evaluate All SourceFiles")
 	defer timer.StopAndLog()
 
-	for _, script := range self.Scripts {
+	for _, script := range self.SourceFiles {
 		self.evaluateScript(script)
 	}
 }
 
-func (self *InterpreterEngine) evaluateScript(script *Script) {
+func (self *InterpreterEngine) evaluateScript(script *SourceFile) {
 	// Evaluate the tree using the GlobalSymbols table to resolve any references
 	self.setScriptLogger(script)
 	defer self.setScriptLogger(nil)
@@ -272,7 +299,7 @@ func (self *InterpreterEngine) evaluateScript(script *Script) {
 
 	self.Evaluator.Eval(script.Program)
 
-	for _, function := range script.Mapper.Functions {
+	for _, function := range script.Program.Functions {
 		if function.Name == "init" {
 			self.Evaluator.ExecuteFunction(function)
 			break
@@ -281,7 +308,7 @@ func (self *InterpreterEngine) evaluateScript(script *Script) {
 
 }
 
-func (self *InterpreterEngine) prepareToEvaluate() {
+func (self *InterpreterEngine) ProcessScripts() {
 	RegisterRuntimeFunctions(self.Env)
 
 	self.parseAll()
@@ -291,10 +318,10 @@ func (self *InterpreterEngine) prepareToEvaluate() {
 }
 
 func (self *InterpreterEngine) Run() {
-	runTimer := utilities.NewTimer("Run All Scripts")
+	runTimer := utilities.NewTimer("Run All SourceFiles")
 	defer runTimer.StopAndLog()
 
-	self.prepareToEvaluate()
+	self.ProcessScripts()
 
 	self.evaluateAll()
 
@@ -348,10 +375,16 @@ func (self *InterpreterEngine) runMainAndServer() {
 		// wg.Wait()
 	}
 
-	fmt.Println("Done")
 }
 
-// func (self *InterpreterEngine) RunScript(script *Script) {
+func (self *InterpreterEngine) DisableLogging(w io.Writer) {
+	globalLogger.SetLevel(log.FatalLevel)
+	globalLogger.SetOutput(w)
+	self.loggingWriter = w
+	self.loggingEnabled = false
+}
+
+// func (self *InterpreterEngine) RunScript(script *SourceFile) {
 // 	lexer := grammar.NewSimpleLangLexer(script.InputStream)
 // 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 // 	parser := grammar.NewSimpleLangParser(stream)

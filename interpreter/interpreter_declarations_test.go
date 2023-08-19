@@ -6,7 +6,7 @@ import (
 
 	"testing"
 
-	"interpreted_lang/ast"
+	"arc/ast"
 )
 
 type TestInterpreterDeclarationTestSuite struct {
@@ -41,9 +41,9 @@ func main() {
 
 	engine := NewTestingInterpreterEngine()
 	engine.LoadScriptFromString(scriptSrc)
-	engine.prepareToEvaluate()
+	engine.ProcessScripts()
 
-	script := engine.Scripts[0]
+	script := engine.SourceFiles[0]
 	main := script.GetMainFunc()
 
 	engine.Evaluator.Eval(main.Body)
@@ -78,9 +78,9 @@ func main() {
 
 	engine := NewTestingInterpreterEngine()
 	engine.LoadScriptFromString(scriptSrc)
-	engine.prepareToEvaluate()
+	engine.ProcessScripts()
 
-	script := engine.Scripts[0]
+	script := engine.SourceFiles[0]
 	main := script.GetMainFunc()
 
 	engine.Evaluator.Eval(main.Body)
@@ -128,9 +128,9 @@ func main() {
 
 	engine := NewTestingInterpreterEngine()
 	engine.LoadScriptFromString(scriptSrc)
-	engine.prepareToEvaluate()
+	engine.ProcessScripts()
 
-	script := engine.Scripts[0]
+	script := engine.SourceFiles[0]
 	main := script.GetMainFunc()
 
 	engine.Evaluator.Eval(main.Body)

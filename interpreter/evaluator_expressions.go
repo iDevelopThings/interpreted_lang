@@ -3,8 +3,8 @@ package interpreter
 import (
 	"github.com/charmbracelet/log"
 
-	"interpreted_lang/ast"
-	"interpreted_lang/ast/operators"
+	"arc/ast"
+	"arc/ast/operators"
 )
 
 func getGoType(val any) ast.LiteralKind {
@@ -78,23 +78,51 @@ func (self *Evaluator) evalCallExpression(node *ast.CallExpression) *Result {
 	var fn *ast.FunctionDeclaration
 
 	if node.Receiver != nil {
-		if receiver = eval.MustEval(node.Receiver).(*ast.RuntimeValue); receiver != nil {
-			fn = receiver.GetMethod(node.FunctionName)
-			// fn = self.Env.LookupFunction(node.FunctionName)
-			// if fn == nil {
-			// 	panic("Undefined function: " + node.FunctionName)
-			// }
-		} else {
-			log.Fatalf("Function receiver is nil: %v", node.Receiver)
+
+		// If we're accessing a static method, our receiver is a TypeReference to the type
+		// that the method is defined on...
+		// So we'll resolve the fn declaration from the type reference
+
+		if node.IsStaticAccess {
+			typeRef, ok := node.Receiver.(*ast.TypeReference)
+			if !ok {
+				log.Fatalf("Receiver is not a type reference: %v", node.Receiver)
+			}
+			receiverObj := self.Env.LookupObject(typeRef.Type)
+			if receiverObj == nil {
+				log.Fatalf("Undefined object: %v", typeRef.Type)
+			}
+
+			fn = receiverObj.GetMethod(node.Function.Name)
+		} else
+		// Otherwise, we're accessing an instance method, so we need to resolve the variable or whatever
+		// to first find its type and then resolve the method from that type
+		{
+
+			receiver = eval.MustEval(node.Receiver).(*ast.RuntimeValue)
+			if receiver == nil {
+				log.Fatalf("Receiver is nil: %v", node.Receiver)
+			}
+			fn = receiver.GetMethod(node.Function.Name)
+		}
+		if fn == nil {
+			log.Fatalf("Failed to resolve function: %v", node.Function.Name)
 		}
 	} else {
-		fn = self.Env.LookupFunction(node.FunctionName)
+		fn = self.Env.LookupFunction(node.Function.Name)
 		if fn == nil {
-			log.Fatalf("Undefined function: %v", node.FunctionName)
+			log.Fatalf("Undefined function: %v", node.Function.Name)
 		}
 	}
 
-	if node.Receiver != nil && fn.Receiver != nil && fn.CustomFuncCb == nil {
+	// Now... if we're not calling a static method, we need to set the receiver variable
+	// for ex: func (x MyType) foo() { ... }
+	// We need to set `x` to our struct instance value on the environment scope
+
+	// If our receiver is nil, we're calling a global fn
+	if fn.CustomFuncCb == nil && !node.IsStaticAccess && node.Receiver != nil {
+		// Evaluating the receiver will resolve our variable to its runtime value
+		// Which we'll then apply to the fn scope as the receiver variable
 		rv := eval.MustEval(node.Receiver).(*ast.RuntimeValue)
 		if rv == nil {
 			log.Fatalf("Runtime value: %v is nil", rv)
@@ -111,22 +139,40 @@ func (self *Evaluator) evalCallExpression(node *ast.CallExpression) *Result {
 			log.Fatalf("Runtime value: %v is not an object", rv)
 		}
 
-		fn, exists := decl.Methods[node.FunctionName]
+		// Now, even though we've resolved the function above, we'll make
+		// sure it actually exists on this variable's runtime object/value
+
+		fnDecl, exists := decl.Methods[node.Function.Name]
 		if !exists {
-			panic("Undefined method: " + node.FunctionName)
+			panic("Undefined method: " + node.Function.Name)
+		}
+		if fn != fnDecl {
+			log.Fatalf("Resolved function: %v is not the same as the function declaration: %v", fn, fnDecl)
 		}
 
 		eval.Env.SetVar(fn.Receiver.Name, rv)
-
 	}
 
-	fnArgs := make([]any, len(node.Args))
-	if fn.Args != nil {
-		for i, param := range fn.Args {
-			arg := eval.MustEval(node.Args[i])
+	fnArgs := make([]any, 0)
+	if len(fn.Args) > 0 {
+		var declArg *ast.TypedIdentifier
+		var varArgList []any
+		for i, arg := range node.Args {
+			if declArg == nil || !declArg.TypeReference.IsVariadic {
+				declArg = fn.Args[i]
+			}
 
-			fnArgs[i] = arg
-			eval.Env.SetVar(param.Name, arg)
+			argValue := eval.MustEval(arg)
+			if declArg.TypeReference.IsVariadic {
+				fnArgs = append(fnArgs, argValue)
+				if eval.Env.LookupVar(declArg.Name) == nil {
+					eval.Env.SetVar(declArg.Name, varArgList)
+				}
+			} else {
+				eval.Env.SetVar(declArg.Name, argValue)
+				fnArgs = append(fnArgs, argValue)
+			}
+
 		}
 	}
 
@@ -138,6 +184,8 @@ func (self *Evaluator) evalCallExpression(node *ast.CallExpression) *Result {
 			}
 
 		}
+
+		fnArgs = append([]any{self.Env}, fnArgs...)
 		return NewResult(fn.CustomFuncCb(fnArgs...))
 	}
 
@@ -209,10 +257,10 @@ func (self *Evaluator) evalBinaryExpression(node *ast.BinaryExpression) *Result 
 
 	// Check mixed type operations
 	if (isType(left, int(0)) && isType(right, float64(0))) || (isType(left, float64(0)) && isType(right, int(0))) {
-		log.Fatalf("Unsupported operation, arithmetic operations between int and float are not supported, please cast both sides: %v - %s", node, node.AstNode.Token.GetText())
+		log.Fatalf("Unsupported operation, arithmetic operations between int and float are not supported, please cast both sides: %v - %s", node, node.GetToken())
 	}
 
-	log.Fatalf("Error evaluating binary expression: %v - %s", self, node.AstNode.Token.GetText())
+	log.Fatalf("Error evaluating binary expression: %v - %s", self, node.GetToken())
 	panic("Unsupported operation: " + string(node.Op))
 }
 
@@ -319,7 +367,7 @@ func (self *Evaluator) evalAssignmentExpression(node *ast.AssignmentExpression) 
 	if node.Op == operators.Equal {
 		if left == nil {
 			switch accessor := node.Left.(type) {
-			case *ast.ArrayAccessExpression:
+			case *ast.IndexAccessExpression:
 				left = self.MustEvalValue(accessor.Instance).(*ast.RuntimeValue)
 				if left != nil && left.Kind == ast.RuntimeValueKindDict {
 					dictKey := self.MustEvalValue(accessor.StartIndex).(*ast.RuntimeValue)
@@ -373,7 +421,7 @@ func (self *Evaluator) evalAssignmentExpression(node *ast.AssignmentExpression) 
 	return r
 }
 
-func (self *Evaluator) evalArrayAccessExpression(node *ast.ArrayAccessExpression) *Result {
+func (self *Evaluator) evalArrayAccessExpression(node *ast.IndexAccessExpression) *Result {
 
 	r := NewResult()
 

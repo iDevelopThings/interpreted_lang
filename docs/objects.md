@@ -18,10 +18,21 @@ var obj MyObject = MyObject{
 
 ## Methods
 
+### Public
 ```sl
 func (o MyObject) Print() {
     fmt::printf("StrValue: %s\n", o.StrValue);
     fmt::printf("IntValue: %d\n", o.IntValue);
+}
+```
+
+### Static
+The missing receiver var indicates a static method.
+
+The functions are bound to the type and not to an instance of the type.
+```sl
+func (MyObject) Print() {
+    
 }
 ```
 

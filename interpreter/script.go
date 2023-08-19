@@ -1,30 +1,26 @@
 package interpreter
 
 import (
-	"github.com/antlr4-go/antlr/v4"
 	"github.com/charmbracelet/log"
 
-	"interpreted_lang/ast"
-	"interpreted_lang/grammar"
+	"arc/ast"
 )
 
-type Script struct {
+type SourceFile struct {
 	Source string
 	Path   string
 
-	InputStream *antlr.InputStream
-	Stream      *antlr.CommonTokenStream
+	// InputStream *antlr.InputStream
+	// Stream      *antlr.CommonTokenStream
+	// Tree grammar.IProgramContext
 
-	Tree grammar.IProgramContext
-
-	Mapper  *AstMapper
 	Program *ast.Program
 
 	Env    *Environment
 	Logger *log.Logger
 }
 
-func (self *Script) GetMainFunc() *ast.FunctionDeclaration {
+func (self *SourceFile) GetMainFunc() *ast.FunctionDeclaration {
 	if self.Program == nil {
 		log.Errorf("Program is nil")
 		return nil

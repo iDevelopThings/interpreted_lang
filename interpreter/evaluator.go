@@ -3,7 +3,7 @@ package interpreter
 import (
 	"github.com/charmbracelet/log"
 
-	"interpreted_lang/ast"
+	"arc/ast"
 )
 
 type Evaluator struct {
@@ -92,7 +92,7 @@ func (self *Evaluator) Eval(n any) *Result {
 
 	case *ast.ObjectInstantiation:
 		return self.evalObjectInstantiation(node)
-	case *ast.ArrayAccessExpression:
+	case *ast.IndexAccessExpression:
 		return self.evalArrayAccessExpression(node)
 	case *ast.ArrayInstantiation:
 		return self.evalArrayInstantiation(node)
@@ -109,7 +109,7 @@ func (self *Evaluator) Eval(n any) *Result {
 		return self.evalBlock(node)
 	default:
 		if node, ok := n.(*ast.AstNode); ok {
-			log.Fatalf("Unhandled AST Node Type: %T - Content: %s", node, node.Token.GetText())
+			log.Fatalf("Unhandled AST Node Type: %T - Content: %s", node, node.GetToken())
 			return nil
 		}
 		log.Fatalf("Unhandled AST Node Type: %T", node)
@@ -221,7 +221,7 @@ func (self *Evaluator) evalDictionaryInstantiation(node *ast.DictionaryInstantia
 }
 
 func (self *Evaluator) evalObjectInstantiation(node *ast.ObjectInstantiation) *Result {
-	inst := ast.NewRuntimeObject(self.Env.LookupObject(node.TypeName))
+	inst := ast.NewRuntimeObject(self.Env.LookupObject(node.TypeName.Name))
 
 	fields := map[string]*ast.RuntimeValue{}
 	for fieldName, expr := range node.Fields {
@@ -301,7 +301,7 @@ func (self *Evaluator) evalLoopStatement(node *ast.LoopStatement) *Result {
 	var lower *ast.Literal
 	var upper *ast.Literal
 
-	iteratorValue := ast.NewLiteral(node.AstNode.Token, 0)
+	iteratorValue := ast.NewLiteral(node.GetToken(), 0)
 
 	eval := self.CreateChild()
 
@@ -325,7 +325,7 @@ func (self *Evaluator) evalLoopStatement(node *ast.LoopStatement) *Result {
 		upper = eval.Env.LookupVar("rangeUpper").(*ast.Literal)
 
 		if lower == nil || upper == nil {
-			log.Fatalf("Upper or lower bound not set for range loop: " + node.AstNode.Token.GetText())
+			log.Fatalf("Upper or lower bound not set for range loop: " + node.GetToken().String())
 		}
 
 	}
@@ -412,7 +412,7 @@ func (self *Evaluator) evalAssignmentStatement(node *ast.AssignmentStatement) *R
 		value = self.MustEval(node.Value)
 	}
 
-	self.Env.SetVar(node.Name, value)
+	self.Env.SetVar(node.Name.Name, value)
 
 	return r.Add(value)
 }
@@ -451,7 +451,7 @@ func (self *Evaluator) evalDeleteStatement(node *ast.DeleteStatement) *Result {
 		self.Env.DeleteVar(node.What.(*ast.VarReference).Name)
 		return r
 
-	case *ast.ArrayAccessExpression:
+	case *ast.IndexAccessExpression:
 		parentVal = self.MustEval(what.Instance).(*ast.RuntimeValue)
 
 		if what.IsSlice {
@@ -478,7 +478,7 @@ func (self *Evaluator) evalDeleteStatement(node *ast.DeleteStatement) *Result {
 	}
 
 	if parentVal == nil {
-		log.Fatalf("Cannot delete nil value - %s", node.AstNode.Token.GetText())
+		log.Fatalf("Cannot delete nil value - %s", node.GetToken())
 	}
 
 	switch parentVal.Kind {
@@ -495,7 +495,7 @@ func (self *Evaluator) evalDeleteStatement(node *ast.DeleteStatement) *Result {
 				if err != nil {
 					log.Fatalf("Error deleting array element: " + err.Error())
 				}
-				log.Fatalf("Cannot delete element with non-string index: " + node.AstNode.Token.GetText())
+				log.Fatalf("Cannot delete element with non-string index: " + node.GetToken().String())
 			}
 		}
 
