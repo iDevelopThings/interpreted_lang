@@ -1,0 +1,212 @@
+[
+  {
+    "Types": [
+      "LPAREN"
+    ],
+    "Value": "(",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 0,
+        "Abs": 0
+      },
+      "End": {
+        "Line": 1,
+        "Column": 1,
+        "Abs": 1
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "INTEGER"
+    ],
+    "Value": "1",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 1,
+        "Abs": 1
+      },
+      "End": {
+        "Line": 1,
+        "Column": 2,
+        "Abs": 2
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "COMMA"
+    ],
+    "Value": ",",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 2,
+        "Abs": 2
+      },
+      "End": {
+        "Line": 1,
+        "Column": 3,
+        "Abs": 3
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "BOOL",
+      "IDENTIFIER"
+    ],
+    "Value": "true",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 4,
+        "Abs": 4
+      },
+      "End": {
+        "Line": 1,
+        "Column": 8,
+        "Abs": 8
+      },
+      "Length": 4
+    }
+  },
+  {
+    "Types": [
+      "COMMA"
+    ],
+    "Value": ",",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 8,
+        "Abs": 8
+      },
+      "End": {
+        "Line": 1,
+        "Column": 9,
+        "Abs": 9
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "FLOAT"
+    ],
+    "Value": "1.0f",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 10,
+        "Abs": 10
+      },
+      "End": {
+        "Line": 1,
+        "Column": 14,
+        "Abs": 14
+      },
+      "Length": 4
+    }
+  },
+  {
+    "Types": [
+      "COMMA"
+    ],
+    "Value": ",",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 14,
+        "Abs": 14
+      },
+      "End": {
+        "Line": 1,
+        "Column": 15,
+        "Abs": 15
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "FLOAT"
+    ],
+    "Value": "1.0f",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 16,
+        "Abs": 16
+      },
+      "End": {
+        "Line": 1,
+        "Column": 20,
+        "Abs": 20
+      },
+      "Length": 4
+    }
+  },
+  {
+    "Types": [
+      "COMMA"
+    ],
+    "Value": ",",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 20,
+        "Abs": 20
+      },
+      "End": {
+        "Line": 1,
+        "Column": 21,
+        "Abs": 21
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "STRING"
+    ],
+    "Value": "test",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 22,
+        "Abs": 22
+      },
+      "End": {
+        "Line": 1,
+        "Column": 28,
+        "Abs": 28
+      },
+      "Length": 6
+    }
+  },
+  {
+    "Types": [
+      "RPAREN"
+    ],
+    "Value": ")",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 28,
+        "Abs": 28
+      },
+      "End": {
+        "Line": 1,
+        "Column": 29,
+        "Abs": 29
+      },
+      "Length": 1
+    }
+  }
+]

@@ -1,0 +1,384 @@
+[
+  {
+    "Types": [
+      "KEYWORD_FUNC",
+      "IDENTIFIER"
+    ],
+    "Value": "func",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 0,
+        "Abs": 0
+      },
+      "End": {
+        "Line": 1,
+        "Column": 4,
+        "Abs": 4
+      },
+      "Length": 4
+    }
+  },
+  {
+    "Types": [
+      "IDENTIFIER"
+    ],
+    "Value": "pls",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 5,
+        "Abs": 5
+      },
+      "End": {
+        "Line": 1,
+        "Column": 8,
+        "Abs": 8
+      },
+      "Length": 3
+    }
+  },
+  {
+    "Types": [
+      "LPAREN"
+    ],
+    "Value": "(",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 8,
+        "Abs": 8
+      },
+      "End": {
+        "Line": 1,
+        "Column": 9,
+        "Abs": 9
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "RPAREN"
+    ],
+    "Value": ")",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 9,
+        "Abs": 9
+      },
+      "End": {
+        "Line": 1,
+        "Column": 10,
+        "Abs": 10
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "LCURLY"
+    ],
+    "Value": "{",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 11,
+        "Abs": 11
+      },
+      "End": {
+        "Line": 1,
+        "Column": 12,
+        "Abs": 12
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "KEYWORD_VAR",
+      "IDENTIFIER"
+    ],
+    "Value": "var",
+    "Pos": {
+      "Start": {
+        "Line": 2,
+        "Column": 1,
+        "Abs": 14
+      },
+      "End": {
+        "Line": 2,
+        "Column": 4,
+        "Abs": 17
+      },
+      "Length": 3
+    }
+  },
+  {
+    "Types": [
+      "IDENTIFIER"
+    ],
+    "Value": "value",
+    "Pos": {
+      "Start": {
+        "Line": 2,
+        "Column": 5,
+        "Abs": 18
+      },
+      "End": {
+        "Line": 2,
+        "Column": 10,
+        "Abs": 23
+      },
+      "Length": 5
+    }
+  },
+  {
+    "Types": [
+      "EQ"
+    ],
+    "Value": "=",
+    "Pos": {
+      "Start": {
+        "Line": 2,
+        "Column": 11,
+        "Abs": 24
+      },
+      "End": {
+        "Line": 2,
+        "Column": 12,
+        "Abs": 25
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "LCURLY"
+    ],
+    "Value": "{",
+    "Pos": {
+      "Start": {
+        "Line": 2,
+        "Column": 13,
+        "Abs": 26
+      },
+      "End": {
+        "Line": 2,
+        "Column": 14,
+        "Abs": 27
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "STRING"
+    ],
+    "Value": "key1",
+    "Pos": {
+      "Start": {
+        "Line": 3,
+        "Column": 8,
+        "Abs": 36
+      },
+      "End": {
+        "Line": 3,
+        "Column": 14,
+        "Abs": 42
+      },
+      "Length": 6
+    }
+  },
+  {
+    "Types": [
+      "COLON"
+    ],
+    "Value": ":",
+    "Pos": {
+      "Start": {
+        "Line": 3,
+        "Column": 14,
+        "Abs": 42
+      },
+      "End": {
+        "Line": 3,
+        "Column": 15,
+        "Abs": 43
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "STRING"
+    ],
+    "Value": "value1",
+    "Pos": {
+      "Start": {
+        "Line": 3,
+        "Column": 16,
+        "Abs": 44
+      },
+      "End": {
+        "Line": 3,
+        "Column": 24,
+        "Abs": 52
+      },
+      "Length": 8
+    }
+  },
+  {
+    "Types": [
+      "COMMA"
+    ],
+    "Value": ",",
+    "Pos": {
+      "Start": {
+        "Line": 3,
+        "Column": 24,
+        "Abs": 52
+      },
+      "End": {
+        "Line": 3,
+        "Column": 25,
+        "Abs": 53
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "STRING"
+    ],
+    "Value": "key2",
+    "Pos": {
+      "Start": {
+        "Line": 4,
+        "Column": 8,
+        "Abs": 62
+      },
+      "End": {
+        "Line": 4,
+        "Column": 14,
+        "Abs": 68
+      },
+      "Length": 6
+    }
+  },
+  {
+    "Types": [
+      "COLON"
+    ],
+    "Value": ":",
+    "Pos": {
+      "Start": {
+        "Line": 4,
+        "Column": 14,
+        "Abs": 68
+      },
+      "End": {
+        "Line": 4,
+        "Column": 15,
+        "Abs": 69
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "STRING"
+    ],
+    "Value": "value2",
+    "Pos": {
+      "Start": {
+        "Line": 4,
+        "Column": 16,
+        "Abs": 70
+      },
+      "End": {
+        "Line": 4,
+        "Column": 24,
+        "Abs": 78
+      },
+      "Length": 8
+    }
+  },
+  {
+    "Types": [
+      "COMMA"
+    ],
+    "Value": ",",
+    "Pos": {
+      "Start": {
+        "Line": 4,
+        "Column": 24,
+        "Abs": 78
+      },
+      "End": {
+        "Line": 4,
+        "Column": 25,
+        "Abs": 79
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "RCURLY"
+    ],
+    "Value": "}",
+    "Pos": {
+      "Start": {
+        "Line": 5,
+        "Column": 4,
+        "Abs": 84
+      },
+      "End": {
+        "Line": 5,
+        "Column": 5,
+        "Abs": 85
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "SEMICOLON"
+    ],
+    "Value": ";",
+    "Pos": {
+      "Start": {
+        "Line": 5,
+        "Column": 5,
+        "Abs": 85
+      },
+      "End": {
+        "Line": 5,
+        "Column": 6,
+        "Abs": 86
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "RCURLY"
+    ],
+    "Value": "}",
+    "Pos": {
+      "Start": {
+        "Line": 6,
+        "Column": 0,
+        "Abs": 87
+      },
+      "End": {
+        "Line": 6,
+        "Column": 1,
+        "Abs": 88
+      },
+      "Length": 1
+    }
+  }
+]

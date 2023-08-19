@@ -1,0 +1,116 @@
+[
+  {
+    "Types": [
+      "INTEGER"
+    ],
+    "Value": "1",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 0,
+        "Abs": 0
+      },
+      "End": {
+        "Line": 1,
+        "Column": 1,
+        "Abs": 1
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "DOT_DOT"
+    ],
+    "Value": "..",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 1,
+        "Abs": 1
+      },
+      "End": {
+        "Line": 1,
+        "Column": 3,
+        "Abs": 3
+      },
+      "Length": 2
+    }
+  },
+  {
+    "Types": [
+      "INTEGER"
+    ],
+    "Value": "10",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 3,
+        "Abs": 3
+      },
+      "End": {
+        "Line": 1,
+        "Column": 5,
+        "Abs": 5
+      },
+      "Length": 2
+    }
+  },
+  {
+    "Types": [
+      "FLOAT"
+    ],
+    "Value": "0.0f",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 6,
+        "Abs": 6
+      },
+      "End": {
+        "Line": 1,
+        "Column": 10,
+        "Abs": 10
+      },
+      "Length": 4
+    }
+  },
+  {
+    "Types": [
+      "FLOAT"
+    ],
+    "Value": ".0f",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 11,
+        "Abs": 11
+      },
+      "End": {
+        "Line": 1,
+        "Column": 14,
+        "Abs": 14
+      },
+      "Length": 3
+    }
+  },
+  {
+    "Types": [
+      "INTEGER"
+    ],
+    "Value": "0",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 15,
+        "Abs": 15
+      },
+      "End": {
+        "Line": 1,
+        "Column": 16,
+        "Abs": 16
+      },
+      "Length": 1
+    }
+  }
+]
