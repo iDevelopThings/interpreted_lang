@@ -1,8 +1,0 @@
-echo ">> Generating antlr parser/lexer"
-antlr -Dlanguage=Go -visitor -o grammar -package grammar SimpleLangParser.g4 SimpleLangLexer.g4
-
-echo ">> Generating parser rules enum"
-
-cd grammar/generate_parser_rules_enum
-
-go run main.go
