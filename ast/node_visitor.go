@@ -99,7 +99,7 @@ package ast
 // 	}
 // 	return nil
 // }
-// func (self *ArrayAccessExpression) Accept(visitor NodeVisitor) any {
+// func (self *IndexAccessExpression) Accept(visitor NodeVisitor) any {
 // 	if self.Instance != nil {
 // 		self.Instance.Accept(visitor)
 // 	}
@@ -271,20 +271,16 @@ func (self *Program) Accept(visitor NodeVisitor) {
 	}
 }
 func (self *Block) Accept(visitor NodeVisitor) {
-	// visitor.VisitBlock(self)
-
-	for _, statement := range self.Statements {
-		visitor.Visit(statement)
-	}
+	visitor.VisitBlock(self)
 }
 func (self *Identifier) Accept(visitor NodeVisitor) {
 	visitor.VisitIdentifier(self)
 }
 func (self *TypedIdentifier) Accept(visitor NodeVisitor) {
 	visitor.VisitTypedIdentifier(self)
-	if self.Identifier != nil {
-		self.Identifier.Accept(visitor)
-	}
+	// if self.Identifier != nil {
+	// 	self.Identifier.Accept(visitor)
+	// }
 }
 
 func (self *TypeReference) Accept(visitor NodeVisitor) {
@@ -374,7 +370,7 @@ func (self *FieldAccessExpression) Accept(visitor NodeVisitor) {
 		visitor.Visit(self.StructInstance)
 	}
 }
-func (self *ArrayAccessExpression) Accept(visitor NodeVisitor) {
+func (self *IndexAccessExpression) Accept(visitor NodeVisitor) {
 	// visitor.Visit(self)
 	visitor.VisitArrayAccessExpression(self)
 	if self.Instance != nil {
@@ -515,8 +511,8 @@ func (self *LoopStatement) Accept(visitor NodeVisitor) {
 func (self *AssignmentStatement) Accept(visitor NodeVisitor) {
 	// visitor.Visit(self)
 	visitor.VisitAssignmentStatement(self)
-	if self.TypedIdentifier != nil {
-		self.TypedIdentifier.Accept(visitor)
+	if self.Type != nil {
+		self.Type.Accept(visitor)
 	}
 	if self.Value != nil {
 		self.Value.Accept(visitor)
@@ -559,7 +555,7 @@ type NodeVisitor interface {
 	VisitPostfixExpression(node *PostfixExpression)
 	VisitUnaryExpression(node *UnaryExpression)
 	VisitFieldAccessExpression(node *FieldAccessExpression)
-	VisitArrayAccessExpression(node *ArrayAccessExpression)
+	VisitArrayAccessExpression(node *IndexAccessExpression)
 	VisitCallExpression(node *CallExpression)
 	VisitHttpRouteDeclaration(node *HttpRouteDeclaration)
 	VisitHttpServerConfig(node *HttpServerConfig)
@@ -620,7 +616,7 @@ func (self *NodeVisitorAdapter) Visit(node Node) {
 	case *FieldAccessExpression:
 		// self.VisitFieldAccessExpression(node)
 		node.Accept(self)
-	case *ArrayAccessExpression:
+	case *IndexAccessExpression:
 		// self.VisitArrayAccessExpression(node)
 		node.Accept(self)
 	case *CallExpression:
@@ -725,7 +721,7 @@ func (self *NodeVisitorAdapter) VisitFieldAccessExpression(node *FieldAccessExpr
 
 }
 
-func (self *NodeVisitorAdapter) VisitArrayAccessExpression(node *ArrayAccessExpression) {
+func (self *NodeVisitorAdapter) VisitArrayAccessExpression(node *IndexAccessExpression) {
 
 }
 

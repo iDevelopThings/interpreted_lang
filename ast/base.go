@@ -1,21 +1,54 @@
 package ast
 
 import (
-	"github.com/antlr4-go/antlr/v4"
+	"sync/atomic"
 
-	"interpreted_lang/grammar"
+	"github.com/charmbracelet/log"
+
+	"arc/lexer"
+	"arc/utilities"
 )
 
+type ParserRuleRange struct {
+	Start *lexer.Token
+	End   *lexer.Token
+}
+
+// This should only be used during the AST building phase(visitor_ast_mapper)
+// It's used when we're building all the nodes
+// When we visit a source file, we'll set this as the root
+// Then all calls to NewAstNode will use this as the parent - so we can
+// easily link a node to source file for the LSP
+var CurrentParsingRoot Node
+
+var nodeIdCounter atomic.Int64
+
+func GetUniqueNodeId() int64 {
+	return nodeIdCounter.Add(1)
+}
+
 type Node interface {
-	GetRuleType() grammar.ParserRule
-	GetRule() antlr.ParserRuleContext
+	IsNodeValid() bool
+	GetAstNode() *AstNode
+	GetId() int64
+	GetRoot() Node
+
+	GetToken() *lexer.Token
+	SetRuleRange(tokens ...*lexer.Token)
+	GetRuleRange() *ParserRuleRange
+
+	GetTokenRange() *TokenRange
+	GetTokenTypes() []lexer.TokenType
+	GetChildren() []Node
+	SetParent(node Node)
 	Accept(visitor NodeVisitor)
+	GetParent() Node
 }
 
 type Statement interface {
 	Node
-	GetRuleType() grammar.ParserRule
 	IsStatement()
+	PrintTree(s *utilities.IndentWriter)
 }
 
 type TopLevelStatement interface {
@@ -26,27 +59,116 @@ type TopLevelStatement interface {
 type Expr interface {
 	Node
 	IsExpression()
+
+	PrintTree(s *utilities.IndentWriter)
 }
 
 type AstNode struct {
-	Token antlr.ParserRuleContext
+	NodeId int64
+
+	Token     *lexer.Token
+	RuleRange *ParserRuleRange
+
+	// The root node of the AST for this source file
+	Root Node `json:"-"`
+
+	Parent   Node   `json:"-"`
+	Children []Node `json:"-"`
 }
 
-func NewAstNode(ctx antlr.ParserRuleContext) *AstNode {
+func (self *AstNode) GetChildren() []Node {
+	return self.Children
+}
+func (self *AstNode) GetParent() Node {
+	if self == nil {
+		return nil
+	}
+	return self.Parent
+}
+
+func NewAstNode(token *lexer.Token) *AstNode {
 	return &AstNode{
-		Token: ctx,
+		NodeId:   GetUniqueNodeId(),
+		Root:     CurrentParsingRoot,
+		Token:    token,
+		Children: make([]Node, 0),
 	}
 }
 
-func (self *AstNode) GetRuleType() grammar.ParserRule {
-	if self.Token == nil {
-		return -1
+func (self *AstNode) SetRuleRange(tokens ...*lexer.Token) {
+	self.RuleRange = &ParserRuleRange{}
+	if len(tokens) == 0 {
+		log.Fatalf("SetRuleRange called with no tokens")
 	}
 
-	return grammar.ParserRule(self.Token.GetRuleIndex())
+	if len(tokens) == 1 {
+		self.RuleRange.Start = tokens[0]
+		self.RuleRange.End = tokens[0]
+		return
+	}
+
+	self.RuleRange.Start = tokens[0]
+	self.RuleRange.End = tokens[len(tokens)-1]
 }
 
-func (self *AstNode) GetRule() antlr.ParserRuleContext {
+func (self *AstNode) GetRuleRange() *ParserRuleRange {
+	return self.RuleRange
+}
+
+func (self *AstNode) GetAstNode() *AstNode {
+	return self
+}
+
+func (self *AstNode) AddChildren(parent Node, nodes ...Node) {
+	self.Children = append(self.Children, nodes...)
+	for _, node := range nodes {
+		if node != nil {
+			if ti, ok := node.(*TypedIdentifier); ok {
+				if ti.Identifier == nil {
+					if ti.TypeReference.Parent != nil {
+						continue
+					}
+					ti.TypeReference.SetParent(parent)
+					continue
+				}
+			}
+			if node.GetParent() != nil {
+				continue
+			}
+			node.SetParent(parent)
+		}
+	}
+}
+
+func (self *AstNode) SetParent(node Node) {
+	self.Parent = node
+}
+
+func (self *AstNode) Accept(visitor NodeVisitor) {
+	visitor.Visit(self)
+}
+
+func (self *AstNode) IsNodeValid() bool {
+	if self == nil {
+		return false
+	}
+	return self.Token != nil
+}
+func (self *AstNode) GetId() int64 {
+	return self.NodeId
+}
+func (self *AstNode) GetRoot() Node {
+	return self.Root
+}
+
+func (self *AstNode) GetTokenTypes() []lexer.TokenType {
+	if self == nil || self.Token == nil {
+		return []lexer.TokenType{lexer.TokenUnknown}
+	}
+	return self.Token.Types
+}
+
+func (self *AstNode) GetToken() *lexer.Token {
 	return self.Token
 }
 
@@ -54,6 +176,19 @@ type Program struct {
 	*AstNode
 	Statements []TopLevelStatement
 	Imports    []*ImportStatement
+
+	// We only add these here, so we can easily iterate source
+	// files and register any declarations before we begin evaluating the program
+	Objects   []*ObjectDeclaration
+	Functions []*FunctionDeclaration
+}
+
+func (self *Program) GetChildren() []Node {
+	var result []Node
+	for _, stmt := range self.Statements {
+		result = append(result, stmt)
+	}
+	return result
 }
 
 type Block struct {
@@ -62,30 +197,32 @@ type Block struct {
 	Function   *FunctionDeclaration
 }
 
-func (self *Block) IsStatement() {}
-func (self *Block) FindStatement(ruleKind grammar.ParserRule) Statement {
+func (self *Block) GetChildren() []Node {
+	var result []Node
 	for _, stmt := range self.Statements {
-		if stmt.GetRuleType() == ruleKind {
-			return stmt
-		}
+		result = append(result, stmt)
 	}
-	return nil
+	return result
 }
+func (self *Block) IsStatement() {}
 
 type Identifier struct {
 	*AstNode
 	Name string
 }
 
+func (self *Identifier) GetChildren() []Node {
+	return []Node{}
+}
 func (self *Identifier) IsExpression() {}
 
-func NewIdentifier(ctx antlr.ParserRuleContext) *Identifier {
-	return NewIdentifierWithValue(ctx, ctx.GetText())
+func NewIdentifier(token *lexer.Token) *Identifier {
+	return NewIdentifierWithValue(token, token.GetText())
 }
 
-func NewIdentifierWithValue(ctx antlr.ParserRuleContext, value string) *Identifier {
+func NewIdentifierWithValue(token *lexer.Token, value string) *Identifier {
 	return &Identifier{
-		AstNode: NewAstNode(ctx),
+		AstNode: NewAstNode(token),
 		Name:    value,
 	}
 }
@@ -93,12 +230,19 @@ func NewIdentifierWithValue(ctx antlr.ParserRuleContext, value string) *Identifi
 type TypeReference struct {
 	*AstNode
 
-	Type      string
-	IsPointer bool
-	IsArray   bool
+	Type       string
+	IsPointer  bool
+	IsArray    bool
+	IsVariadic bool
 }
 
-func (self *TypeReference) SetType(typ any) {
+func (self *TypeReference) IsExpression() {}
+
+func (self *TypeReference) GetChildren() []Node {
+	return []Node{}
+}
+
+/*func (self *TypeReference) SetType(typ any) {
 	switch typeCtx := typ.(type) {
 	case *grammar.SimpleTypeIdentifierContext:
 		self.Type = typeCtx.GetTypeName().GetText()
@@ -115,7 +259,7 @@ func (self *TypeReference) SetType(typ any) {
 			self.AstNode = NewAstNode(typeCtx.GetTypeName())
 		}
 	}
-}
+}*/
 
 func (self *TypeReference) TypeName() string {
 	return self.Type
@@ -134,7 +278,21 @@ type TypedIdentifier struct {
 	TypeReference *TypeReference
 }
 
-func NewTypedIdentifierCustom(name, typ string) *TypedIdentifier {
+func (self *TypedIdentifier) GetToken() *lexer.Token {
+	if self.Identifier != nil {
+		return self.Identifier.Token
+	}
+	if self.TypeReference != nil {
+		return self.TypeReference.Token
+	}
+	return nil
+}
+
+func (self *TypedIdentifier) GetChildren() []Node {
+	return []Node{self.Identifier, self.TypeReference}
+}
+
+/*func NewTypedIdentifierCustom(name, typ string) *TypedIdentifier {
 	ti := &TypedIdentifier{
 		Identifier: &Identifier{
 			Name: name,
@@ -147,9 +305,9 @@ func NewTypedIdentifierCustom(name, typ string) *TypedIdentifier {
 	return ti
 }
 
-func NewTypedIdentifier(ctx antlr.ParserRuleContext, name, typ string) *TypedIdentifier {
+func NewTypedIdentifier(token *lexer.Token, name, typ string) *TypedIdentifier {
 	ti := &TypedIdentifier{
-		Identifier: NewIdentifier(ctx),
+		Identifier: NewIdentifier(token),
 		TypeReference: &TypeReference{
 			Type: typ,
 		},
@@ -158,8 +316,22 @@ func NewTypedIdentifier(ctx antlr.ParserRuleContext, name, typ string) *TypedIde
 
 	return ti
 }
+func NewTypedIdentifierFromToken(tok *lexer.Token, name, typ string) *TypedIdentifier {
+	ti := &TypedIdentifier{
+		Identifier: &Identifier{
+			AstNode: NewAstNode(tok),
+			Name:    name,
+		},
+		TypeReference: &TypeReference{
+			Type: typ,
+		},
+	}
+	ti.Name = name
 
-func NewTypedIdentifierFromCtx(ctx grammar.ITypedIdentifierContext) *TypedIdentifier {
+	return ti
+}*/
+
+/*func NewTypedIdentifierFromCtx(ctx grammar.ITypedIdentifierContext) *TypedIdentifier {
 	ti := &TypedIdentifier{
 		Identifier:    NewIdentifier(ctx),
 		TypeReference: &TypeReference{},
@@ -168,4 +340,4 @@ func NewTypedIdentifierFromCtx(ctx grammar.ITypedIdentifierContext) *TypedIdenti
 	ti.TypeReference.SetType(ctx.Type_())
 
 	return ti
-}
+}*/

@@ -5,8 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/antlr4-go/antlr/v4"
 	"github.com/goccy/go-json"
+
+	"arc/lexer"
 )
 
 type LiteralKind string
@@ -35,6 +36,9 @@ type Literal struct {
 	Value any
 }
 
+func (self *Literal) GetChildren() []Node {
+	return []Node{}
+}
 func (self *Literal) MarshalJSON() ([]byte, error) {
 	return json.Marshal(self.Value)
 }
@@ -47,30 +51,35 @@ func (self *Literal) TypeName() string {
 	return t.TypeName()
 }
 
-func NewLiteral(ctx antlr.ParserRuleContext, value any) *Literal {
-	lit := &Literal{
-		AstNode: NewAstNode(ctx),
-	}
+func (self *Literal) SetValue(value any) {
 
 	switch value.(type) {
 	case string:
-		lit.Kind = LiteralKindString
-		lit.Value = value.(string)
+		self.Kind = LiteralKindString
+		self.Value = value.(string)
 	case int:
-		lit.Kind = LiteralKindInteger
-		lit.Value = value.(int)
+		self.Kind = LiteralKindInteger
+		self.Value = value.(int)
 	case float64:
-		lit.Kind = LiteralKindFloat
-		lit.Value = value.(float64)
+		self.Kind = LiteralKindFloat
+		self.Value = value.(float64)
 	case bool:
-		lit.Kind = LiteralKindBoolean
-		lit.Value = value.(bool)
+		self.Kind = LiteralKindBoolean
+		self.Value = value.(bool)
 	case nil:
-		lit.Kind = LiteralKindNull
-		lit.Value = nil
+		self.Kind = LiteralKindNull
+		self.Value = nil
 	default:
 		panic("Unknown literal type: " + fmt.Sprintf("%T", value))
 	}
+
+}
+
+func NewLiteral(tok *lexer.Token, value any) *Literal {
+	lit := &Literal{
+		AstNode: NewAstNode(tok),
+	}
+	lit.SetValue(value)
 
 	return lit
 }

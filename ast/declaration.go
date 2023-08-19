@@ -8,30 +8,62 @@ type Declaration interface {
 
 type ObjectDeclaration struct {
 	*AstNode
-	Name    string
+	Name    *Identifier
 	Fields  []*TypedIdentifier
 	Methods map[string]*FunctionDeclaration
 }
 
+func (self *ObjectDeclaration) GetChildren() []Node {
+	nodes := []Node{}
+	for _, field := range self.Fields {
+		nodes = append(nodes, field)
+	}
+	for _, method := range self.Methods {
+		nodes = append(nodes, method)
+	}
+	return nodes
+}
 func (self *ObjectDeclaration) IsTopLevelStatement() {}
 func (self *ObjectDeclaration) IsStatement()         {}
 func (self *ObjectDeclaration) IsDeclaration()       {}
-func (self *ObjectDeclaration) TypeName() string     { return self.Name }
+func (self *ObjectDeclaration) TypeName() string     { return self.Name.Name }
 
 func (self *ObjectDeclaration) GetMethods() map[string]*FunctionDeclaration {
 	return self.Methods
 }
 
-type FunctionDeclaration struct {
-	*AstNode
-	Name         string
-	Args         []*TypedIdentifier
-	ReturnType   *Identifier
-	Receiver     *TypedIdentifier
-	Body         *Block
-	CustomFuncCb func(args ...any) any
+func (self *ObjectDeclaration) GetMethod(name string) *FunctionDeclaration {
+	if m, ok := self.Methods[name]; ok {
+		return m
+	}
+	return nil
 }
 
+type FunctionDeclaration struct {
+	*AstNode
+	Name            string
+	Args            []*TypedIdentifier
+	ReturnType      *Identifier
+	Receiver        *TypedIdentifier
+	Body            *Block
+	CustomFuncCb    func(args ...any) any `json:"-"`
+	IsStatic        bool
+	IsBuiltin       bool
+	HasVariadicArgs bool
+}
+
+func (self *FunctionDeclaration) GetChildren() []Node {
+	nodes := []Node{}
+	for _, arg := range self.Args {
+		nodes = append(nodes, arg)
+	}
+	nodes = append(nodes, self.Body)
+	nodes = append(nodes, self.ReturnType)
+	if self.Receiver != nil {
+		nodes = append(nodes, self.Receiver)
+	}
+	return nodes
+}
 func (self *FunctionDeclaration) IsTopLevelStatement() {}
 func (self *FunctionDeclaration) IsStatement()         {}
 func (self *FunctionDeclaration) IsDeclaration()       {}

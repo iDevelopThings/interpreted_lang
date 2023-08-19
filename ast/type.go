@@ -1,11 +1,21 @@
 package ast
 
 type Type interface {
+	Node
 	TypeName() string
 }
 
 type BasicType struct {
+	*AstNode
 	Name string
+}
+
+func (self *BasicType) GetChildren() []Node {
+	return []Node{}
+}
+
+func (self *BasicType) Accept(visitor NodeVisitor) {
+	visitor.Visit(self)
 }
 
 func (self *BasicType) TypeName() string {
@@ -13,12 +23,34 @@ func (self *BasicType) TypeName() string {
 }
 
 var (
-	IntType    = &BasicType{"int"}
-	StringType = &BasicType{"string"}
-	BoolType   = &BasicType{"bool"}
-	FloatType  = &BasicType{"float"}
-	NullType   = &BasicType{"null"}
-	VoidType   = &BasicType{"void"}
+	IntType = &BasicType{
+		AstNode: &AstNode{NodeId: GetUniqueNodeId()},
+		Name:    "int",
+	}
+	StringType = &BasicType{
+		AstNode: &AstNode{NodeId: GetUniqueNodeId()},
+		Name:    "string",
+	}
+	BoolType = &BasicType{
+		AstNode: &AstNode{NodeId: GetUniqueNodeId()},
+		Name:    "bool",
+	}
+	FloatType = &BasicType{
+		AstNode: &AstNode{NodeId: GetUniqueNodeId()},
+		Name:    "float",
+	}
+	NullType = &BasicType{
+		AstNode: &AstNode{NodeId: GetUniqueNodeId()},
+		Name:    "null",
+	}
+	VoidType = &BasicType{
+		AstNode: &AstNode{NodeId: GetUniqueNodeId()},
+		Name:    "void",
+	}
+	AnyType = &BasicType{
+		AstNode: &AstNode{NodeId: GetUniqueNodeId()},
+		Name:    "any",
+	}
 )
 
 var BasicTypes = map[string]Type{
@@ -28,4 +60,5 @@ var BasicTypes = map[string]Type{
 	"float":  FloatType,
 	"null":   NullType,
 	"void":   VoidType,
+	"any":    AnyType,
 }
