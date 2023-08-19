@@ -2,7 +2,7 @@
 object User {
    name string
 }
-func (u User) String() string {
+func (User) String() string {
     return u.name;
 }
 

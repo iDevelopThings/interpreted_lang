@@ -38,5 +38,6 @@ func main(){
     testing(v.yas, v.pls.y)
     testing(v.yas, v.pls.y)
     testing(x, true)
+
     // testing(v.pls.y, v.pls.y)
 }
