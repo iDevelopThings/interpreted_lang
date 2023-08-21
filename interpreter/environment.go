@@ -18,17 +18,17 @@ type Environment struct {
 
 	HttpEnv *HttpEnv
 
-	vars    map[string]any
-	objects map[string]*ast.ObjectDeclaration
-	// objectInstances map[string]*ObjectInstantiation
+	vars      map[string]any
+	objects   map[string]*ast.ObjectDeclaration
 	functions map[string]*ast.FunctionDeclaration
+	enums     map[string]*ast.EnumDeclaration
 }
 
 func NewEnvironment() *Environment {
 	return &Environment{
-		vars:    map[string]any{},
-		objects: map[string]*ast.ObjectDeclaration{},
-		// objectInstances: map[string]*ObjectInstantiation{},
+		vars:      map[string]any{},
+		objects:   map[string]*ast.ObjectDeclaration{},
+		enums:     map[string]*ast.EnumDeclaration{},
 		functions: map[string]*ast.FunctionDeclaration{},
 		HttpEnv: &HttpEnv{
 			Options: &ast.HttpServerConfig{
@@ -110,7 +110,7 @@ func (self *Environment) DeleteVar(name string) bool {
 }
 
 func (self *Environment) SetFunction(function *ast.FunctionDeclaration) {
-	fnName := function.GetEnvName()
+	fnName := function.GetEnvBindingName()
 
 	if _, found := self.functions[fnName]; found {
 		log.Errorf("Function already defined: %s - function will be ignored", function.Name)
@@ -180,4 +180,45 @@ func (self *Environment) RegisterRoute(route *ast.HttpRouteDeclaration) {
 func (self *Environment) SetHttpConfig(config *ast.HttpServerConfig) {
 	root := self.GetRoot()
 	root.HttpEnv.Options = config
+}
+
+func (self *Environment) SetEnum(t *ast.EnumDeclaration, evaluator *Evaluator) {
+	if _, found := self.enums[t.Name.Name]; found {
+		log.Errorf("Enum already defined: %s - enum will be ignored", t.Name.Name)
+		return
+	}
+
+	self.enums[t.Name.Name] = t
+
+	rtEnum := ast.NewRuntimeEnumDecl(t)
+	self.SetVar(t.Name.Name, rtEnum)
+	evaluator.evalEnumDeclaration(t, rtEnum)
+}
+
+func (self *Environment) LookupEnum(name string) *ast.EnumDeclaration {
+	if t, ok := self.enums[name]; ok {
+		return t
+	}
+	if self.parent != nil {
+		return self.parent.LookupEnum(name)
+	}
+	return nil
+}
+
+func (self *Environment) LookupType(t string) ast.Type {
+	if obj := self.LookupObject(t); obj != nil {
+		return obj
+	}
+	if enum := self.LookupEnum(t); enum != nil {
+		return enum
+	}
+	if bt, ok := ast.BasicTypes[t]; ok {
+		return bt
+	}
+
+	if self.parent != nil {
+		return self.parent.LookupType(t)
+	}
+
+	return nil
 }

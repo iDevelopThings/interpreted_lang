@@ -160,6 +160,7 @@ func (suite *TestParserTestSuite) Test_TokenGrouping() {
 	w := utilities.NewIndentWriter(os.Stdout, " ")
 	program.PrintTree(w.(*utilities.IndentWriter))
 }
+
 func (suite *TestParserTestSuite) Test_Enums() {
 
 	l := lexer.NewLexer(suite.inputData)

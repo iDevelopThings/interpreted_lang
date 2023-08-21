@@ -8,7 +8,6 @@ import (
 	"github.com/charmbracelet/log"
 
 	"arc/ast"
-	"arc/utilities"
 )
 
 func getValueArgIndexes(fmtString string) []int {
@@ -159,8 +158,8 @@ func bindStaticRuntimeType(env *Environment, t any) {
 
 		if methodDecl.IsStatic {
 			methodDecl.CustomFuncCb = func(args ...interface{}) interface{} {
-				timer := utilities.NewTimer("runtime bound function execution " + objName + "." + methodDecl.Name)
-				defer timer.StopAndLog()
+				// timer := utilities.NewTimer("runtime bound function execution " + objName + "." + methodDecl.Name)
+				// defer timer.StopAndLog()
 
 				fnArgValues := make([]reflect.Value, 0)
 				// fnArgValues = append(fnArgValues, reflect.ValueOf(t))
@@ -173,12 +172,18 @@ func bindStaticRuntimeType(env *Environment, t any) {
 					if mArg == nil || !mArg.TypeReference.IsVariadic {
 						mArg = methodDecl.Args[idx-1]
 					}
+					if mArg == nil {
+						panic("mArg is nil")
+					}
 					if mArg.TypeReference.IsVariadic {
 						isVariadicInsertion = true
 					}
 
 					if bt := mArg.TypeReference.GetBasicType(); bt != nil {
 						value := arg
+						if value == (*ast.RuntimeValue)(nil) {
+							value = nil
+						}
 						if rt, ok := value.(*ast.RuntimeValue); ok {
 							switch rt.Kind {
 							case ast.RuntimeValueKindObject, ast.RuntimeValueKindDict:
@@ -208,9 +213,9 @@ func bindStaticRuntimeType(env *Environment, t any) {
 							continue
 						}
 
-						log.Fatalf("Argument %d passed to runtime bound function %s::%s is not a runtime value", i, objName, methodDecl.Name)
+						log.Warnf("Argument %d passed to runtime bound function %s::%s is not a runtime value", i, objName, methodDecl.Name)
 					} else {
-						log.Fatalf("Argument %d passed to runtime bound function %s::%s is not a basic type", i, objName, methodDecl.Name)
+						log.Warnf("Argument %d passed to runtime bound function %s::%s is not a basic type", i, objName, methodDecl.Name)
 					}
 				}
 

@@ -179,8 +179,7 @@ type Program struct {
 
 	// We only add these here, so we can easily iterate source
 	// files and register any declarations before we begin evaluating the program
-	Objects   []*ObjectDeclaration
-	Functions []*FunctionDeclaration
+	Declarations []Declaration
 }
 
 func (self *Program) GetChildren() []Node {
@@ -261,9 +260,8 @@ func (self *TypeReference) GetChildren() []Node {
 	}
 }*/
 
-func (self *TypeReference) TypeName() string {
-	return self.Type
-}
+func (self *TypeReference) TypeName() string          { return self.Type }
+func (self *TypeReference) GetEnvBindingName() string { return self.Type }
 
 func (self *TypeReference) GetBasicType() Type {
 	t, ok := BasicTypes[self.Type]

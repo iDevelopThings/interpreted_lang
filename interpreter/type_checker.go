@@ -2,6 +2,7 @@ package interpreter
 
 import (
 	"github.com/charmbracelet/log"
+
 	protocol "github.com/tliron/glsp/protocol_3_16"
 
 	"arc/ast"
@@ -83,11 +84,18 @@ func (self *TypeCheckerInstance) FindType(node ast.Node) ast.Type {
 			return v
 
 		case *ast.TypeReference:
-			obj := self.Env.LookupObject(node.Type)
+			obj := self.Env.LookupType(node.Type)
 			if obj == nil {
 				return nil
 			}
 			return obj
+
+		case *ast.IndexAccessExpression:
+			resolved := resolveType(node.Instance)
+			if resolved == nil {
+				return nil
+			}
+			return ast.BasicTypes["any"]
 
 		case *ast.FieldAccessExpression:
 			resolved := resolveType(node.StructInstance)
@@ -105,6 +113,13 @@ func (self *TypeCheckerInstance) FindType(node ast.Node) ast.Type {
 				for _, field := range resolved.Fields {
 					if field.Name == node.FieldName {
 						resolvedType = field.TypeReference
+						break
+					}
+				}
+			case *ast.EnumDeclaration:
+				for _, field := range resolved.Values {
+					if field.Name.Name == node.FieldName {
+						resolvedType = field.Type
 						break
 					}
 				}
@@ -182,11 +197,20 @@ func (self *TypeCheckerInstance) FindDeclaration(node ast.Node) (ast.Type, ast.N
 			return v, nil
 
 		case *ast.TypeReference:
-			obj := self.Env.LookupObject(node.Type)
-			if obj == nil {
-				return nil, nil
+			if t := self.Env.LookupType(node.Type); t != nil {
+				if obj, ok := t.(*ast.ObjectDeclaration); ok {
+					return obj, obj.Name
+				} else if e, ok := t.(*ast.EnumDeclaration); ok {
+					return e, e.Name
+				}
+				return t, t
 			}
-			return obj, obj.Name
+			return nil, nil
+			// obj := self.Env.LookupObject(node.Type)
+			// if obj == nil {
+			// 	return nil, nil
+			// }
+			// return obj, obj.Name
 
 		case *ast.FieldAccessExpression:
 			resolved, _ := resolveDeclaration(node.StructInstance)
@@ -260,6 +284,9 @@ func (self *TypeCheckerInstance) MustEqual(mainNode ast.Node, lhs, rhs ast.Node)
 		if lhsType != nil {
 			lhsName = lhsType.TypeName()
 		} else {
+			if lhsT, ok := lhs.(ast.Type); ok {
+				lhsName = lhsT.TypeName()
+			}
 			if lhsTok := lhs.GetToken(); lhsTok != nil {
 				lhsName = lhsTok.Value
 			}
@@ -268,6 +295,9 @@ func (self *TypeCheckerInstance) MustEqual(mainNode ast.Node, lhs, rhs ast.Node)
 		if rhsType != nil {
 			rhsName = rhsType.TypeName()
 		} else {
+			if rhsT, ok := rhs.(ast.Type); ok {
+				rhsName = rhsT.TypeName()
+			}
 			if rhsTok := rhs.GetToken(); rhsTok != nil {
 				rhsName = rhsTok.Value
 			}

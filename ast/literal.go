@@ -56,6 +56,7 @@ func (self *Literal) TypeName() string {
 	}
 	return ""
 }
+func (self *Literal) GetEnvBindingName() string { return self.TypeName() }
 
 func (self *Literal) SetValue(value any) {
 

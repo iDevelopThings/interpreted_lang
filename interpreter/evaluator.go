@@ -48,6 +48,12 @@ func (self *Evaluator) Eval(n any) *Result {
 		return self.evalObjectDeclaration(node)
 	case *ast.FunctionDeclaration:
 		return self.evalFunctionDeclaration(node)
+	case *ast.EnumDeclaration:
+		return NewResult()
+		// We don't eval enums here... type checker needs the information
+		// which isn't available at type checking time...
+		// So when we bind declarations, we'll eval enums then & bind their values
+		// return self.evalEnumDeclaration(node)
 
 	case *ast.HttpRouteDeclaration:
 		return self.evalHttpRouteDeclaration(node)
@@ -93,7 +99,7 @@ func (self *Evaluator) Eval(n any) *Result {
 	case *ast.ObjectInstantiation:
 		return self.evalObjectInstantiation(node)
 	case *ast.IndexAccessExpression:
-		return self.evalArrayAccessExpression(node)
+		return self.evalIndexAccessExpression(node)
 	case *ast.ArrayInstantiation:
 		return self.evalArrayInstantiation(node)
 	case *ast.DictionaryInstantiation:
@@ -205,6 +211,64 @@ func (self *Evaluator) ExecuteFunction(node *ast.FunctionDeclaration) *Result {
 	}
 
 	return r
+}
+
+func (self *Evaluator) evalEnumDeclaration(node *ast.EnumDeclaration, enum *ast.RuntimeValue) *Result {
+	// Even though it should be bound at this point, we'll just double-check
+	if self.Env.LookupVar(node.Name.Name) == nil {
+		NewErrorAtNode(node, "Enum %s not found", node.Name.Name)
+	}
+	if enum.Kind != ast.RuntimeValueKindEnumDecl {
+		NewErrorAtNode(node, "Enum %s not found", node.Name.Name)
+	}
+
+	rvValue := enum.Value.(map[string]*ast.RuntimeValue)
+
+	for _, value := range node.Values {
+		if value.Kind == ast.EnumValueKindLiteral {
+			rvValue[value.Name.Name] = ast.NewRuntimeLiteral(value.Value)
+		}
+
+		if value.Kind == ast.EnumValueKindWithValue {
+			enum.Methods[value.Name.Name] = &ast.FunctionDeclaration{
+				AstNode:    value.AstNode,
+				Name:       value.Name.Name,
+				Args:       value.Properties,
+				ReturnType: nil,
+				// Receiver:        nil,
+				CustomFuncCb: func(args ...any) any {
+					// env := args[0].(*Environment)
+
+					if len(args) != len(value.Properties)+1 {
+						NewErrorAtNode(value, "Enum value constructor %s expects %d arguments, got %d", value.Name.Name, len(value.Properties), len(args)-1)
+					}
+
+					// When calling the enum value constructor, we need to create a
+					// new runtime object holding these values and return it essentially
+					// It's kind of a hack... but it works
+
+					rtObj := ast.NewRuntimeEnumValue(node)
+					for i, prop := range value.Properties {
+						// i+1 because env is always the first argument of a custom function
+						rtObj.SetField(prop.Name, args[i+1].(*ast.RuntimeValue))
+					}
+
+					log.Debugf("Calling enum value constructor: %s\n", value.Name.Name)
+
+					return rtObj
+
+					// return nil
+				},
+				// IsStatic:        false,
+				// IsBuiltin:       false,
+				// HasVariadicArgs: false,
+			}
+		}
+	}
+
+	log.Debugf("Enum bound/declared: %s", enum.TypeName)
+
+	return nil
 }
 
 func (self *Evaluator) evalDictionaryInstantiation(node *ast.DictionaryInstantiation) *Result {
@@ -542,7 +606,7 @@ func (self *Evaluator) evalIdentifier(node *ast.Identifier) *Result {
 func (self *Evaluator) evalVarReference(node *ast.VarReference) *Result {
 	value := self.Env.LookupVar(node.Name)
 	if value == nil {
-		panic("Undefined variable: " + node.Name)
+		NewErrorAtNode(node, "Undefined variable: %s", node.Name)
 	}
 
 	return NewResult(value)

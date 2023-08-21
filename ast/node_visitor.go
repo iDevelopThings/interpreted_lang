@@ -1,274 +1,17 @@
 package ast
 
-// func (self *Program) Accept(visitor NodeVisitor) any {
-// 	values := make([]any, 0)
-// 	for _, statement := range self.Statements {
-// 		if v := statement.Accept(visitor); v != nil {
-// 			values = append(values, v)
-// 		}
-// 	}
-// 	return values
-// }
-// func (self *Block) Accept(visitor NodeVisitor) any {
-// 	values := make([]any, 0)
-// 	for _, statement := range self.Statements {
-// 		if v := statement.Accept(visitor); v != nil {
-// 			values = append(values, v)
-// 		}
-// 	}
-// 	return values
-// }
-// func (self *Identifier) Accept(visitor NodeVisitor) any {
-// 	return nil
-// }
-// func (self *TypedIdentifier) Accept(visitor NodeVisitor) any {
-// 	if self.Identifier != nil {
-// 		return self.Identifier.Accept(visitor)
-// 	}
-// 	return nil
-// }
-// func (self *ObjectDeclaration) Accept(visitor NodeVisitor) any {
-// 	if self.Fields != nil {
-// 		for _, field := range self.Fields {
-// 			field.Accept(visitor)
-// 		}
-// 	}
-// 	if self.Methods != nil {
-// 		for _, method := range self.Methods {
-// 			method.Accept(visitor)
-// 		}
-// 	}
-// 	return nil
-// }
-// func (self *FunctionDeclaration) Accept(visitor NodeVisitor) any {
-// 	if self.Args != nil {
-// 		for _, arg := range self.Args {
-// 			arg.Accept(visitor)
-// 		}
-// 	}
-// 	if self.Receiver != nil {
-// 		self.Receiver.Accept(visitor)
-// 	}
-// 	if self.Body != nil {
-// 		self.Body.Accept(visitor)
-// 	}
-// 	return nil
-// }
-// func (self *RangeExpression) Accept(visitor NodeVisitor) any {
-// 	if self.Left != nil {
-// 		self.Left.Accept(visitor)
-// 	}
-// 	if self.Right != nil {
-// 		self.Right.Accept(visitor)
-// 	}
-// 	return nil
-// }
-// func (self *AssignmentExpression) Accept(visitor NodeVisitor) any {
-// 	if self.Left != nil {
-// 		self.Left.Accept(visitor)
-// 	}
-// 	if self.Value != nil {
-// 		self.Value.Accept(visitor)
-// 	}
-// 	return nil
-// }
-// func (self *BinaryExpression) Accept(visitor NodeVisitor) any {
-// 	if self.Left != nil {
-// 		self.Left.Accept(visitor)
-// 	}
-// 	if self.Right != nil {
-// 		self.Right.Accept(visitor)
-// 	}
-// 	return nil
-// }
-// func (self *PostfixExpression) Accept(visitor NodeVisitor) any {
-// 	if self.Left != nil {
-// 		self.Left.Accept(visitor)
-// 	}
-// 	return nil
-// }
-// func (self *UnaryExpression) Accept(visitor NodeVisitor) any {
-// 	if self.Expr != nil {
-// 		self.Expr.Accept(visitor)
-// 	}
-// 	return nil
-// }
-// func (self *FieldAccessExpression) Accept(visitor NodeVisitor) any {
-// 	if self.StructInstance != nil {
-// 		self.StructInstance.Accept(visitor)
-// 	}
-// 	return nil
-// }
-// func (self *IndexAccessExpression) Accept(visitor NodeVisitor) any {
-// 	if self.Instance != nil {
-// 		self.Instance.Accept(visitor)
-// 	}
-// 	if self.StartIndex != nil {
-// 		self.StartIndex.Accept(visitor)
-// 	}
-// 	if self.EndIndex != nil {
-// 		self.EndIndex.Accept(visitor)
-// 	}
-// 	return nil
-// }
-// func (self *CallExpression) Accept(visitor NodeVisitor) any {
-// 	if self.Receiver != nil {
-// 		self.Receiver.Accept(visitor)
-// 	}
-// 	if self.Args != nil {
-// 		for _, arg := range self.Args {
-// 			arg.Accept(visitor)
-// 		}
-// 	}
-// 	return nil
-// }
-// func (self *HttpRouteDeclaration) Accept(visitor NodeVisitor) any {
-// 	if self.Path != nil {
-// 		self.Path.Accept(visitor)
-// 	}
-// 	if self.Body != nil {
-// 		self.Body.Accept(visitor)
-// 	}
-// 	if self.Injections != nil {
-// 		for _, injection := range self.Injections {
-// 			if injection != nil {
-// 				injection.Accept(visitor)
-// 			}
-// 		}
-// 	}
-// 	return nil
-// }
-// func (self *HttpServerConfig) Accept(visitor NodeVisitor) any {
-// 	if self.Port != nil {
-// 		self.Port.Accept(visitor)
-// 	}
-// 	if self.FormMaxMemory != nil {
-// 		self.FormMaxMemory.Accept(visitor)
-// 	}
-// 	return nil
-// }
-// func (self *HttpResponseData) Accept(visitor NodeVisitor) any {
-// 	if self.ResponseCode != nil {
-// 		self.ResponseCode.Accept(visitor)
-// 	}
-// 	if self.Data != nil {
-// 		self.Data.Accept(visitor)
-// 	}
-// 	return nil
-// }
-// func (self *HttpRouteBodyInjection) Accept(visitor NodeVisitor) any {
-// 	if self.Var != nil {
-// 		self.Var.Accept(visitor)
-// 	}
-// 	return nil
-// }
-// func (self *Literal) Accept(visitor NodeVisitor) any {
-//
-// 	return nil
-// }
-// func (self *ArrayInstantiation) Accept(visitor NodeVisitor) any {
-// 	if self.Type != nil {
-// 		self.Type.Accept(visitor)
-// 	}
-// 	if self.Values != nil {
-// 		for _, value := range self.Values {
-// 			value.Accept(visitor)
-// 		}
-// 	}
-// 	return nil
-// }
-// func (self *ObjectInstantiation) Accept(visitor NodeVisitor) any {
-// 	if self.Fields != nil {
-// 		for _, field := range self.Fields {
-// 			if field != nil {
-// 				field.Accept(visitor)
-// 			}
-// 		}
-// 	}
-// 	return nil
-// }
-// func (self *DictionaryInstantiation) Accept(visitor NodeVisitor) any {
-// 	if self.Fields != nil {
-// 		for _, field := range self.Fields {
-// 			if field != nil {
-// 				field.Accept(visitor)
-// 			}
-// 		}
-// 	}
-// 	return nil
-// }
-// func (self *IfStatement) Accept(visitor NodeVisitor) any {
-// 	if self.Condition != nil {
-// 		self.Condition.Accept(visitor)
-// 	}
-// 	if self.Body != nil {
-// 		self.Body.Accept(visitor)
-// 	}
-// 	if self.Else != nil {
-// 		self.Else.Accept(visitor)
-// 	}
-// 	return nil
-// }
-// func (self *LoopStatement) Accept(visitor NodeVisitor) any {
-// 	if self.Range != nil {
-// 		self.Range.Accept(visitor)
-// 	}
-// 	if self.Body != nil {
-// 		self.Range.Accept(visitor)
-// 	}
-// 	if self.Step != nil {
-// 		self.Range.Accept(visitor)
-// 	}
-// 	if self.As != nil {
-// 		self.Range.Accept(visitor)
-// 	}
-// 	return nil
-// }
-// func (self *AssignmentStatement) Accept(visitor NodeVisitor) any {
-// 	if self.TypedIdentifier != nil {
-// 		self.TypedIdentifier.Accept(visitor)
-// 	}
-// 	if self.Value != nil {
-// 		self.Value.Accept(visitor)
-// 	}
-// 	return nil
-// }
-// func (self *VarReference) Accept(visitor NodeVisitor) any {
-//
-// 	return nil
-// }
-// func (self *ReturnStatement) Accept(visitor NodeVisitor) any {
-// 	if self.Value != nil {
-// 		self.Value.Accept(visitor)
-// 	}
-// 	return nil
-// }
-// func (self *BreakStatement) Accept(visitor NodeVisitor) any {
-//
-// 	return nil
-// }
-// func (self *DeleteStatement) Accept(visitor NodeVisitor) any {
-// 	if self.What != nil {
-// 		self.What.Accept(visitor)
-// 	}
-// 	return nil
-// }
-
-//
-//
-//
-//
-//
-//
-//
-//
-
 func (self *Program) Accept(visitor NodeVisitor) {
 	visitor.VisitProgram(self)
 
 	for _, statement := range self.Statements {
 		visitor.Visit(statement)
 	}
+}
+func (self *EnumDeclaration) Accept(visitor NodeVisitor) {
+	visitor.VisitEnumDeclaration(self)
+}
+func (self *EnumValue) Accept(visitor NodeVisitor) {
+	visitor.VisitEnumValueDeclaration(self)
 }
 func (self *Block) Accept(visitor NodeVisitor) {
 	visitor.VisitBlock(self)
@@ -372,7 +115,7 @@ func (self *FieldAccessExpression) Accept(visitor NodeVisitor) {
 }
 func (self *IndexAccessExpression) Accept(visitor NodeVisitor) {
 	// visitor.Visit(self)
-	visitor.VisitArrayAccessExpression(self)
+	visitor.VisitIndexAccessExpression(self)
 	if self.Instance != nil {
 		visitor.Visit(self.Instance)
 	}
@@ -543,6 +286,8 @@ func (self *DeleteStatement) Accept(visitor NodeVisitor) {
 type NodeVisitor interface {
 	Visit(node Node)
 	VisitProgram(node *Program)
+	VisitEnumDeclaration(node *EnumDeclaration)
+	VisitEnumValueDeclaration(node *EnumValue)
 	VisitBlock(node *Block)
 	VisitIdentifier(node *Identifier)
 	VisitTypedIdentifier(node *TypedIdentifier)
@@ -555,7 +300,7 @@ type NodeVisitor interface {
 	VisitPostfixExpression(node *PostfixExpression)
 	VisitUnaryExpression(node *UnaryExpression)
 	VisitFieldAccessExpression(node *FieldAccessExpression)
-	VisitArrayAccessExpression(node *IndexAccessExpression)
+	VisitIndexAccessExpression(node *IndexAccessExpression)
 	VisitCallExpression(node *CallExpression)
 	VisitHttpRouteDeclaration(node *HttpRouteDeclaration)
 	VisitHttpServerConfig(node *HttpServerConfig)
@@ -580,6 +325,10 @@ func (self *NodeVisitorAdapter) Visit(node Node) {
 	switch node := node.(type) {
 	case *Program:
 		// self.VisitProgram(node)
+		node.Accept(self)
+	case *EnumDeclaration:
+		node.Accept(self)
+	case *EnumValue:
 		node.Accept(self)
 	case *Block:
 		// self.VisitBlock(node)
@@ -617,7 +366,7 @@ func (self *NodeVisitorAdapter) Visit(node Node) {
 		// self.VisitFieldAccessExpression(node)
 		node.Accept(self)
 	case *IndexAccessExpression:
-		// self.VisitArrayAccessExpression(node)
+		// self.VisitIndexAccessExpression(node)
 		node.Accept(self)
 	case *CallExpression:
 		// self.VisitCallExpression(node)
@@ -673,6 +422,12 @@ func (self *NodeVisitorAdapter) Visit(node Node) {
 func (self *NodeVisitorAdapter) VisitProgram(node *Program) {
 
 }
+func (self *NodeVisitorAdapter) VisitEnumDeclaration(node *EnumDeclaration) {
+
+}
+func (self *NodeVisitorAdapter) VisitEnumValueDeclaration(node *EnumValue) {
+
+}
 
 func (self *NodeVisitorAdapter) VisitBlock(node *Block) {
 
@@ -721,7 +476,7 @@ func (self *NodeVisitorAdapter) VisitFieldAccessExpression(node *FieldAccessExpr
 
 }
 
-func (self *NodeVisitorAdapter) VisitArrayAccessExpression(node *IndexAccessExpression) {
+func (self *NodeVisitorAdapter) VisitIndexAccessExpression(node *IndexAccessExpression) {
 
 }
 

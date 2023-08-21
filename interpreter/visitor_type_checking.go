@@ -32,6 +32,10 @@ func (self *TypeCheckingVisitor) Visit(node ast.Node) {
 	case *ast.Block:
 		// self.VisitBlock(node)
 		node.Accept(self)
+	case *ast.EnumDeclaration:
+		node.Accept(self)
+	case *ast.EnumValue:
+		node.Accept(self)
 	case *ast.Identifier:
 		// self.VisitIdentifier(node)
 		node.Accept(self)
@@ -63,7 +67,7 @@ func (self *TypeCheckingVisitor) Visit(node ast.Node) {
 		// self.VisitFieldAccessExpression(node)
 		node.Accept(self)
 	case *ast.IndexAccessExpression:
-		// self.VisitArrayAccessExpression(node)
+		// self.VisitIndexAccessExpression(node)
 		node.Accept(self)
 	case *ast.CallExpression:
 		// self.VisitCallExpression(node)
@@ -117,6 +121,14 @@ func (self *TypeCheckingVisitor) Visit(node ast.Node) {
 }
 
 func (self *TypeCheckingVisitor) VisitProgram(node *ast.Program) {
+	TypeChecker.Scope.Push()
+}
+
+func (self *TypeCheckingVisitor) VisitEnumDeclaration(node *ast.EnumDeclaration) {
+	if TypeChecker.Scope.IsDefined(node.Name.Name) {
+		NewErrorAtNode(node.Name, "Enum '%s' already defined", node.Name.Name)
+	}
+	TypeChecker.Scope.Insert(node.Name, node)
 }
 
 func (self *TypeCheckingVisitor) VisitFunctionDeclaration(node *ast.FunctionDeclaration) {
@@ -180,19 +192,41 @@ func (self *TypeCheckingVisitor) VisitCallExpression(node *ast.CallExpression) {
 	}
 	TypeChecker.Scope.LinkNodeScope(node)
 
+	if len(node.Args) > 0 {
+		for _, arg := range node.Args {
+			arg.Accept(self)
+		}
+	}
+
 	var receiverType ast.Type
 	if node.Receiver != nil {
 		receiverType, _ = TypeChecker.FindDeclaration(node.Receiver)
 	}
 
+	if receiverType != nil {
+		if enum, ok := receiverType.(*ast.EnumDeclaration); ok {
+			valCtor := enum.GetValueConstructor(node.Function.Name)
+			if valCtor == nil {
+				NewErrorAtNode(node.Function, "Enum '%s' has no value constructor '%s'", enum.Name.Name, node.Function.Name)
+			}
+
+			if len(node.Args) != len(valCtor.Properties) {
+				NewErrorAtNode(node.Function, "Enum value constructor '%s' expects %d arguments, but %d given", node.Function.Name, len(valCtor.Properties), len(node.Args))
+			}
+
+			return
+		}
+	}
+
 	lookupName := node.Function.Name
 	if receiverType != nil {
-		lookupName = receiverType.(*ast.ObjectDeclaration).Name.Name + "_" + node.Function.Name
+		// lookupName = receiverType.(*ast.ObjectDeclaration).Name.Name + "_" + node.Function.Name
+		lookupName = receiverType.TypeName() + "_" + node.Function.Name
 	}
 
 	fnDecl := self.env.LookupFunction(lookupName)
 	if fnDecl == nil {
-		NewErrorAtNode(node, "Function '%s' is not defined", node.Function.Name)
+		NewErrorAtNode(node.Function, "Function '%s' is not defined", node.Function.Name)
 	}
 
 	if fnDecl.Args != nil && len(fnDecl.Args) > 0 {
@@ -229,13 +263,13 @@ func (self *TypeCheckingVisitor) VisitCallExpression(node *ast.CallExpression) {
 }
 
 func (self *TypeCheckingVisitor) VisitIdentifier(node *ast.Identifier) {
-	// log.Debugf("TypeCheckingVisitor.VisitIdentifier: %v", node.GetToken())
+	// log.Debugf("TypeCheckingVisitor.VisitIdentifier: %#v", node.GetToken())
 }
 
 func (self *TypeCheckingVisitor) VisitVarReference(node *ast.VarReference) {
 	TypeChecker.Scope.LinkNodeScope(node)
 
-	// log.Debugf("TypeCheckingVisitor.VisitVarReference: %v", node.GetToken())
+	// log.Debugf("TypeCheckingVisitor.VisitVarReference: %#v", node.GetToken())
 
 	if !TypeChecker.Scope.IsDefined(node.Name) {
 		if node.Name != "fmt" {
@@ -245,19 +279,27 @@ func (self *TypeCheckingVisitor) VisitVarReference(node *ast.VarReference) {
 }
 
 func (self *TypeCheckingVisitor) VisitTypeReference(node *ast.TypeReference) {
-	// log.Debugf("TypeCheckingVisitor.VisitTypeReference: %v", node.GetToken())
+	// log.Debugf("TypeCheckingVisitor.VisitTypeReference: %#v", node.GetToken())
 
 	TypeChecker.Scope.LinkNodeScope(node)
 }
 
 func (self *TypeCheckingVisitor) VisitAssignmentStatement(node *ast.AssignmentStatement) {
-	// log.Debugf("TypeCheckingVisitor.VisitAssignmentStatement: %v", node.GetToken())
+	// log.Debugf("TypeCheckingVisitor.VisitAssignmentStatement: %#v", node.GetToken())
 
 	if node.Name != nil {
 		node.Name.Accept(self)
 	}
+
+	var varType ast.Type
+
 	if node.Type != nil {
 		node.Type.Accept(self)
+
+		varType = self.env.LookupType(node.Type.Type)
+		if varType == nil {
+			NewErrorAtNode(node.Type, "Type '%s' is not defined", node.Type.Type)
+		}
 	}
 
 	switch v := node.Value.(type) {
@@ -314,8 +356,29 @@ func (self *TypeCheckingVisitor) VisitAssignmentStatement(node *ast.AssignmentSt
 			TypeChecker.Scope.Insert(node.Name, result)
 		}
 
+	case *ast.CallExpression:
+		result := TypeChecker.FindType(v.Receiver)
+		switch result.(type) {
+		// Our enum value `constructor`s are seen as call expressions,
+		// so we need to handle them here
+		case *ast.EnumDeclaration:
+			if !TypeChecker.Scope.IsDefined(node.Name.Name) {
+				TypeChecker.Scope.Insert(node.Name, result)
+			}
+		default:
+			if result == nil {
+				NewErrorAtNode(v, "[VisitAssignmentStatement-CallExpression]: Failed to infer type of '%s'", v.GetToken())
+			}
+
+			NewErrorAtNode(node, "[VisitAssignmentStatement-CallExpression]: I don't know what dragons lay here... %T", result)
+		}
+
 	default:
-		NewErrorAtNode(node, "[VisitAssignmentStatement-default]:Type '%s' is not defined: %v", node.Type.Type, v)
+		if node.Type.AstNode != nil {
+			NewErrorAtNode(node.Type, "[VisitAssignmentStatement-default]:Type '%s' is not defined: %#v", node.Type.Type, v)
+			return
+		}
+		NewErrorAtNode(node, "[VisitAssignmentStatement-default]:Type '%s' is not defined: %#v", node.Type.Type, v)
 	}
 
 }
@@ -323,7 +386,7 @@ func (self *TypeCheckingVisitor) VisitAssignmentStatement(node *ast.AssignmentSt
 func (self *TypeCheckingVisitor) VisitTypedIdentifier(node *ast.TypedIdentifier) {
 	TypeChecker.Scope.LinkNodeScope(node)
 
-	// log.Debugf("TypeCheckingVisitor.VisitTypedIdentifier: %v", node.GetToken())
+	// log.Debugf("TypeCheckingVisitor.VisitTypedIdentifier: %#v", node.GetToken())
 
 	if node.TypeReference != nil {
 		node.TypeReference.Accept(self)
@@ -331,7 +394,7 @@ func (self *TypeCheckingVisitor) VisitTypedIdentifier(node *ast.TypedIdentifier)
 }
 
 func (self *TypeCheckingVisitor) VisitReturnStatement(node *ast.ReturnStatement) {
-	// log.Debugf("TypeCheckingVisitor.VisitReturnStatement: %v", node)
+	// log.Debugf("TypeCheckingVisitor.VisitReturnStatement: %#v", node)
 
 	TypeChecker.Scope.LinkNodeScope(node)
 
@@ -382,4 +445,51 @@ func (self *TypeCheckingVisitor) VisitReturnStatement(node *ast.ReturnStatement)
 	default:
 		NewErrorAtNode(node, "[VisitReturnStatement-default]: Failed to resolve type of '%s'", node.GetToken())
 	}
+}
+
+func (self *TypeCheckingVisitor) VisitIndexAccessExpression(node *ast.IndexAccessExpression) {
+	// log.Debugf("TypeCheckingVisitor.VisitIndexAccessExpression: %#v", node)
+
+	TypeChecker.Scope.LinkNodeScope(node)
+
+	if node.Instance != nil {
+		node.Instance.Accept(self)
+	}
+	if node.StartIndex != nil {
+		node.StartIndex.Accept(self)
+	}
+	if node.EndIndex != nil {
+		node.EndIndex.Accept(self)
+	}
+
+	result := TypeChecker.FindType(node.Instance)
+	if result == nil {
+		NewErrorAtNode(node, "[VisitIndexAccessExpression]: Failed to infer type of '%s'", node.GetToken())
+	}
+
+	switch t := result.(type) {
+	case *ast.EnumDeclaration:
+		if node.IsSlice {
+			NewErrorAtNode(node, "[VisitIndexAccessExpression]: Cannot use slice syntax on enum value access '%s'", t.Name)
+		}
+		index := node.StartIndex
+		if index == nil {
+			NewErrorAtNode(node, "[VisitIndexAccessExpression]: Enum value access '%s' requires an index", t.Name)
+		}
+		indexType := TypeChecker.FindType(index)
+		if indexType == nil {
+			NewErrorAtNode(node, "[VisitIndexAccessExpression]: Failed to infer type of '%s'", index.GetToken())
+		}
+
+		switch indexType.(type) {
+		case *ast.BasicType, *ast.Literal:
+		default:
+			NewErrorAtNode(node, "[VisitIndexAccessExpression]: Enum value access '%s' can only use literal values for item lookup", t.Name)
+		}
+
+	}
+
+	// if result.TypeName() != "list" {
+	// 	NewErrorAtNode(node, "[VisitIndexAccessExpression]: Type '%s' does not support index access", result.TypeName())
+	// }
 }

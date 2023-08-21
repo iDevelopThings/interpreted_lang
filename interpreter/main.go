@@ -14,6 +14,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 
+	"arc/ast"
 	"arc/http_server"
 	"arc/lexer"
 	"arc/parser"
@@ -196,10 +197,6 @@ func (self *InterpreterEngine) constructASTs() {
 
 		importedScripts[script.Path] = script
 
-		// mapper, program := NewAstMapper(script.Tree)
-		// script.Mapper = mapper
-		// script.Program = program
-
 		if len(script.Program.Imports) > 0 {
 			for _, importPath := range script.Program.Imports {
 				ip := importPath.Path.Value.(string)
@@ -243,17 +240,20 @@ func (self *InterpreterEngine) linkScript(script *SourceFile) {
 	self.setScriptLogger(script)
 	defer self.setScriptLogger(nil)
 
-	if len(script.Program.Objects) > 0 {
-		for _, obj := range script.Program.Objects {
-			self.Env.SetObject(obj)
+	if len(script.Program.Declarations) > 0 {
+		for _, declaration := range script.Program.Declarations {
+			switch t := declaration.(type) {
+			case *ast.FunctionDeclaration:
+				self.Env.SetFunction(t)
+			case *ast.ObjectDeclaration:
+				self.Env.SetObject(t)
+			case *ast.EnumDeclaration:
+				self.Env.SetEnum(t, self.Evaluator)
+
+			}
 		}
 	}
 
-	if len(script.Program.Functions) > 0 {
-		for _, fn := range script.Program.Functions {
-			self.Env.SetFunction(fn)
-		}
-	}
 }
 
 func (self *InterpreterEngine) typeCheck() {
@@ -299,12 +299,9 @@ func (self *InterpreterEngine) evaluateScript(script *SourceFile) {
 
 	self.Evaluator.Eval(script.Program)
 
-	for _, function := range script.Program.Functions {
-		if function.Name == "init" {
-			self.Evaluator.ExecuteFunction(function)
-			break
-		}
-	}
+	// if mainFunc := script.GetMainFunc(); mainFunc != nil {
+	// 	self.Evaluator.ExecuteFunction(mainFunc)
+	// }
 
 }
 

@@ -110,10 +110,15 @@ func NewCodeErrorAtNode(node ast.Node) *CodeError {
 	// 	pos.End.Column += len(rule.GetStop().GetText())
 	// }
 
+	calcLength := pos.Start.Width
+	if pos.End.Column-pos.Start.Column > calcLength {
+		calcLength = pos.End.Column - pos.Start.Column
+	}
+
 	pos.HighlightBounds = &TokenHighlightBounds{
 		StartColumn: pos.Start.Column,
 		EndColumn:   pos.Start.Column + pos.Start.Width,
-		Length:      pos.Start.Width,
+		Length:      calcLength,
 	}
 
 	if pos.End.Line-pos.Start.Line > 1 {

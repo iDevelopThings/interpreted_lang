@@ -261,7 +261,7 @@ func (p *Parser) parseInfixExpression(lhs ast.Expr) ast.Expr {
 			binExpr.Kind = ast.BinaryExpressionKindLogicalAnd
 		case operators.BitwiseLeftShift, operators.BitwiseRightShift:
 			binExpr.Kind = ast.BinaryExpressionKindShift
-		case operators.Equal, operators.NotEqual:
+		case operators.EqualEqual, operators.NotEqual:
 			binExpr.Kind = ast.BinaryExpressionKindEquality
 		case operators.LessThan, operators.LessThanOrEqual, operators.GreaterThan, operators.GreaterThanOrEqual:
 			binExpr.Kind = ast.BinaryExpressionKindRelational
@@ -293,9 +293,20 @@ func (p *Parser) parseIndexAccessExpression(lhs ast.Expr) ast.Expr {
 	s := p.curr
 
 	node := &ast.IndexAccessExpression{
-		AstNode: ast.NewAstNode(p.curr),
+		AstNode:  ast.NewAstNode(p.curr),
+		Instance: lhs,
 	}
+
+	if lhs, ok := lhs.(*ast.Identifier); ok {
+		node.Instance = &ast.VarReference{
+			AstNode: lhs.AstNode,
+			Name:    lhs.Name,
+		}
+	}
+
+	node.AddChildren(node, node.Instance)
 	defer node.SetRuleRange(s, p.prev)
+
 	// Access can be any of the following:
 	// Slices:
 	//    - [index]
@@ -318,7 +329,6 @@ func (p *Parser) parseIndexAccessExpression(lhs ast.Expr) ast.Expr {
 			p.error("dictionary access does not support slicing")
 		}
 	} else {
-		node.IsSlice = true
 
 		// If we have a RBracket, we're doing a single index access
 		// not using a string though which is for dictionaries
@@ -328,11 +338,13 @@ func (p *Parser) parseIndexAccessExpression(lhs ast.Expr) ast.Expr {
 		} else
 		// if we have a colon, we're just doing 0-end slicing
 		if p.is(lexer.TokenColon) {
+			node.IsSlice = true
 			node.EndIndex = p.parseExpression(LOWEST)
 			node.AddChildren(node, node.StartIndex)
 			p.expect(lexer.TokenColon)
 		} else {
 
+			node.IsSlice = true
 			node.StartIndex = p.parseExpression(LOWEST)
 			node.AddChildren(node, node.StartIndex)
 

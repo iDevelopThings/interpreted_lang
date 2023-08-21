@@ -3,6 +3,7 @@ package ast
 type Type interface {
 	Node
 	TypeName() string
+	GetEnvBindingName() string
 }
 
 type BasicType struct {
@@ -18,9 +19,8 @@ func (self *BasicType) Accept(visitor NodeVisitor) {
 	visitor.Visit(self)
 }
 
-func (self *BasicType) TypeName() string {
-	return self.Name
-}
+func (self *BasicType) TypeName() string          { return self.Name }
+func (self *BasicType) GetEnvBindingName() string { return self.Name }
 
 var (
 	IntType = &BasicType{

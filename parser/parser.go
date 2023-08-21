@@ -73,39 +73,40 @@ func (p *Parser) Parse() *ast.Program {
 
 func (p *Parser) parseProgram() *ast.Program {
 	program := &ast.Program{
-		AstNode:    ast.NewAstNode(p.curr),
-		Statements: make([]ast.TopLevelStatement, 0),
-		Imports:    make([]*ast.ImportStatement, 0),
-		Objects:    make([]*ast.ObjectDeclaration, 0),
-		Functions:  make([]*ast.FunctionDeclaration, 0),
+		AstNode:      ast.NewAstNode(p.curr),
+		Statements:   make([]ast.TopLevelStatement, 0),
+		Imports:      make([]*ast.ImportStatement, 0),
+		Declarations: make([]ast.Declaration, 0),
 	}
 
 	p.safeLoop(func() bool { return !p.peekIs(lexer.TokenEOF) }, func() {
 		if node := p.parseTopLevelStatement(); node != nil {
 			node.SetParent(program)
 
-			switch d := node.(type) {
-			case *ast.ObjectDeclaration:
-				program.Objects = append(program.Objects, d)
-			case *ast.FunctionDeclaration:
-				program.Functions = append(program.Functions, d)
+			if decl, ok := node.(ast.Declaration); ok {
+				program.Declarations = append(program.Declarations, decl)
 			}
 
 			program.Statements = append(program.Statements, node)
 		}
 	})
 
-	for _, function := range program.Functions {
-		if function.Receiver == nil {
+	for _, decl := range program.Declarations {
+		fn, ok := decl.(*ast.FunctionDeclaration)
+		if !ok {
+			continue
+		}
+		if fn.Receiver == nil {
 			continue
 		}
 
-		for _, object := range program.Objects {
-			if function.Receiver.TypeReference.Type == object.Name.Name {
-				object.Methods[function.Name] = function
+		for _, object := range program.Declarations {
+			if object, ok := object.(*ast.ObjectDeclaration); ok {
+				if fn.Receiver.TypeReference.Type == object.Name.Name {
+					object.Methods[fn.Name] = fn
+				}
 			}
 		}
-
 	}
 
 	return program
@@ -490,7 +491,9 @@ func (p *Parser) parseVariableDeclaration() *ast.AssignmentStatement {
 		Type:    nil,
 		Value:   nil,
 	}
-	defer node.SetRuleRange(s, p.prev)
+	defer func() {
+		node.SetRuleRange(s, p.prev)
+	}()
 
 	// var <name=ident> = <expr>
 	// var <name=ident> <type=ident> = <expr>

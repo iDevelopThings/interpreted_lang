@@ -1,6 +1,8 @@
 package interpreter
 
 import (
+	"fmt"
+
 	"github.com/charmbracelet/log"
 
 	"arc/ast"
@@ -39,6 +41,9 @@ func isType(val interface{}, typeOf interface{}) bool {
 		return ok
 	case *ast.Literal:
 		_, ok := val.(*ast.Literal)
+		return ok
+	case *ast.RuntimeValue:
+		_, ok := val.(*ast.RuntimeValue)
 		return ok
 	default:
 		return false
@@ -86,14 +91,26 @@ func (self *Evaluator) evalCallExpression(node *ast.CallExpression) *Result {
 		if node.IsStaticAccess {
 			typeRef, ok := node.Receiver.(*ast.TypeReference)
 			if !ok {
-				log.Fatalf("Receiver is not a type reference: %v", node.Receiver)
+				NewErrorAtNode(node.Receiver, "Receiver is not a type reference: %#v", node.Receiver)
 			}
-			receiverObj := self.Env.LookupObject(typeRef.Type)
+			receiverObj := self.Env.LookupType(typeRef.Type)
 			if receiverObj == nil {
-				log.Fatalf("Undefined object: %v", typeRef.Type)
+				NewErrorAtNode(typeRef, "Undefined object: %#v", typeRef.Type)
 			}
 
-			fn = receiverObj.GetMethod(node.Function.Name)
+			switch obj := receiverObj.(type) {
+			case *ast.ObjectDeclaration:
+				fn = obj.GetMethod(node.Function.Name)
+			case *ast.EnumDeclaration:
+				receiver = self.Env.GetRoot().LookupVar(node.Receiver.(*ast.TypeReference).Type).(*ast.RuntimeValue)
+				// receiver = eval.MustEval(node.Receiver).(*ast.RuntimeValue)
+				if receiver == nil {
+					NewErrorAtNode(node, "Enum receiver is nil: %v", node.Receiver)
+				}
+				fn = receiver.GetMethod(node.Function.Name)
+			default:
+				NewErrorAtNode(typeRef, "Invalid receiver type: %#v", typeRef.Type)
+			}
 		} else
 		// Otherwise, we're accessing an instance method, so we need to resolve the variable or whatever
 		// to first find its type and then resolve the method from that type
@@ -101,17 +118,17 @@ func (self *Evaluator) evalCallExpression(node *ast.CallExpression) *Result {
 
 			receiver = eval.MustEval(node.Receiver).(*ast.RuntimeValue)
 			if receiver == nil {
-				log.Fatalf("Receiver is nil: %v", node.Receiver)
+				NewErrorAtNode(node, "Receiver is nil: %v", node.Receiver)
 			}
 			fn = receiver.GetMethod(node.Function.Name)
 		}
 		if fn == nil {
-			log.Fatalf("Failed to resolve function: %v", node.Function.Name)
+			NewErrorAtNode(node.Function, "Failed to resolve function: %v", node.Function.Name)
 		}
 	} else {
 		fn = self.Env.LookupFunction(node.Function.Name)
 		if fn == nil {
-			log.Fatalf("Undefined function: %v", node.Function.Name)
+			NewErrorAtNode(node.Function, "Undefined function: %v", node.Function.Name)
 		}
 	}
 
@@ -210,6 +227,17 @@ func (self *Evaluator) evalRangeExpression(node *ast.RangeExpression) *Result {
 	return r
 }
 
+func getUnderlyingValue(value any) any {
+	switch v := value.(type) {
+	case *ast.RuntimeValue:
+		return v.Value
+	case *ast.Literal:
+		return v.Value
+	}
+
+	return value
+}
+
 func evalBinaryOperation(
 	kind ast.BinaryExpressionKind,
 	op operators.Operator,
@@ -219,12 +247,8 @@ func evalBinaryOperation(
 		return nil
 	}
 
-	if isType(left, &ast.Literal{}) {
-		left = left.(*ast.Literal).Value
-	}
-	if isType(right, &ast.Literal{}) {
-		right = right.(*ast.Literal).Value
-	}
+	left = getUnderlyingValue(left)
+	right = getUnderlyingValue(right)
 
 	switch l := left.(type) {
 	case int:
@@ -237,7 +261,7 @@ func evalBinaryOperation(
 		}
 
 	default:
-		log.Fatalf("Unsupported operation: %v %s %v", left, op, right)
+		log.Warnf("Unsupported operation: %#v %s %#v", left, op, right)
 	}
 
 	return nil
@@ -257,11 +281,11 @@ func (self *Evaluator) evalBinaryExpression(node *ast.BinaryExpression) *Result 
 
 	// Check mixed type operations
 	if (isType(left, int(0)) && isType(right, float64(0))) || (isType(left, float64(0)) && isType(right, int(0))) {
-		log.Fatalf("Unsupported operation, arithmetic operations between int and float are not supported, please cast both sides: %v - %s", node, node.GetToken())
+		log.Warnf("Unsupported operation, arithmetic operations between int and float are not supported, please cast both sides: %v - %s", node, node.GetToken())
 	}
 
-	log.Fatalf("Error evaluating binary expression: %v - %s", self, node.GetToken())
-	panic("Unsupported operation: " + string(node.Op))
+	log.Warnf("Error evaluating binary expression: %v - %s", self, node.GetToken())
+	return NewResult(false)
 }
 
 func (self *Evaluator) evalUnaryExpression(node *ast.UnaryExpression) *Result {
@@ -308,7 +332,7 @@ func (self *Evaluator) evalFieldAccessExpression(node *ast.FieldAccessExpression
 	r := NewResult()
 
 	if node.StructInstance == nil {
-		panic("Struct instance not found")
+		NewErrorAtNode(node, "Struct instance not found")
 	}
 
 	switch instance := node.StructInstance.(type) {
@@ -317,18 +341,18 @@ func (self *Evaluator) evalFieldAccessExpression(node *ast.FieldAccessExpression
 		baseObjEval := self.Eval(instance)
 		if baseObjEval == nil {
 			self.Eval(instance)
-			log.Fatalf("Error evaluating field access expression: %v", instance)
+			NewErrorAtNode(instance, "Error evaluating field access expression: %v", instance)
 		}
 		baseObj := baseObjEval.First().(ast.ObjectFieldGetter)
 		if baseObj == nil {
-			log.Fatalf("Error evaluating field access expression: %v", instance)
+			NewErrorAtNode(instance, "Error evaluating field access expression: %v", instance)
 		}
 		return NewResult(baseObj.GetField(node.FieldName))
 
 	case *ast.FieldAccessExpression:
 		resolvedObj := self.Eval(instance)
 		if resolvedObj == nil {
-			log.Fatalf("Error evaluating field access expression: %v", instance)
+			NewErrorAtNode(instance, "Error evaluating field access expression: %v", instance)
 		}
 		switch ro := resolvedObj.First().(type) {
 		case ast.ObjectFieldGetter:
@@ -337,8 +361,21 @@ func (self *Evaluator) evalFieldAccessExpression(node *ast.FieldAccessExpression
 			return NewResult(ro[node.FieldName])
 		}
 
+	case *ast.IndexAccessExpression:
+		resolved := self.MustEvalValue(instance)
+		if resolved == nil {
+			NewErrorAtNode(instance, "Error evaluating field access expression: %v", instance)
+		}
+		switch ro := resolved.(type) {
+		case ast.ObjectFieldGetter:
+			return NewResult(ro.GetField(node.FieldName))
+		case map[string]any:
+			return NewResult(ro[node.FieldName])
+		}
+		return r.Add(resolved)
+
 	default:
-		log.Fatalf("Error evaluating field access expression: %v", instance)
+		NewErrorAtNode(instance, "Error evaluating field access expression: %v", instance)
 	}
 
 	return r
@@ -421,13 +458,13 @@ func (self *Evaluator) evalAssignmentExpression(node *ast.AssignmentExpression) 
 	return r
 }
 
-func (self *Evaluator) evalArrayAccessExpression(node *ast.IndexAccessExpression) *Result {
+func (self *Evaluator) evalIndexAccessExpression(node *ast.IndexAccessExpression) *Result {
 
 	r := NewResult()
 
 	valExpr := self.MustEval(node.Instance)
 	if valExpr == nil {
-		log.Fatalf("Error evaluating array access expression: %v", node)
+		NewErrorAtNode(node, "Error evaluating array access expression: %v", node)
 	}
 	val := valExpr.(*ast.RuntimeValue)
 
@@ -447,18 +484,18 @@ func (self *Evaluator) evalArrayAccessExpression(node *ast.IndexAccessExpression
 				}
 
 				if startIdx > endIdx {
-					log.Fatalf("Error evaluating array access expression, start index is greater than end index: %v", node)
+					NewErrorAtNode(node, "Error evaluating array access expression, start index is greater than end index: %v", node)
 				}
 
 				if startIdx < 0 || endIdx > len(arr) {
-					log.Fatalf("Error evaluating array access expression, index out of bounds: %v", node)
+					NewErrorAtNode(node, "Error evaluating array access expression, index out of bounds: %v", node)
 				}
 
 				r.Add(arr[startIdx:endIdx])
 			} else {
 				startIdx := startIndex.Value.(int)
 				if startIdx < 0 || startIdx >= len(arr) {
-					log.Fatalf("Error evaluating array access expression, index out of bounds: %v", node)
+					NewErrorAtNode(node, "Error evaluating array access expression, index out of bounds: %v", node)
 				}
 
 				item := arr[startIdx]
@@ -466,20 +503,20 @@ func (self *Evaluator) evalArrayAccessExpression(node *ast.IndexAccessExpression
 			}
 		}
 
-	case ast.RuntimeValueKindDict:
+	case ast.RuntimeValueKindDict, ast.RuntimeValueKindEnumValue:
 		{
 			index := self.MustEval(node.StartIndex).(*ast.RuntimeValue)
-			if index.Kind != ast.RuntimeValueKindString {
-				log.Fatalf("Error evaluating array access expression, index is not a string: %v", node)
+			if index.Kind != ast.RuntimeValueKindString && val.Kind == ast.RuntimeValueKindDict {
+				NewErrorAtNode(node, "Error evaluating array access expression, index is not a string: %v", node)
 			}
 
-			fieldValue := val.GetField(index.Value.(string))
+			fieldValue := val.GetField(fmt.Sprintf("%v", index.Value))
 
 			r.Add(fieldValue)
 		}
 
 	default:
-		log.Fatalf("Error evaluating array access expression, value is not an array or dict: %v", node)
+		NewErrorAtNode(node, "Error evaluating array access expression, value is not an array or dict: %v", node)
 	}
 
 	return r

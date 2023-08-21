@@ -2,9 +2,12 @@ package ast
 
 import (
 	"errors"
+	"sync/atomic"
 
 	"github.com/charmbracelet/log"
 )
+
+var runtimeObjectUid = atomic.Int64{}
 
 type RuntimeValueKind string
 
@@ -18,9 +21,19 @@ const (
 	RuntimeValueKindNull    RuntimeValueKind = "null"
 	RuntimeValueKindArray   RuntimeValueKind = "array"
 	RuntimeValueKindDict    RuntimeValueKind = "dict"
+
+	// A global enum instance is bound to the runtime when the declaration is discovered
+	// This allows for calling the `value constructors` like methods on the enum
+	RuntimeValueKindEnumDecl  RuntimeValueKind = "enum"
+	RuntimeValueKindEnumValue RuntimeValueKind = "enum_value"
 )
 
 type RuntimeValue struct {
+	// Every runtime value has a unique id
+	// This will allow us to track the value across the runtime
+	// and compare values(in a simple manner)
+	Uid int64
+
 	TypeName string
 	Decl     Declaration
 
@@ -37,6 +50,7 @@ type RuntimeValue struct {
 
 func newRuntimeValue(decl Declaration) *RuntimeValue {
 	rv := &RuntimeValue{
+		Uid:     runtimeObjectUid.Add(1),
 		Methods: map[string]*FunctionDeclaration{},
 	}
 
@@ -121,7 +135,11 @@ func NewRuntimeObject(decl Declaration) *RuntimeValue {
 
 	rv.Value = map[string]*RuntimeValue{}
 	rv.Kind = RuntimeValueKindObject
-	rv.Methods = decl.GetMethods()
+	if decl != nil {
+		rv.Methods = decl.GetMethods()
+	} else {
+		rv.Methods = map[string]*FunctionDeclaration{}
+	}
 
 	return rv
 }
@@ -131,6 +149,7 @@ func NewRuntimeDictionary() *RuntimeValue {
 
 	rv.Value = map[string]*RuntimeValue{}
 	rv.Kind = RuntimeValueKindDict
+	rv.Methods = map[string]*FunctionDeclaration{}
 
 	return rv
 }
@@ -138,7 +157,13 @@ func NewRuntimeDictionary() *RuntimeValue {
 func NewRuntimeLiteral(value any) *RuntimeValue {
 	rv := newRuntimeValue(nil)
 
-	lit := NewLiteral(nil, value)
+	var lit *Literal
+	switch value.(type) {
+	case *Literal:
+		lit = value.(*Literal)
+	default:
+		lit = NewLiteral(nil, value)
+	}
 
 	rv.TypeName = string(lit.Kind)
 	rv.Value = lit.Value
@@ -147,11 +172,31 @@ func NewRuntimeLiteral(value any) *RuntimeValue {
 	return rv
 }
 
+func NewRuntimeEnumDecl(enum *EnumDeclaration) *RuntimeValue {
+	rv := newRuntimeValue(enum)
+
+	rvValue := map[string]*RuntimeValue{}
+	rv.Value = rvValue
+	rv.Kind = RuntimeValueKindEnumDecl
+
+	return rv
+}
+
+func NewRuntimeEnumValue(enum *EnumDeclaration) *RuntimeValue {
+	rv := NewRuntimeDictionary()
+	rv.Kind = RuntimeValueKindEnumValue
+
+	return rv
+}
+
 func (self *RuntimeValue) GetField(fieldName string) *RuntimeValue {
 	if self == nil {
 		return nil
 	}
-	if self.Kind != RuntimeValueKindObject && self.Kind != RuntimeValueKindDict {
+	if self.Kind != RuntimeValueKindObject &&
+		self.Kind != RuntimeValueKindDict &&
+		self.Kind != RuntimeValueKindEnumValue &&
+		self.Kind != RuntimeValueKindEnumDecl {
 		return nil
 	}
 
@@ -167,7 +212,9 @@ func (self *RuntimeValue) GetField(fieldName string) *RuntimeValue {
 	return nil
 }
 func (self *RuntimeValue) SetField(fieldName string, value *RuntimeValue) {
-	if self.Kind != RuntimeValueKindObject && self.Kind != RuntimeValueKindDict {
+	if self.Kind != RuntimeValueKindObject &&
+		self.Kind != RuntimeValueKindDict &&
+		self.Kind != RuntimeValueKindEnumValue {
 		return
 	}
 

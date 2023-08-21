@@ -26,8 +26,8 @@ func (self *SourceFile) GetMainFunc() *ast.FunctionDeclaration {
 		return nil
 	}
 
-	for _, statement := range self.Program.Statements {
-		if funcDecl, ok := statement.(*ast.FunctionDeclaration); ok {
+	for _, decl := range self.Program.Declarations {
+		if funcDecl, ok := decl.(*ast.FunctionDeclaration); ok {
 			if funcDecl.Name == "main" {
 				return funcDecl
 			}
