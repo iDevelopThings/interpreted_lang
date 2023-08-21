@@ -1,7 +1,7 @@
 object MyObject {
     StrValue string
     IntValue int
-    Nested MyObject*
+    Nested MyObject
 }
 
 func (obj MyObject) TestFunc() int {
@@ -12,7 +12,7 @@ func (obj MyObject) TestFunc() int {
 }
 
 func runInputScript() {
-    var z MyObject* = MyObject{
+    var z MyObject = MyObject{
         StrValue: "root str",
         IntValue: (1 + 2) * 3,
     };

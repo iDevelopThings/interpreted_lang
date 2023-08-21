@@ -68,10 +68,37 @@ func (self *FunctionDeclaration) IsTopLevelStatement() {}
 func (self *FunctionDeclaration) IsStatement()         {}
 func (self *FunctionDeclaration) IsDeclaration()       {}
 func (self *FunctionDeclaration) TypeName() string     { return self.Name }
-
 func (self *FunctionDeclaration) GetEnvName() string {
 	if self.Receiver != nil {
 		return self.Receiver.TypeReference.Type + "_" + self.Name
 	}
 	return self.Name
+}
+
+type EnumDeclaration struct {
+	*AstNode
+	Name   *Identifier
+	Values []*EnumValue
+}
+
+func (self *EnumDeclaration) IsTopLevelStatement() {}
+func (self *EnumDeclaration) IsStatement()         {}
+func (self *EnumDeclaration) TypeName() string     { return self.Name.Name }
+
+type EnumValueKind string
+
+const (
+	EnumValueKindLiteral   EnumValueKind = "literal"
+	EnumValueKindWithValue EnumValueKind = "with_value"
+)
+
+type EnumValue struct {
+	*AstNode
+	Name *Identifier
+	Kind EnumValueKind
+	// We only have a value & type when we're using an `EnumValueKindLiteral`
+	Type  Type
+	Value Expr
+	// We only have properties when we're using an `EnumValueKindWithValue`
+	Properties []*TypedIdentifier
 }

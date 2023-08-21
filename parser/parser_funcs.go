@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"fmt"
+
 	"arc/lexer"
 	"arc/log"
 )
@@ -116,4 +118,8 @@ func (p *Parser) safeLoop(predicate func() bool, cb func()) {
 			return
 		}
 	}
+}
+
+func (p *Parser) unexpectedToken(curr *lexer.Token) {
+	p.error(fmt.Sprintf("Unexpected token %s", curr))
 }

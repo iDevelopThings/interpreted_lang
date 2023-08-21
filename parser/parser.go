@@ -116,6 +116,11 @@ func (p *Parser) skipSemi() {
 		p.next()
 	}
 }
+func (p *Parser) skipComma() {
+	if p.is(lexer.TokenComma) {
+		p.next()
+	}
+}
 
 func (p *Parser) parseTopLevelStatement() ast.TopLevelStatement {
 
@@ -123,6 +128,9 @@ func (p *Parser) parseTopLevelStatement() ast.TopLevelStatement {
 
 	case p.is(lexer.TokenKeywordImport):
 		return p.parseImportStatement()
+
+	case p.is(lexer.TokenKeywordEnum):
+		return p.parseEnumDeclaration()
 
 	case p.is(lexer.TokenKeywordObject):
 		return p.parseObjectDeclaration()
@@ -147,6 +155,66 @@ func (p *Parser) parseImportStatement() ast.TopLevelStatement {
 	node.AddChildren(node, node.Path)
 
 	p.skipSemi()
+
+	return node
+}
+
+func (p *Parser) parseEnumDeclaration() ast.TopLevelStatement {
+	p.expect(lexer.TokenKeywordEnum)
+
+	node := &ast.EnumDeclaration{
+		AstNode: ast.NewAstNode(p.prev),
+		Name:    p.parseIdentifier(),
+		Values:  make([]*ast.EnumValue, 0),
+	}
+	defer node.SetRuleRange(node.Token, p.prev)
+
+	p.expect(lexer.TokenLCurly)
+
+	if p.is(lexer.TokenRCurly) {
+		p.next()
+		return node
+	}
+
+	p.safeLoop(func() bool { return !p.is(lexer.TokenRCurly) }, func() {
+		value := &ast.EnumValue{
+			AstNode: ast.NewAstNode(p.curr),
+			Name:    p.parseIdentifier(),
+		}
+		defer value.SetRuleRange(value.Token, p.prev)
+
+		// We can either have any of these at this point:
+		// `= <value>`
+		// `(<ident> <type>, ...)`
+
+		if p.is(lexer.TokenEQ) {
+			p.next()
+			value.Kind = ast.EnumValueKindLiteral
+			value.Value = p.parseExpression(0)
+
+			if lit, ok := value.Value.(*ast.Literal); ok {
+				value.Type = lit.GetBasicType()
+			} else {
+				p.error("Expected a literal value after '=' in enum value declaration, got %s", value.Value)
+			}
+
+			value.AddChildren(node, value.Value)
+		} else {
+			arguments := p.parseArgumentDeclarationListWithOptionalName()
+			value.Properties = arguments
+			value.Kind = ast.EnumValueKindWithValue
+			for _, property := range value.Properties {
+				value.AddChildren(node, property)
+			}
+		}
+
+		node.Values = append(node.Values, value)
+		node.AddChildren(node, value)
+
+		p.skipComma()
+	})
+
+	p.expect(lexer.TokenRCurly)
 
 	return node
 }
@@ -176,7 +244,7 @@ func (p *Parser) parseFunctionDeclaration() ast.TopLevelStatement {
 		// IF we have ident ident, we're parsing an instance function
 		if p.is(lexer.TokenIdentifier) {
 			if p.peekIs(lexer.TokenIdentifier) {
-				node.Receiver = p.parseTypedIdentifier()
+				node.Receiver = p.parseTypedIdentifier(false)
 				node.AddChildren(node, node.Receiver)
 			} else if p.peekIs(lexer.TokenRParen) {
 				// if we have ident ) we're parsing a static function
@@ -235,24 +303,42 @@ func (p *Parser) parseIdentifier() *ast.Identifier {
 	return node
 }
 
-func (p *Parser) parseTypedIdentifier() *ast.TypedIdentifier {
+func (p *Parser) parseTypedIdentifier(optionalName bool) *ast.TypedIdentifier {
 	s := p.curr
+
 	node := &ast.TypedIdentifier{
-		Identifier:    p.parseIdentifier(),
+		Identifier: &ast.Identifier{
+			AstNode: ast.NewAstNode(s),
+		},
 		TypeReference: &ast.TypeReference{},
 	}
+
 	defer node.SetRuleRange(s, p.curr)
+
+	hasTypeName := p.is(lexer.TokenIdentifier) && p.peekIs(lexer.TokenIdentifier, lexer.TokenLBracket)
+
+	if !optionalName {
+		if !hasTypeName {
+			p.error("Expected `<ident> <ident>` but got `%s %s`", p.curr.Value, p.peek.Value)
+		}
+	}
+
+	if hasTypeName {
+		node.Identifier = p.parseIdentifier()
+		node.AddChildren(node, node.Identifier)
+	}
 
 	if p.is(lexer.TokenLBracket) {
 		node.TypeReference.IsArray = true
 		p.next()
 		p.expect(lexer.TokenRBracket)
 	}
+
 	rhs := p.parseIdentifier()
 	node.TypeReference.AstNode = rhs.AstNode
 	node.TypeReference.Type = rhs.Name
 
-	node.AddChildren(node, node.Identifier, node.TypeReference)
+	node.AddChildren(node, node.TypeReference)
 
 	return node
 }
@@ -268,7 +354,37 @@ func (p *Parser) parseArgumentDeclarationList() []*ast.TypedIdentifier {
 	}
 
 	for {
-		args = append(args, p.parseTypedIdentifier())
+		args = append(args, p.parseTypedIdentifier(false))
+
+		if p.is(lexer.TokenRParen) {
+			break
+		}
+
+		p.expect(lexer.TokenComma)
+	}
+
+	p.expect(lexer.TokenRParen)
+
+	return args
+}
+func (p *Parser) parseArgumentDeclarationListWithOptionalName() []*ast.TypedIdentifier {
+	p.expect(lexer.TokenLParen)
+
+	args := make([]*ast.TypedIdentifier, 0)
+
+	if p.is(lexer.TokenRParen) {
+		p.next()
+		return args
+	}
+
+	idx := 0
+	for {
+		ident := p.parseTypedIdentifier(true)
+		if ident.Identifier.Name == "" {
+			ident.Identifier.Name = fmt.Sprintf("%d", idx)
+			idx++
+		}
+		args = append(args, ident)
 
 		if p.is(lexer.TokenRParen) {
 			break
@@ -387,7 +503,7 @@ func (p *Parser) parseVariableDeclaration() *ast.AssignmentStatement {
 	isTypedId = isTypedId || (p.is(lexer.TokenIdentifier) && p.peekIs(lexer.TokenLBracket))
 
 	if isTypedId {
-		typedIdent = p.parseTypedIdentifier()
+		typedIdent = p.parseTypedIdentifier(false)
 		node.Name = typedIdent.Identifier
 		node.Type = typedIdent.TypeReference
 		node.AddChildren(node, typedIdent, typedIdent.Identifier, typedIdent.TypeReference)
@@ -467,7 +583,7 @@ func (p *Parser) parseObjectDeclaration() ast.TopLevelStatement {
 	}
 
 	p.safeLoop(func() bool { return !p.is(lexer.TokenRCurly) }, func() {
-		field := p.parseTypedIdentifier()
+		field := p.parseTypedIdentifier(false)
 		node.Fields = append(node.Fields, field)
 		node.AddChildren(node, field)
 	})
@@ -605,8 +721,4 @@ func (p *Parser) parseRange() *ast.RangeExpression {
 	node.AddChildren(node, node.Right)
 
 	return node
-}
-
-func (p *Parser) unexpectedToken(curr *lexer.Token) {
-	p.error(fmt.Sprintf("Unexpected token %s", curr))
 }

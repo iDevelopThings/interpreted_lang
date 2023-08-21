@@ -43,12 +43,18 @@ func (self *Literal) MarshalJSON() ([]byte, error) {
 	return json.Marshal(self.Value)
 }
 func (self *Literal) IsExpression() {}
-func (self *Literal) TypeName() string {
-	t, ok := BasicTypes[string(self.Kind)]
-	if !ok {
-		return ""
+func (self *Literal) GetBasicType() Type {
+	if t, ok := BasicTypes[string(self.Kind)]; ok {
+		return t
 	}
-	return t.TypeName()
+	return nil
+}
+func (self *Literal) TypeName() string {
+	t := self.GetBasicType()
+	if t != nil {
+		return t.TypeName()
+	}
+	return ""
 }
 
 func (self *Literal) SetValue(value any) {

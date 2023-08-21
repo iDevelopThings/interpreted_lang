@@ -38,11 +38,6 @@ func pls() {
 
 func main() {
 
-    pls()
-    pls()
-    pls()
-    pls()
-    pls()
-    pls()
+    pls();
 
 }

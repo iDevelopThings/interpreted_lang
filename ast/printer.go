@@ -252,7 +252,29 @@ func (self *DeleteStatement) PrintTree(s *utilities.IndentWriter) {
 
 func (self *Identifier) PrintTree(s *utilities.IndentWriter) {
 	s.WriteString("Identifier: " + self.Name + "\n")
+}
+func (self *TypedIdentifier) PrintTree(s *utilities.IndentWriter) {
+	s.WriteString("TypedIdentifier(")
 
+	s.WriteString("name=")
+	if self.Identifier != nil {
+		s.WriteString(self.Identifier.Name)
+	} else {
+		s.WriteString("<nil>")
+	}
+
+	if self.Identifier != nil && self.TypeReference != nil {
+		s.WriteString(", ")
+	}
+
+	s.WriteString("type=")
+	if self.TypeReference != nil {
+		s.WriteString(self.TypeReference.Type)
+	} else {
+		s.WriteString("<nil>")
+	}
+
+	s.WriteString(")\n")
 }
 func (self *RangeExpression) PrintTree(s *utilities.IndentWriter) {
 	s.WriteString("RangeExpression: \n")
@@ -358,6 +380,67 @@ func (self *VarReference) PrintTree(s *utilities.IndentWriter) {
 	s.WriteString("VarReference: " + self.Name + "\n")
 }
 
+func (self *BasicType) PrintTree(s *utilities.IndentWriter) {
+	s.WriteString("BasicType: " + self.Name + "\n")
+
+}
 func (self *TypeReference) PrintTree(s *utilities.IndentWriter) {
 	s.WriteString("TypeReference: " + self.Type + "\n")
+}
+
+func (self *EnumDeclaration) PrintTree(s *utilities.IndentWriter) {
+	s.WriteString("EnumDeclaration: " + self.Name.Name + "\n")
+
+	w := s.ChildWriter()
+	w.WriteString("Values: \n")
+	if len(self.Values) == 0 {
+		w.WriteString("<none>\n")
+	} else {
+		for _, v := range self.Values {
+			v.PrintTree(w.ChildWriter())
+		}
+	}
+
+}
+func (self *EnumValue) PrintTree(s *utilities.IndentWriter) {
+	s.WriteString("EnumValue: " + self.Name.Name + "\n")
+
+	w := s.ChildWriter()
+	w.WriteString("Kind: " + string(self.Kind) + "\n")
+	w.WriteString("Type: ")
+	if self.Type != nil {
+		w.WriteString("\n")
+		if t, ok := self.Type.(*BasicType); ok {
+			t.PrintTree(w.ChildWriter())
+		} else if t, ok := self.Type.(*TypeReference); ok {
+			t.PrintTree(w.ChildWriter())
+		} else {
+			w.WriteString(fmt.Sprintf("%#v", self.Type) + "\n")
+		}
+	} else {
+		w.WriteString("<nil>\n")
+	}
+
+	if self.Kind == EnumValueKindLiteral {
+		w.WriteString("Value: ")
+		if self.Value != nil {
+			w.WriteString("\n")
+			self.Value.PrintTree(w.ChildWriter())
+		} else {
+			w.WriteString("<nil>\n")
+		}
+	}
+
+	if self.Kind == EnumValueKindWithValue {
+		w.WriteString("Properties: ")
+		if len(self.Properties) == 0 {
+			w.WriteString("<none>\n")
+		} else {
+			w.WriteString("\n")
+			cw := w.ChildWriter()
+			for _, p := range self.Properties {
+				p.PrintTree(cw)
+			}
+		}
+	}
 }

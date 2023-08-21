@@ -160,3 +160,17 @@ func (suite *TestParserTestSuite) Test_TokenGrouping() {
 	w := utilities.NewIndentWriter(os.Stdout, " ")
 	program.PrintTree(w.(*utilities.IndentWriter))
 }
+func (suite *TestParserTestSuite) Test_Enums() {
+
+	l := lexer.NewLexer(suite.inputData)
+	p := NewParser(l)
+	program := p.Parse()
+
+	if diff := cmp.Diff(suite.goldenData, program); diff != "" {
+		suite.Failf("Token mismatch (-want +got):\n%s", diff)
+	}
+	suite.goldenData = program
+
+	w := utilities.NewIndentWriter(os.Stdout, " ")
+	program.PrintTree(w.(*utilities.IndentWriter))
+}

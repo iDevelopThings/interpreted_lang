@@ -133,6 +133,7 @@ const (
 	TokenKeywordAs       = "KEYWORD_AS"
 	TokenKeywordStep     = "KEYWORD_STEP"
 	TokenKeywordImport   = "KEYWORD_IMPORT"
+	TokenKeywordEnum     = "KEYWORD_ENUM"
 
 	//
 	// Other
@@ -206,6 +207,7 @@ var tokenKeywordMap = map[string]TokenType{
 	"as":       TokenKeywordAs,
 	"step":     TokenKeywordStep,
 	"import":   TokenKeywordImport,
+	"enum":     TokenKeywordEnum,
 
 	"true":  TokenBool,
 	"false": TokenBool,
