@@ -161,11 +161,11 @@ func (self *TypeCheckingVisitor) VisitFunctionDeclaration(node *ast.FunctionDecl
 	}
 
 	if node.ReturnType == nil {
-		NewErrorAtNode(node.ReturnType, "Return type: type '%s' is not defined", node.ReturnType.Name)
+		NewErrorAtNode(node.ReturnType, "Return type: type '%s' is not defined", node.ReturnType.Type)
 	} else {
-		if node.ReturnType.Name != "void" {
-			if self.env.LookupObject(node.ReturnType.Name) == nil {
-				NewErrorAtNode(node.ReturnType, "Return type: type '%s' is not defined", node.ReturnType.Name)
+		if node.ReturnType.Type != "void" {
+			if self.env.LookupObject(node.ReturnType.Type) == nil {
+				NewErrorAtNode(node.ReturnType, "Return type: type '%s' is not defined", node.ReturnType.Type)
 			}
 		}
 	}
@@ -408,7 +408,7 @@ func (self *TypeCheckingVisitor) VisitReturnStatement(node *ast.ReturnStatement)
 		NewErrorAtNode(node, "Failed to get return type of function declaration, this is likely a compiler bug")
 	}
 
-	if funcDecl.ReturnType.Name == "void" {
+	if funcDecl.ReturnType.Type == "void" {
 		if node.Value != nil {
 			NewErrorAtNode(node, "Cannot return a value from a function with void return type")
 		}
@@ -438,8 +438,25 @@ func (self *TypeCheckingVisitor) VisitReturnStatement(node *ast.ReturnStatement)
 			NewErrorAtNode(v, "[VisitReturnStatement-FieldAccessExpression]: Failed to infer type of '%s'", v.GetToken())
 		}
 	case *ast.Literal:
-		if funcDecl.ReturnType.Name != v.TypeName() {
-			NewErrorAtNode(node, "[VisitReturnStatement-Literal]: Type '%s' does not match defined type of '%s'", v.TypeName(), funcDecl.ReturnType.Name)
+		valType := v.GetBasicType()
+		switch {
+
+		case valType == ast.NoneType:
+			if !funcDecl.ReturnType.IsOptionType {
+				newRt := "?" + funcDecl.ReturnType.Type
+				ErrorManager.ShouldExit(false)
+
+				NewErrorAtNode(node.Value, "You cannot return 'none', without your value being an option type.")
+				// NewErrorAtNode(funcDecl.ReturnType, "You cannot compare a non-option type to 'none', you should change your function return type to: %s", newRt)
+				ErrorManager.ShouldExit(true)
+				NewErrorAtNode(funcDecl.ReturnType, "You should change your return type to: %s", newRt)
+			}
+
+		default:
+			if funcDecl.ReturnType.Type != v.TypeName() {
+				NewErrorAtNode(node, "[VisitReturnStatement-Literal]: Type '%s' does not match defined type of '%s'", v.TypeName(), funcDecl.ReturnType.Type)
+			}
+
 		}
 
 	default:

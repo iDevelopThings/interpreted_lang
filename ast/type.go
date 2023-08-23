@@ -39,9 +39,9 @@ var (
 		AstNode: &AstNode{NodeId: GetUniqueNodeId()},
 		Name:    "float",
 	}
-	NullType = &BasicType{
+	NoneType = &BasicType{
 		AstNode: &AstNode{NodeId: GetUniqueNodeId()},
-		Name:    "null",
+		Name:    "none",
 	}
 	VoidType = &BasicType{
 		AstNode: &AstNode{NodeId: GetUniqueNodeId()},
@@ -58,7 +58,7 @@ var BasicTypes = map[string]Type{
 	"string": StringType,
 	"bool":   BoolType,
 	"float":  FloatType,
-	"null":   NullType,
+	"none":   NoneType,
 	"void":   VoidType,
 	"any":    AnyType,
 }

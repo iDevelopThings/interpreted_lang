@@ -92,3 +92,10 @@ func (self *DeleteStatement) GetChildren() []Node {
 	return []Node{self.What}
 }
 func (self *DeleteStatement) IsStatement() {}
+
+type DeferStatement struct {
+	*AstNode
+	Func *FunctionDeclaration
+}
+
+func (self *DeferStatement) IsStatement() {}

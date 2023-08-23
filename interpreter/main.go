@@ -179,6 +179,7 @@ func (self *InterpreterEngine) parseScript(script *SourceFile) {
 	// script.Tree = parser.Program()
 
 	l := lexer.NewLexer(script.Source)
+	l.SetSource(script.Path)
 	p := parser.NewParser(l)
 
 	script.Program = p.Parse()
@@ -300,7 +301,7 @@ func (self *InterpreterEngine) evaluateScript(script *SourceFile) {
 	self.Evaluator.Eval(script.Program)
 
 	// if mainFunc := script.GetMainFunc(); mainFunc != nil {
-	// 	self.Evaluator.ExecuteFunction(mainFunc)
+	// 	self.Evaluator.ForceExecuteFunction(mainFunc)
 	// }
 
 }
@@ -330,7 +331,7 @@ func (self *InterpreterEngine) Run() {
 func (self *InterpreterEngine) runMainAndServer() {
 	mainFn := self.Env.LookupFunction("main")
 	if mainFn != nil {
-		self.Evaluator.ExecuteFunction(mainFn)
+		self.Evaluator.ForceExecuteFunction(mainFn)
 	} else {
 		if !self.IsTesting {
 			panic("No main function")

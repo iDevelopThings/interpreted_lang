@@ -14,9 +14,14 @@ type Evaluator struct {
 }
 
 func NewEvaluator(env *Environment) *Evaluator {
-	return &Evaluator{
+	e := &Evaluator{
 		Env: env,
 	}
+
+	frame := NewStackFrame()
+	frame.env = e.Env
+
+	return e
 }
 
 func (self *Evaluator) GetRoot() *Evaluator {
@@ -40,6 +45,10 @@ func (self *Evaluator) CreateChild() *Evaluator {
 }
 
 func (self *Evaluator) Eval(n any) *Result {
+	if getFrame() != nil {
+		getFrame().addExecutionMarker(n)
+	}
+
 	switch node := n.(type) {
 	case *ast.Program:
 		return self.evalProgram(node)
@@ -68,14 +77,17 @@ func (self *Evaluator) Eval(n any) *Result {
 		return self.evalIfStatement(node)
 	case *ast.LoopStatement:
 		return self.evalLoopStatement(node)
+	case *ast.AssignmentStatement:
+		return self.evalAssignmentStatement(node)
+	case *ast.DeferStatement:
+		return self.evalDeferStatement(node)
+
 	case *ast.ReturnStatement:
 		return self.evalReturnStatement(node)
 	case *ast.BreakStatement:
 		return self.evalBreakStatement(node)
 	case *ast.DeleteStatement:
 		return self.evalDeleteStatement(node)
-	case *ast.AssignmentStatement:
-		return self.evalAssignmentStatement(node)
 
 	// TODO: ContinueStatement
 	// case *ast.ContinueStatement:
@@ -115,7 +127,7 @@ func (self *Evaluator) Eval(n any) *Result {
 		return self.evalBlock(node)
 	default:
 		if node, ok := n.(*ast.AstNode); ok {
-			log.Fatalf("Unhandled AST Node Type: %T - Content: %s", node, node.GetToken())
+			NewErrorAtNode(node, "Unhandled AST Node Type: %T - Content: %s", node, node.GetToken())
 			return nil
 		}
 		log.Fatalf("Unhandled AST Node Type: %T", node)
@@ -175,40 +187,6 @@ func (self *Evaluator) evalObjectDeclaration(node *ast.ObjectDeclaration) *Resul
 
 func (self *Evaluator) evalFunctionDeclaration(node *ast.FunctionDeclaration) *Result {
 	r := NewResult()
-
-	return r
-}
-
-func (self *Evaluator) ExecuteFunction(node *ast.FunctionDeclaration) *Result {
-	r := NewResult()
-
-	eval := self.CreateChild()
-
-	if node.CustomFuncCb != nil {
-		return r.Add(node.CustomFuncCb(eval.Env))
-	}
-
-	if node.Args != nil {
-		for _, param := range node.Args {
-			paramValue := eval.Eval(param)
-			if !paramValue.HasValue() {
-				log.Fatalf("Function(%s) parameter %s has no value", node.Name, param.Name)
-			}
-			eval.Env.SetVar(param.Name, paramValue.First())
-		}
-	}
-
-	if node.Receiver != nil {
-		receiver := eval.Eval(node.Receiver)
-		if !receiver.HasValue() {
-			log.Fatalf("Function(%s) receiver %s has no value", node.Name, node.Receiver.Name)
-		}
-		eval.Env.SetVar(node.Receiver.Name, receiver.First())
-	}
-
-	if node.Body != nil {
-		r.Merge(eval.Eval(node.Body))
-	}
 
 	return r
 }

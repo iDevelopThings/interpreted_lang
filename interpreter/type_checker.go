@@ -61,7 +61,7 @@ func (self *TypeCheckerInstance) FindType(node ast.Node) ast.Type {
 			if !ok {
 				return nil
 			}
-			return self.Env.LookupObject(m.ReturnType.Name)
+			return self.Env.LookupObject(m.ReturnType.Type)
 
 		// case *ast.Identifier:
 		// 	return self.Env.LookupObject(node.Name)

@@ -18,7 +18,7 @@ const (
 	LiteralKindInteger LiteralKind = "int"
 	LiteralKindFloat   LiteralKind = "float"
 	LiteralKindBoolean LiteralKind = "bool"
-	LiteralKindNull    LiteralKind = "null"
+	LiteralKindNone    LiteralKind = "none"
 )
 
 var AllLiteralKinds = []LiteralKind{
@@ -27,7 +27,7 @@ var AllLiteralKinds = []LiteralKind{
 	LiteralKindInteger,
 	LiteralKindFloat,
 	LiteralKindBoolean,
-	LiteralKindNull,
+	LiteralKindNone,
 }
 
 type Literal struct {
@@ -74,7 +74,7 @@ func (self *Literal) SetValue(value any) {
 		self.Kind = LiteralKindBoolean
 		self.Value = value.(bool)
 	case nil:
-		self.Kind = LiteralKindNull
+		self.Kind = LiteralKindNone
 		self.Value = nil
 	default:
 		panic("Unknown literal type: " + fmt.Sprintf("%T", value))
@@ -234,7 +234,7 @@ func (self *Literal) IsEqual(other *Literal) bool {
 		return self.Value.(string) == other.Value.(string)
 	case LiteralKindBoolean:
 		return self.Value.(bool) == other.Value.(bool)
-	case LiteralKindNull:
+	case LiteralKindNone:
 		return true
 	default:
 		panic("Cannot compare literal")
@@ -254,7 +254,7 @@ func (self *Literal) IsNotEqual(other *Literal) bool {
 		return self.Value.(string) != other.Value.(string)
 	case LiteralKindBoolean:
 		return self.Value.(bool) != other.Value.(bool)
-	case LiteralKindNull:
+	case LiteralKindNone:
 		return false
 	default:
 		panic("Cannot compare literal")

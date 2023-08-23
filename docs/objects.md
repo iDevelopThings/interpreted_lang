@@ -2,7 +2,7 @@
 
 ## Declaration
 
-```sl
+```arc
 object MyObject {
     StrValue string
     IntValue int
@@ -19,7 +19,7 @@ var obj MyObject = MyObject{
 ## Methods
 
 ### Public
-```sl
+```arc
 func (o MyObject) Print() {
     fmt::printf("StrValue: %s\n", o.StrValue);
     fmt::printf("IntValue: %d\n", o.IntValue);
@@ -30,7 +30,7 @@ func (o MyObject) Print() {
 The missing receiver var indicates a static method.
 
 The functions are bound to the type and not to an instance of the type.
-```sl
+```arc
 func (MyObject) Print() {
     
 }
@@ -38,7 +38,7 @@ func (MyObject) Print() {
 
 ## Accessing fields
 
-```sl
+```arc
 var obj MyObject = MyObject{
     StrValue: "root str",
     IntValue: (1 + 2) * 3,

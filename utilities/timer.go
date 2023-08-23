@@ -35,5 +35,10 @@ func (t *Timer) String() string {
 func (t *Timer) StopAndLog() {
 	t.Stop()
 	log.Helper()
+	l := log.GetLevel()
+	if l != log.DebugLevel {
+		log.SetLevel(log.DebugLevel)
+		defer log.SetLevel(l)
+	}
 	log.Debugf(t.String())
 }

@@ -29,6 +29,30 @@ func (p *Parser) bindPrefixParseFns() {
 	}
 
 	p.prefixParseFns[lexer.TokenIdentifier] = func() ast.Expr {
+
+		if p.curr.HasKeyword() {
+
+			switch {
+
+			case p.is(lexer.TokenKeywordNone):
+				{
+					node := ast.NewLiteral(p.curr, nil)
+					node.SetRuleRange(p.curr, p.curr)
+					p.next()
+					return node
+				}
+
+			}
+
+		}
+
+		// We have a problem where when we're parsing an if statement
+		// like `== none {` we're parsing the `none` as an identifier
+		// which then gets processed by the object instantiation parser
+
+		// NOTE: Any special keywords that need to
+		// be handled, should be handled above
+
 		if p.peekIs(lexer.TokenLCurly) {
 			ident := p.parseIdentifier()
 			p.next()
@@ -67,9 +91,13 @@ func (p *Parser) bindInfixParseFns() {
 	p.infixParseFns[lexer.TokenLTE] = p.parseInfixExpression
 	p.infixParseFns[lexer.TokenGTE] = p.parseInfixExpression
 	p.infixParseFns[lexer.TokenAnd] = p.parseInfixExpression
+	p.infixParseFns[lexer.TokenOr] = p.parseInfixExpression
 	p.infixParseFns[lexer.TokenLShift] = p.parseInfixExpression
 	p.infixParseFns[lexer.TokenRShift] = p.parseInfixExpression
 
+	p.infixParseFns[lexer.TokenKeywordOr] = func(left ast.Expr) ast.Expr {
+		return p.parseOrExpression(left)
+	}
 	p.infixParseFns[lexer.TokenDot] = func(left ast.Expr) ast.Expr {
 		return p.parseMemberAccessExpression(left, false)
 	}
@@ -179,7 +207,11 @@ func (p *Parser) parseCallExpression(left ast.Expr) ast.Expr {
 		if node.Receiver != nil {
 			node.SetRuleRange(node.Receiver.GetToken(), p.prev)
 		} else {
-			node.SetRuleRange(s, p.prev)
+			t := s
+			if left != nil {
+				t = left.GetToken()
+			}
+			node.SetRuleRange(t, p.prev)
 		}
 	}()
 
@@ -228,24 +260,7 @@ func (p *Parser) parseInfixExpression(lhs ast.Expr) ast.Expr {
 
 	switch {
 
-	case p.prevIs(
-		lexer.TokenPlus,
-		lexer.TokenMinus,
-		lexer.TokenDiv,
-		lexer.TokenMul,
-		lexer.TokenCaret,
-		lexer.TokenMod,
-
-		lexer.TokenEQEQ,
-		lexer.TokenNEQ,
-		lexer.TokenLT,
-		lexer.TokenGT,
-		lexer.TokenLTE,
-		lexer.TokenGTE,
-		lexer.TokenAnd,
-		lexer.TokenLShift,
-		lexer.TokenRShift,
-	):
+	case p.prevIs(lexer.MathOperators...):
 		op := operators.Operator(p.prev.Value)
 
 		binExpr := &ast.BinaryExpression{
@@ -282,8 +297,10 @@ func (p *Parser) parseInfixExpression(lhs ast.Expr) ast.Expr {
 			Op:      op,
 			Value:   p.parseExpression(p.getTokenPrecedence(p.curr)),
 		}
+
 	default:
 		p.error("Unhandled infix expression/operator: %s", p.curr.Value)
+
 	}
 
 	return expr.(ast.Expr)
@@ -366,7 +383,6 @@ func (p *Parser) parseIndexAccessExpression(lhs ast.Expr) ast.Expr {
 }
 
 func (p *Parser) parsePostfixExpression(lhs ast.Expr) ast.Expr {
-	s := p.prev
 	p.assertPrev(lexer.TokenPlusPlus, lexer.TokenMinusMinus)
 
 	op := operators.ToOperator(p.prev.Value)
@@ -375,7 +391,9 @@ func (p *Parser) parsePostfixExpression(lhs ast.Expr) ast.Expr {
 		Left:    lhs,
 		Op:      op,
 	}
-	defer node.SetRuleRange(s, p.curr)
+	defer func() {
+		node.SetRuleRange(lhs.GetToken(), p.prev)
+	}()
 
 	return node
 }
@@ -441,4 +459,52 @@ func (p *Parser) parseExpressionList(open, close lexer.TokenType) []ast.Expr {
 	p.expect(close)
 
 	return list
+}
+
+func (p *Parser) parseRange() *ast.RangeExpression {
+	s := p.curr
+
+	node := &ast.RangeExpression{
+		AstNode: ast.NewAstNode(p.curr),
+		Left:    nil,
+		Right:   nil,
+	}
+	defer node.SetRuleRange(s, p.prev)
+
+	p.toggleInfixFunc(lexer.TokenLCurly, false)
+	defer p.toggleInfixFunc(lexer.TokenLCurly, true)
+
+	node.Left = p.parseExpression(LOWEST)
+	node.AddChildren(node, node.Left)
+
+	p.expect(lexer.TokenDotDot)
+
+	node.Right = p.parseExpression(LOWEST)
+	node.AddChildren(node, node.Right)
+
+	return node
+}
+
+func (p *Parser) parseOrExpression(left ast.Expr) *ast.OrExpression {
+	p.assertPrev(lexer.TokenKeywordOr)
+	s := p.prev
+
+	node := &ast.OrExpression{
+		AstNode: ast.NewAstNode(s),
+		Left:    left,
+	}
+	node.AddChildren(node, node.Left)
+	defer func() {
+		node.SetRuleRange(left.GetToken(), p.prev)
+	}()
+
+	if p.is(lexer.TokenLCurly) {
+		node.Right = p.parseBlock()
+	} else {
+		node.Right = p.parseExpression(LOWEST)
+	}
+
+	node.AddChildren(node, node.Right)
+
+	return node
 }

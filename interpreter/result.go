@@ -103,7 +103,11 @@ func (self *Result) First() any {
 		return nil
 	}
 
-	return self.Values[0].Value
+	result := self.Values[0].Value
+	for r, ok := result.(*Result); ok; r, ok = result.(*Result) {
+		result = r.First()
+	}
+	return result
 }
 
 func (self *Result) HasValue() bool {

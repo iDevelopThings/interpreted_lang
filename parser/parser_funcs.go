@@ -7,6 +7,32 @@ import (
 	"arc/log"
 )
 
+func (p *Parser) toggleInfixFunc(t lexer.TokenType, enabled bool) {
+	if enabled {
+		if _, ok := p.disabledInfixParseFns[t]; !ok {
+			return
+		}
+		p.infixParseFns[t] = p.disabledInfixParseFns[t]
+		delete(p.disabledInfixParseFns, t)
+	} else {
+		if _, ok := p.infixParseFns[t]; !ok {
+			return
+		}
+		p.disabledInfixParseFns[t] = p.infixParseFns[t]
+		delete(p.infixParseFns, t)
+	}
+}
+func (p *Parser) skipSemi() {
+	if p.is(lexer.TokenSemicolon) {
+		p.next()
+	}
+}
+func (p *Parser) skipComma() {
+	if p.is(lexer.TokenComma) {
+		p.next()
+	}
+}
+
 func (p *Parser) next() {
 	if p.curr != nil {
 		p.prev = p.curr

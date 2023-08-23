@@ -11,7 +11,7 @@ import (
 
 func getGoType(val any) ast.LiteralKind {
 	if val == nil {
-		return ast.LiteralKindNull
+		return ast.LiteralKindNone
 	}
 	switch val.(type) {
 	case int:
@@ -76,145 +76,6 @@ func evaluateFloatOperation(
 	}
 }
 
-func (self *Evaluator) evalCallExpression(node *ast.CallExpression) *Result {
-	eval := self.CreateChild()
-
-	var receiver *ast.RuntimeValue
-	var fn *ast.FunctionDeclaration
-
-	if node.Receiver != nil {
-
-		// If we're accessing a static method, our receiver is a TypeReference to the type
-		// that the method is defined on...
-		// So we'll resolve the fn declaration from the type reference
-
-		if node.IsStaticAccess {
-			typeRef, ok := node.Receiver.(*ast.TypeReference)
-			if !ok {
-				NewErrorAtNode(node.Receiver, "Receiver is not a type reference: %#v", node.Receiver)
-			}
-			receiverObj := self.Env.LookupType(typeRef.Type)
-			if receiverObj == nil {
-				NewErrorAtNode(typeRef, "Undefined object: %#v", typeRef.Type)
-			}
-
-			switch obj := receiverObj.(type) {
-			case *ast.ObjectDeclaration:
-				fn = obj.GetMethod(node.Function.Name)
-			case *ast.EnumDeclaration:
-				receiver = self.Env.GetRoot().LookupVar(node.Receiver.(*ast.TypeReference).Type).(*ast.RuntimeValue)
-				// receiver = eval.MustEval(node.Receiver).(*ast.RuntimeValue)
-				if receiver == nil {
-					NewErrorAtNode(node, "Enum receiver is nil: %v", node.Receiver)
-				}
-				fn = receiver.GetMethod(node.Function.Name)
-			default:
-				NewErrorAtNode(typeRef, "Invalid receiver type: %#v", typeRef.Type)
-			}
-		} else
-		// Otherwise, we're accessing an instance method, so we need to resolve the variable or whatever
-		// to first find its type and then resolve the method from that type
-		{
-
-			receiver = eval.MustEval(node.Receiver).(*ast.RuntimeValue)
-			if receiver == nil {
-				NewErrorAtNode(node, "Receiver is nil: %v", node.Receiver)
-			}
-			fn = receiver.GetMethod(node.Function.Name)
-		}
-		if fn == nil {
-			NewErrorAtNode(node.Function, "Failed to resolve function: %v", node.Function.Name)
-		}
-	} else {
-		fn = self.Env.LookupFunction(node.Function.Name)
-		if fn == nil {
-			NewErrorAtNode(node.Function, "Undefined function: %v", node.Function.Name)
-		}
-	}
-
-	// Now... if we're not calling a static method, we need to set the receiver variable
-	// for ex: func (x MyType) foo() { ... }
-	// We need to set `x` to our struct instance value on the environment scope
-
-	// If our receiver is nil, we're calling a global fn
-	if fn.CustomFuncCb == nil && !node.IsStaticAccess && node.Receiver != nil {
-		// Evaluating the receiver will resolve our variable to its runtime value
-		// Which we'll then apply to the fn scope as the receiver variable
-		rv := eval.MustEval(node.Receiver).(*ast.RuntimeValue)
-		if rv == nil {
-			log.Fatalf("Runtime value: %v is nil", rv)
-		}
-		if rv.Decl == nil {
-			log.Fatalf("Runtime value: %v does not have an associated declaration", rv)
-		}
-		if rv.Kind != ast.RuntimeValueKindObject {
-			log.Fatalf("Runtime value: %v is not an object", rv)
-		}
-
-		decl, ok := rv.Decl.(*ast.ObjectDeclaration)
-		if !ok {
-			log.Fatalf("Runtime value: %v is not an object", rv)
-		}
-
-		// Now, even though we've resolved the function above, we'll make
-		// sure it actually exists on this variable's runtime object/value
-
-		fnDecl, exists := decl.Methods[node.Function.Name]
-		if !exists {
-			panic("Undefined method: " + node.Function.Name)
-		}
-		if fn != fnDecl {
-			log.Fatalf("Resolved function: %v is not the same as the function declaration: %v", fn, fnDecl)
-		}
-
-		eval.Env.SetVar(fn.Receiver.Name, rv)
-	}
-
-	fnArgs := make([]any, 0)
-	if len(fn.Args) > 0 {
-		var declArg *ast.TypedIdentifier
-		var varArgList []any
-		for i, arg := range node.Args {
-			if declArg == nil || !declArg.TypeReference.IsVariadic {
-				declArg = fn.Args[i]
-			}
-
-			argValue := eval.MustEval(arg)
-			if declArg.TypeReference.IsVariadic {
-				fnArgs = append(fnArgs, argValue)
-				if eval.Env.LookupVar(declArg.Name) == nil {
-					eval.Env.SetVar(declArg.Name, varArgList)
-				}
-			} else {
-				eval.Env.SetVar(declArg.Name, argValue)
-				fnArgs = append(fnArgs, argValue)
-			}
-
-		}
-	}
-
-	if fn.CustomFuncCb != nil {
-		if fn.Args == nil && node.Args != nil {
-			fnArgs = make([]any, len(node.Args))
-			for i, arg := range node.Args {
-				fnArgs[i] = eval.MustEvalValue(arg)
-			}
-
-		}
-
-		fnArgs = append([]any{self.Env}, fnArgs...)
-		return NewResult(fn.CustomFuncCb(fnArgs...))
-	}
-
-	result := NewResult()
-
-	if fn.Body != nil {
-		result.Merge(eval.Eval(fn.Body))
-	}
-
-	return result
-}
-
 func (self *Evaluator) evalRangeExpression(node *ast.RangeExpression) *Result {
 	r := NewResult()
 
@@ -241,14 +102,14 @@ func getUnderlyingValue(value any) any {
 func evalBinaryOperation(
 	kind ast.BinaryExpressionKind,
 	op operators.Operator,
-	left, right any,
+	originalLeft, originalRight any,
 ) *Result {
-	if left == nil || right == nil {
+	if originalLeft == nil || originalRight == nil {
 		return nil
 	}
 
-	left = getUnderlyingValue(left)
-	right = getUnderlyingValue(right)
+	left := getUnderlyingValue(originalLeft)
+	right := getUnderlyingValue(originalRight)
 
 	switch l := left.(type) {
 	case int:
@@ -259,10 +120,27 @@ func evalBinaryOperation(
 		if r, ok := right.(float64); ok {
 			return evaluateFloatOperation(kind, op, l, r)
 		}
-
-	default:
-		log.Warnf("Unsupported operation: %#v %s %#v", left, op, right)
 	}
+
+	l, ok := originalLeft.(*ast.RuntimeValue)
+	r, ok := originalRight.(*ast.RuntimeValue)
+	if !ok {
+		return nil
+	}
+
+	if l.Kind != r.Kind {
+		log.Debugf("Error evaluating binary expression, left and right types are not the same: %v, lhs: %v, rhs: %v", kind, l, r)
+		return nil
+	}
+
+	switch op {
+	case "==":
+		return NewResult(l.Value == r.Value)
+	case "!=":
+		return NewResult(l.Value != r.Value)
+	}
+
+	log.Warnf("Unsupported operation: %#v %s %#v", left, op, right)
 
 	return nil
 }
@@ -324,8 +202,10 @@ func (self *Evaluator) evalPostfixExpression(node *ast.PostfixExpression) *Resul
 		return NewResult(varRef)
 	}
 
-	log.Fatalf("Error evaluating postfix expression: %v", node)
-	panic("Unsupported operation: " + string(node.Op))
+	NewErrorAtNode(node, "Error evaluating postfix expression: %v", node)
+
+	// panic("Unsupported operation: " + string(node.Op))
+	return nil
 }
 
 func (self *Evaluator) evalFieldAccessExpression(node *ast.FieldAccessExpression) *Result {

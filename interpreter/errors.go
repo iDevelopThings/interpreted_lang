@@ -3,7 +3,6 @@ package interpreter
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/charmbracelet/log"
 
@@ -23,8 +22,9 @@ type CompilerErrorTracking struct {
 	CurrentSourceFilePath    string
 	CurrentSourceFileContent string
 	// CurrentTokenStream       *antlr.CommonTokenStream
-	Presenter *errors.ErrorPresenter
-	hooks     []PresenterHookFn
+	Presenter   *errors.ErrorPresenter
+	hooks       []PresenterHookFn
+	exitOnError bool
 }
 
 func (self *CompilerErrorTracking) SetSource(path string, content string) {
@@ -39,16 +39,26 @@ func (self *CompilerErrorTracking) SetNode(node ast.Node) {
 	self.Presenter = errors.NewErrorPresenter(self.CurrentSourceFileContent, node.GetRuleRange())
 	self.CurrentNode = node
 }
+func (self *CompilerErrorTracking) ShouldExit(value ...bool) {
+	val := true
+	if len(value) > 0 {
+		val = value[0]
+	}
+	self.exitOnError = val
+}
 
 // func (self *CompilerErrorTracking) SetToken(token *lexer.Token) {
 // 	self.Presenter = errors.NewErrorPresenter(self.CurrentSourceFileContent, token)
 // }
 
 func (self *CompilerErrorTracking) Error(format string, a ...any) {
+	log.Helper()
 	if self.CurrentNode == nil {
 		log.Warnf("CompilerErrorTracking.CurrentNode is nil - falling back to regular log error")
 		log.Errorf(format, a...)
-		os.Exit(1)
+		if self.exitOnError {
+			os.Exit(1)
+		}
 		return
 	}
 
@@ -88,16 +98,9 @@ func Errors() *errors.ErrorPresenter {
 func (self *CompilerErrorTracking) Print() {
 	Errors().Print(self.CurrentSourceFilePath)
 
-	// callerInfo := log.CallerInfo(2)
-	log.Helper()
-	log.Debugf("From: %s\n", self.CurrentSourceFilePath)
-	fmt.Println(strings.Repeat("-", 80))
-
-	// fmt.Printf("From: %s:%d\n", callerInfo.File, callerInfo.Line)
-	// fmt.Println(strings.Repeat("-", 80))
-	// fmt.Println("")
-
-	os.Exit(1)
+	if self.exitOnError {
+		os.Exit(1)
+	}
 }
 
 func (self *CompilerErrorTracking) AddProcessor(cb PresenterHookFn) {
@@ -106,6 +109,7 @@ func (self *CompilerErrorTracking) AddProcessor(cb PresenterHookFn) {
 }
 
 func NewError(format string, a ...any) {
+	log.Helper()
 	ErrorManager.Error(format, a...)
 }
 

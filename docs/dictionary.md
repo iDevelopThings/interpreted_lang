@@ -2,7 +2,7 @@
 
 ## Declaration
 
-```sl
+```arc
 var dict = {
     "key1": "value1",
     "key2": 2,
@@ -11,7 +11,7 @@ var dict = {
 
 ## Get value
 
-```sl
+```arc
 // Via string key
 dict["key1"];
 
@@ -25,7 +25,7 @@ dict.key1;
 
 ## Set value
 
-```sl
+```arc
 dict["key"] = value;
 var k = "key";
 dict[k] = value;

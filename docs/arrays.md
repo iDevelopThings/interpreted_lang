@@ -2,7 +2,7 @@
 
 ## Declaration
 
-```sl
+```arc
 object User {
    name string
 }
@@ -15,7 +15,7 @@ var user []User = {
 
 ## Slices
 
-```sl
+```arc
 var user []User = {
     User{name:"John"},
     User{name:"Bruce"},
@@ -36,7 +36,7 @@ var d = user[0];
 
 ## Api
 
-```sl
+```arc
 var u = User{name:"Barry"};
 
 // Add element

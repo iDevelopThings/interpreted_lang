@@ -59,6 +59,30 @@ func (t *Token) String() string {
 	return fmt.Sprintf("%s - tokenTypes: %s", t.Value, t.TokenTypeState.String())
 }
 
+func (t *Token) HasKeyword(keywords ...TokenType) bool {
+
+	for _, tokenType := range t.TokenTypeState.Types {
+		// If we don't pass keywords, we're just checking
+		// if we have any at all
+		if len(keywords) == 0 {
+			for _, kw := range KeywordTokens {
+				if kw == tokenType {
+					return true
+				}
+			}
+			continue
+		}
+
+		for _, kw := range keywords {
+			if kw == tokenType {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 type TokenType string
 
 const (
@@ -92,6 +116,7 @@ const (
 	TokenLParen     = "LPAREN"
 	TokenRParen     = "RPAREN"
 	TokenDotDot     = "DOT_DOT"
+	TokenQuestion   = "QUESTION"
 	TokenPlus       = "PLUS"
 	TokenPlusEq     = "PLUS_EQ"
 	TokenPlusPlus   = "PLUS_PLUS"
@@ -134,6 +159,9 @@ const (
 	TokenKeywordStep     = "KEYWORD_STEP"
 	TokenKeywordImport   = "KEYWORD_IMPORT"
 	TokenKeywordEnum     = "KEYWORD_ENUM"
+	TokenKeywordDefer    = "KEYWORD_DEFER"
+	TokenKeywordOr       = "KEYWORD_OR"
+	TokenKeywordNone     = "KEYWORD_NONE"
 
 	//
 	// Other
@@ -160,6 +188,7 @@ var tokenMap = map[string]TokenType{
 	"(":  TokenLParen,
 	")":  TokenRParen,
 	"..": TokenDotDot,
+	"?":  TokenQuestion,
 
 	// Operators
 	"+":  TokenPlus,
@@ -208,10 +237,15 @@ var tokenKeywordMap = map[string]TokenType{
 	"step":     TokenKeywordStep,
 	"import":   TokenKeywordImport,
 	"enum":     TokenKeywordEnum,
+	"or":       TokenKeywordOr,
+	"defer":    TokenKeywordDefer,
 
+	"none":  TokenKeywordNone,
 	"true":  TokenBool,
 	"false": TokenBool,
 }
+
+var KeywordTokens []TokenType
 
 func init() {
 	for k, v := range tokenKeywordMap {
@@ -219,5 +253,26 @@ func init() {
 			panic("keyword already exists as token")
 		}
 		tokenMap[k] = v
+
+		KeywordTokens = append(KeywordTokens, v)
 	}
+}
+
+var MathOperators = []TokenType{
+	TokenPlus,
+	TokenMinus,
+	TokenDiv,
+	TokenMul,
+	TokenCaret,
+	TokenMod,
+
+	TokenEQEQ,
+	TokenNEQ,
+	TokenLT,
+	TokenGT,
+	TokenLTE,
+	TokenGTE,
+	TokenAnd,
+	TokenLShift,
+	TokenRShift,
 }

@@ -1,18 +1,18 @@
 ## Variables
 
-```sl
+```arc
 var <name> <type> = <value>;
 var <name> <type>;
 ```
 
-```sl
+```arc
 var name string = "John";
 var name string;
 ```
 
 ## If statements
 
-```sl
+```arc
 if <condition> {
     <body>
 } else if <condition> {
@@ -22,7 +22,7 @@ if <condition> {
 }
 ```
 
-```sl
+```arc
 if 1 == 1 {
     print("1 is equal to 1");
 }
@@ -30,7 +30,7 @@ if 1 == 1 {
 
 ## For loops
 
-```sl
+```arc
 
 // Regular `while` loop, you control the flow
 
@@ -83,7 +83,8 @@ for users as u {
 Using C++/PHP like syntax for deletion
 
 ### Dictionaries
-```sl
+
+```arc
 var dict = {"key": "value"};
 delete dict["key"];
 delete dict.key;
@@ -91,7 +92,8 @@ delete dict[someVarWithKeyName];
 ```
 
 ### Arrays
-```sl
+
+```arc
 var arr = [1, 2, 3];
 delete arr[0];
 delete arr[someVarWithIndex];
@@ -105,10 +107,26 @@ delete arr[1:];
 ```
 
 ### Variables
+
 This mainly just deletes the variable from the current scope
 Any further access to the variable will result in an error/panic
-```sl
+
+```arc
 var name = "John";
 
 delete name;
+```
+
+## Defer statements
+
+Can be placed anywhere in a function and will be executed when the function returns
+
+```arc
+defer {
+    fmt::printf("testing\n");
+}
+
+defer func (param type) {
+    fmt::printf("testing\n");
+}
 ```

@@ -22,6 +22,9 @@ type Environment struct {
 	objects   map[string]*ast.ObjectDeclaration
 	functions map[string]*ast.FunctionDeclaration
 	enums     map[string]*ast.EnumDeclaration
+
+	// stack        []*StackFrame
+	// currentFrame *StackFrame
 }
 
 func NewEnvironment() *Environment {
@@ -40,6 +43,16 @@ func NewEnvironment() *Environment {
 	}
 }
 
+func (self *Environment) NewFrame(function ...*ast.FunctionDeclaration) *StackFrame {
+	frame := NewStackFrame(getFrame())
+	frame.env = self
+	if len(function) > 0 {
+		frame.function = function[0]
+	}
+
+	return frame
+}
+
 func (self *Environment) NewChild() *Environment {
 	env := NewEnvironment()
 	env.parent = self
@@ -48,6 +61,12 @@ func (self *Environment) NewChild() *Environment {
 }
 
 func (self *Environment) LookupVar(name string) any {
+	if getFrame() != nil {
+		if v, ok := getFrame().vars[name]; ok {
+			return v
+		}
+	}
+
 	if v, ok := self.vars[name]; ok {
 		return v
 	}
@@ -55,6 +74,46 @@ func (self *Environment) LookupVar(name string) any {
 		return self.parent.LookupVar(name)
 	}
 	return nil
+}
+
+func (self *Environment) SetVar(name string, value any) {
+	self.vars[name] = value
+	if getFrame() != nil {
+		if rt, ok := value.(*ast.RuntimeValue); ok {
+			getFrame().vars[name] = rt
+		} else {
+			log.Warnf("SetVar: trying to push a runtime value to the stack but it's not a runtime value: %s, value=%#v", name, value)
+		}
+	}
+}
+func (self *Environment) AppendVars(vars map[string]any) {
+	for k, v := range vars {
+		self.SetVar(k, v)
+	}
+}
+func (self *Environment) DeleteVar(name string) bool {
+	if getFrame() != nil {
+		if v, ok := getFrame().vars[name]; ok {
+			v.Value = nil
+			log.Debugf("Deleted var %s from current frame", name)
+			delete(getFrame().vars, name)
+			return true
+		}
+	}
+
+	if v, ok := self.vars[name]; ok {
+		if rv, ok := v.(*ast.RuntimeValue); ok {
+			rv.Value = nil
+		}
+
+		log.Debugf("Deleted var %s from environment", name)
+
+		delete(self.vars, name)
+
+		return true
+	}
+
+	return false
 }
 
 func (self *Environment) LookupFunction(name string) *ast.FunctionDeclaration {
@@ -83,30 +142,6 @@ func (self *Environment) LookupObject(name string) *ast.ObjectDeclaration {
 	}
 
 	return nil
-}
-
-func (self *Environment) SetVar(name string, value any) {
-	self.vars[name] = value
-}
-func (self *Environment) AppendVars(vars map[string]any) {
-	for k, v := range vars {
-		self.vars[k] = v
-	}
-}
-func (self *Environment) DeleteVar(name string) bool {
-	if v, ok := self.vars[name]; ok {
-		if rv, ok := v.(*ast.RuntimeValue); ok {
-			rv.Value = nil
-		}
-
-		log.Debugf("Deleted var %s from environment", name)
-
-		delete(self.vars, name)
-
-		return true
-	}
-
-	return false
 }
 
 func (self *Environment) SetFunction(function *ast.FunctionDeclaration) {

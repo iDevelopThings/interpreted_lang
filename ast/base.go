@@ -203,7 +203,8 @@ func (self *Block) GetChildren() []Node {
 	}
 	return result
 }
-func (self *Block) IsStatement() {}
+func (self *Block) IsStatement()  {}
+func (self *Block) IsExpression() {}
 
 type Identifier struct {
 	*AstNode
@@ -233,6 +234,16 @@ type TypeReference struct {
 	IsPointer  bool
 	IsArray    bool
 	IsVariadic bool
+
+	IsOptionType bool
+	IsResultType bool
+}
+
+func NewTypeReferenceWithValue(value string) *TypeReference {
+	return &TypeReference{
+		AstNode: NewAstNode(nil),
+		Type:    value,
+	}
 }
 
 func (self *TypeReference) IsExpression() {}

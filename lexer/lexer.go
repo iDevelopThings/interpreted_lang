@@ -9,8 +9,9 @@ import (
 )
 
 type Lexer struct {
-	input string
-	pos   *Position
+	input  string
+	pos    *Position
+	source string
 }
 
 func NewLexer(input string) *Lexer {
@@ -357,4 +358,11 @@ func (l *Lexer) debugDisplayTokens(w func(fmt string, args ...any), tokens []*To
 		w("     %s%s  value=%s types=(%s)\n", prefix, marked, token.Value, token.Types)
 		w("\n")
 	}
+}
+
+func (l *Lexer) SetSource(path string) {
+	l.source = path
+}
+func (l *Lexer) GetSource() string {
+	return l.source
 }

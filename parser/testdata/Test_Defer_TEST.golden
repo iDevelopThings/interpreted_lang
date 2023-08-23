@@ -1,0 +1,2111 @@
+{
+  "NodeId": 8,
+  "Token": {
+    "Types": [
+      "KEYWORD_FUNC",
+      "IDENTIFIER"
+    ],
+    "Value": "func",
+    "Pos": {
+      "Start": {
+        "Line": 2,
+        "Column": 0,
+        "Abs": 1
+      },
+      "End": {
+        "Line": 2,
+        "Column": 4,
+        "Abs": 5
+      },
+      "Length": 4
+    }
+  },
+  "RuleRange": null,
+  "Statements": [
+    {
+      "NodeId": 9,
+      "Token": {
+        "Types": [
+          "KEYWORD_FUNC",
+          "IDENTIFIER"
+        ],
+        "Value": "func",
+        "Pos": {
+          "Start": {
+            "Line": 2,
+            "Column": 0,
+            "Abs": 1
+          },
+          "End": {
+            "Line": 2,
+            "Column": 4,
+            "Abs": 5
+          },
+          "Length": 4
+        }
+      },
+      "RuleRange": {
+        "Start": {
+          "Types": [
+            "KEYWORD_FUNC",
+            "IDENTIFIER"
+          ],
+          "Value": "func",
+          "Pos": {
+            "Start": {
+              "Line": 2,
+              "Column": 0,
+              "Abs": 1
+            },
+            "End": {
+              "Line": 2,
+              "Column": 4,
+              "Abs": 5
+            },
+            "Length": 4
+          }
+        },
+        "End": {
+          "Types": [
+            "KEYWORD_FUNC",
+            "IDENTIFIER"
+          ],
+          "Value": "func",
+          "Pos": {
+            "Start": {
+              "Line": 2,
+              "Column": 0,
+              "Abs": 1
+            },
+            "End": {
+              "Line": 2,
+              "Column": 4,
+              "Abs": 5
+            },
+            "Length": 4
+          }
+        }
+      },
+      "Name": "main",
+      "Args": [],
+      "ReturnType": {
+        "NodeId": 10,
+        "Token": {
+          "Types": [
+            "LCURLY"
+          ],
+          "Value": "{",
+          "Pos": {
+            "Start": {
+              "Line": 2,
+              "Column": 12,
+              "Abs": 13
+            },
+            "End": {
+              "Line": 2,
+              "Column": 13,
+              "Abs": 14
+            },
+            "Length": 1
+          }
+        },
+        "RuleRange": null,
+        "Name": "void"
+      },
+      "Receiver": null,
+      "Body": {
+        "NodeId": 11,
+        "Token": {
+          "Types": [
+            "KEYWORD_DEFER",
+            "IDENTIFIER"
+          ],
+          "Value": "defer",
+          "Pos": {
+            "Start": {
+              "Line": 3,
+              "Column": 2,
+              "Abs": 17
+            },
+            "End": {
+              "Line": 3,
+              "Column": 7,
+              "Abs": 22
+            },
+            "Length": 5
+          }
+        },
+        "RuleRange": {
+          "Start": {
+            "Types": [
+              "LCURLY"
+            ],
+            "Value": "{",
+            "Pos": {
+              "Start": {
+                "Line": 2,
+                "Column": 12,
+                "Abs": 13
+              },
+              "End": {
+                "Line": 2,
+                "Column": 13,
+                "Abs": 14
+              },
+              "Length": 1
+            }
+          },
+          "End": {
+            "Types": [
+              "LCURLY"
+            ],
+            "Value": "{",
+            "Pos": {
+              "Start": {
+                "Line": 2,
+                "Column": 12,
+                "Abs": 13
+              },
+              "End": {
+                "Line": 2,
+                "Column": 13,
+                "Abs": 14
+              },
+              "Length": 1
+            }
+          }
+        },
+        "Statements": [
+          {
+            "NodeId": 12,
+            "Token": {
+              "Types": [
+                "LCURLY"
+              ],
+              "Value": "{",
+              "Pos": {
+                "Start": {
+                  "Line": 3,
+                  "Column": 8,
+                  "Abs": 23
+                },
+                "End": {
+                  "Line": 3,
+                  "Column": 9,
+                  "Abs": 24
+                },
+                "Length": 1
+              }
+            },
+            "RuleRange": {
+              "Start": {
+                "Types": [
+                  "KEYWORD_DEFER",
+                  "IDENTIFIER"
+                ],
+                "Value": "defer",
+                "Pos": {
+                  "Start": {
+                    "Line": 3,
+                    "Column": 2,
+                    "Abs": 17
+                  },
+                  "End": {
+                    "Line": 3,
+                    "Column": 7,
+                    "Abs": 22
+                  },
+                  "Length": 5
+                }
+              },
+              "End": {
+                "Types": [
+                  "KEYWORD_DEFER",
+                  "IDENTIFIER"
+                ],
+                "Value": "defer",
+                "Pos": {
+                  "Start": {
+                    "Line": 3,
+                    "Column": 2,
+                    "Abs": 17
+                  },
+                  "End": {
+                    "Line": 3,
+                    "Column": 7,
+                    "Abs": 22
+                  },
+                  "Length": 5
+                }
+              }
+            },
+            "Kind": "block",
+            "Block": {
+              "NodeId": 13,
+              "Token": {
+                "Types": [
+                  "IDENTIFIER"
+                ],
+                "Value": "fmt",
+                "Pos": {
+                  "Start": {
+                    "Line": 4,
+                    "Column": 4,
+                    "Abs": 29
+                  },
+                  "End": {
+                    "Line": 4,
+                    "Column": 7,
+                    "Abs": 32
+                  },
+                  "Length": 3
+                }
+              },
+              "RuleRange": {
+                "Start": {
+                  "Types": [
+                    "LCURLY"
+                  ],
+                  "Value": "{",
+                  "Pos": {
+                    "Start": {
+                      "Line": 3,
+                      "Column": 8,
+                      "Abs": 23
+                    },
+                    "End": {
+                      "Line": 3,
+                      "Column": 9,
+                      "Abs": 24
+                    },
+                    "Length": 1
+                  }
+                },
+                "End": {
+                  "Types": [
+                    "LCURLY"
+                  ],
+                  "Value": "{",
+                  "Pos": {
+                    "Start": {
+                      "Line": 3,
+                      "Column": 8,
+                      "Abs": 23
+                    },
+                    "End": {
+                      "Line": 3,
+                      "Column": 9,
+                      "Abs": 24
+                    },
+                    "Length": 1
+                  }
+                }
+              },
+              "Statements": [
+                {
+                  "NodeId": 17,
+                  "Token": {
+                    "Types": [
+                      "STRING"
+                    ],
+                    "Value": "testing\\n",
+                    "Pos": {
+                      "Start": {
+                        "Line": 4,
+                        "Column": 16,
+                        "Abs": 41
+                      },
+                      "End": {
+                        "Line": 4,
+                        "Column": 27,
+                        "Abs": 52
+                      },
+                      "Length": 11
+                    }
+                  },
+                  "RuleRange": {
+                    "Start": {
+                      "Types": [
+                        "IDENTIFIER"
+                      ],
+                      "Value": "fmt",
+                      "Pos": {
+                        "Start": {
+                          "Line": 4,
+                          "Column": 4,
+                          "Abs": 29
+                        },
+                        "End": {
+                          "Line": 4,
+                          "Column": 7,
+                          "Abs": 32
+                        },
+                        "Length": 3
+                      }
+                    },
+                    "End": {
+                      "Types": [
+                        "SEMICOLON"
+                      ],
+                      "Value": ";",
+                      "Pos": {
+                        "Start": {
+                          "Line": 4,
+                          "Column": 28,
+                          "Abs": 53
+                        },
+                        "End": {
+                          "Line": 4,
+                          "Column": 29,
+                          "Abs": 54
+                        },
+                        "Length": 1
+                      }
+                    }
+                  },
+                  "Function": {
+                    "NodeId": 15,
+                    "Token": {
+                      "Types": [
+                        "IDENTIFIER"
+                      ],
+                      "Value": "printf",
+                      "Pos": {
+                        "Start": {
+                          "Line": 4,
+                          "Column": 9,
+                          "Abs": 34
+                        },
+                        "End": {
+                          "Line": 4,
+                          "Column": 15,
+                          "Abs": 40
+                        },
+                        "Length": 6
+                      }
+                    },
+                    "RuleRange": {
+                      "Start": {
+                        "Types": [
+                          "IDENTIFIER"
+                        ],
+                        "Value": "printf",
+                        "Pos": {
+                          "Start": {
+                            "Line": 4,
+                            "Column": 9,
+                            "Abs": 34
+                          },
+                          "End": {
+                            "Line": 4,
+                            "Column": 15,
+                            "Abs": 40
+                          },
+                          "Length": 6
+                        }
+                      },
+                      "End": {
+                        "Types": [
+                          "IDENTIFIER"
+                        ],
+                        "Value": "printf",
+                        "Pos": {
+                          "Start": {
+                            "Line": 4,
+                            "Column": 9,
+                            "Abs": 34
+                          },
+                          "End": {
+                            "Line": 4,
+                            "Column": 15,
+                            "Abs": 40
+                          },
+                          "Length": 6
+                        }
+                      }
+                    },
+                    "Name": "printf"
+                  },
+                  "Receiver": {
+                    "NodeId": 14,
+                    "Token": {
+                      "Types": [
+                        "IDENTIFIER"
+                      ],
+                      "Value": "fmt",
+                      "Pos": {
+                        "Start": {
+                          "Line": 4,
+                          "Column": 4,
+                          "Abs": 29
+                        },
+                        "End": {
+                          "Line": 4,
+                          "Column": 7,
+                          "Abs": 32
+                        },
+                        "Length": 3
+                      }
+                    },
+                    "RuleRange": {
+                      "Start": {
+                        "Types": [
+                          "IDENTIFIER"
+                        ],
+                        "Value": "fmt",
+                        "Pos": {
+                          "Start": {
+                            "Line": 4,
+                            "Column": 4,
+                            "Abs": 29
+                          },
+                          "End": {
+                            "Line": 4,
+                            "Column": 7,
+                            "Abs": 32
+                          },
+                          "Length": 3
+                        }
+                      },
+                      "End": {
+                        "Types": [
+                          "IDENTIFIER"
+                        ],
+                        "Value": "fmt",
+                        "Pos": {
+                          "Start": {
+                            "Line": 4,
+                            "Column": 4,
+                            "Abs": 29
+                          },
+                          "End": {
+                            "Line": 4,
+                            "Column": 7,
+                            "Abs": 32
+                          },
+                          "Length": 3
+                        }
+                      }
+                    },
+                    "Type": "fmt",
+                    "IsPointer": false,
+                    "IsArray": false,
+                    "IsVariadic": false
+                  },
+                  "Args": [
+                    "testing\\n"
+                  ],
+                  "IsStaticAccess": true
+                }
+              ],
+              "Function": null
+            },
+            "Func": null
+          },
+          {
+            "NodeId": 19,
+            "Token": {
+              "Types": [
+                "KEYWORD_FUNC",
+                "IDENTIFIER"
+              ],
+              "Value": "func",
+              "Pos": {
+                "Start": {
+                  "Line": 7,
+                  "Column": 8,
+                  "Abs": 68
+                },
+                "End": {
+                  "Line": 7,
+                  "Column": 12,
+                  "Abs": 72
+                },
+                "Length": 4
+              }
+            },
+            "RuleRange": {
+              "Start": {
+                "Types": [
+                  "KEYWORD_DEFER",
+                  "IDENTIFIER"
+                ],
+                "Value": "defer",
+                "Pos": {
+                  "Start": {
+                    "Line": 7,
+                    "Column": 2,
+                    "Abs": 62
+                  },
+                  "End": {
+                    "Line": 7,
+                    "Column": 7,
+                    "Abs": 67
+                  },
+                  "Length": 5
+                }
+              },
+              "End": {
+                "Types": [
+                  "KEYWORD_DEFER",
+                  "IDENTIFIER"
+                ],
+                "Value": "defer",
+                "Pos": {
+                  "Start": {
+                    "Line": 7,
+                    "Column": 2,
+                    "Abs": 62
+                  },
+                  "End": {
+                    "Line": 7,
+                    "Column": 7,
+                    "Abs": 67
+                  },
+                  "Length": 5
+                }
+              }
+            },
+            "Kind": "function",
+            "Block": null,
+            "Func": {
+              "NodeId": 20,
+              "Token": {
+                "Types": [
+                  "KEYWORD_FUNC",
+                  "IDENTIFIER"
+                ],
+                "Value": "func",
+                "Pos": {
+                  "Start": {
+                    "Line": 7,
+                    "Column": 8,
+                    "Abs": 68
+                  },
+                  "End": {
+                    "Line": 7,
+                    "Column": 12,
+                    "Abs": 72
+                  },
+                  "Length": 4
+                }
+              },
+              "RuleRange": {
+                "Start": {
+                  "Types": [
+                    "KEYWORD_FUNC",
+                    "IDENTIFIER"
+                  ],
+                  "Value": "func",
+                  "Pos": {
+                    "Start": {
+                      "Line": 7,
+                      "Column": 8,
+                      "Abs": 68
+                    },
+                    "End": {
+                      "Line": 7,
+                      "Column": 12,
+                      "Abs": 72
+                    },
+                    "Length": 4
+                  }
+                },
+                "End": {
+                  "Types": [
+                    "KEYWORD_FUNC",
+                    "IDENTIFIER"
+                  ],
+                  "Value": "func",
+                  "Pos": {
+                    "Start": {
+                      "Line": 7,
+                      "Column": 8,
+                      "Abs": 68
+                    },
+                    "End": {
+                      "Line": 7,
+                      "Column": 12,
+                      "Abs": 72
+                    },
+                    "Length": 4
+                  }
+                }
+              },
+              "Name": "_____anonymous_func",
+              "Args": [
+                {
+                  "NodeId": 22,
+                  "Token": {
+                    "Types": [
+                      "IDENTIFIER"
+                    ],
+                    "Value": "param",
+                    "Pos": {
+                      "Start": {
+                        "Line": 7,
+                        "Column": 14,
+                        "Abs": 74
+                      },
+                      "End": {
+                        "Line": 7,
+                        "Column": 19,
+                        "Abs": 79
+                      },
+                      "Length": 5
+                    }
+                  },
+                  "RuleRange": {
+                    "Start": {
+                      "Types": [
+                        "IDENTIFIER"
+                      ],
+                      "Value": "param",
+                      "Pos": {
+                        "Start": {
+                          "Line": 7,
+                          "Column": 14,
+                          "Abs": 74
+                        },
+                        "End": {
+                          "Line": 7,
+                          "Column": 19,
+                          "Abs": 79
+                        },
+                        "Length": 5
+                      }
+                    },
+                    "End": {
+                      "Types": [
+                        "IDENTIFIER"
+                      ],
+                      "Value": "param",
+                      "Pos": {
+                        "Start": {
+                          "Line": 7,
+                          "Column": 14,
+                          "Abs": 74
+                        },
+                        "End": {
+                          "Line": 7,
+                          "Column": 19,
+                          "Abs": 79
+                        },
+                        "Length": 5
+                      }
+                    }
+                  },
+                  "Name": "param",
+                  "TypeReference": {
+                    "NodeId": 23,
+                    "Token": {
+                      "Types": [
+                        "IDENTIFIER"
+                      ],
+                      "Value": "type",
+                      "Pos": {
+                        "Start": {
+                          "Line": 7,
+                          "Column": 20,
+                          "Abs": 80
+                        },
+                        "End": {
+                          "Line": 7,
+                          "Column": 24,
+                          "Abs": 84
+                        },
+                        "Length": 4
+                      }
+                    },
+                    "RuleRange": {
+                      "Start": {
+                        "Types": [
+                          "IDENTIFIER"
+                        ],
+                        "Value": "type",
+                        "Pos": {
+                          "Start": {
+                            "Line": 7,
+                            "Column": 20,
+                            "Abs": 80
+                          },
+                          "End": {
+                            "Line": 7,
+                            "Column": 24,
+                            "Abs": 84
+                          },
+                          "Length": 4
+                        }
+                      },
+                      "End": {
+                        "Types": [
+                          "IDENTIFIER"
+                        ],
+                        "Value": "type",
+                        "Pos": {
+                          "Start": {
+                            "Line": 7,
+                            "Column": 20,
+                            "Abs": 80
+                          },
+                          "End": {
+                            "Line": 7,
+                            "Column": 24,
+                            "Abs": 84
+                          },
+                          "Length": 4
+                        }
+                      }
+                    },
+                    "Type": "type",
+                    "IsPointer": false,
+                    "IsArray": false,
+                    "IsVariadic": false
+                  }
+                }
+              ],
+              "ReturnType": {
+                "NodeId": 24,
+                "Token": {
+                  "Types": [
+                    "LCURLY"
+                  ],
+                  "Value": "{",
+                  "Pos": {
+                    "Start": {
+                      "Line": 7,
+                      "Column": 26,
+                      "Abs": 86
+                    },
+                    "End": {
+                      "Line": 7,
+                      "Column": 27,
+                      "Abs": 87
+                    },
+                    "Length": 1
+                  }
+                },
+                "RuleRange": null,
+                "Name": "void"
+              },
+              "Receiver": null,
+              "Body": {
+                "NodeId": 25,
+                "Token": {
+                  "Types": [
+                    "IDENTIFIER"
+                  ],
+                  "Value": "fmt",
+                  "Pos": {
+                    "Start": {
+                      "Line": 8,
+                      "Column": 4,
+                      "Abs": 92
+                    },
+                    "End": {
+                      "Line": 8,
+                      "Column": 7,
+                      "Abs": 95
+                    },
+                    "Length": 3
+                  }
+                },
+                "RuleRange": {
+                  "Start": {
+                    "Types": [
+                      "LCURLY"
+                    ],
+                    "Value": "{",
+                    "Pos": {
+                      "Start": {
+                        "Line": 7,
+                        "Column": 26,
+                        "Abs": 86
+                      },
+                      "End": {
+                        "Line": 7,
+                        "Column": 27,
+                        "Abs": 87
+                      },
+                      "Length": 1
+                    }
+                  },
+                  "End": {
+                    "Types": [
+                      "LCURLY"
+                    ],
+                    "Value": "{",
+                    "Pos": {
+                      "Start": {
+                        "Line": 7,
+                        "Column": 26,
+                        "Abs": 86
+                      },
+                      "End": {
+                        "Line": 7,
+                        "Column": 27,
+                        "Abs": 87
+                      },
+                      "Length": 1
+                    }
+                  }
+                },
+                "Statements": [
+                  {
+                    "NodeId": 29,
+                    "Token": {
+                      "Types": [
+                        "STRING"
+                      ],
+                      "Value": "testing\\n",
+                      "Pos": {
+                        "Start": {
+                          "Line": 8,
+                          "Column": 16,
+                          "Abs": 104
+                        },
+                        "End": {
+                          "Line": 8,
+                          "Column": 27,
+                          "Abs": 115
+                        },
+                        "Length": 11
+                      }
+                    },
+                    "RuleRange": {
+                      "Start": {
+                        "Types": [
+                          "IDENTIFIER"
+                        ],
+                        "Value": "fmt",
+                        "Pos": {
+                          "Start": {
+                            "Line": 8,
+                            "Column": 4,
+                            "Abs": 92
+                          },
+                          "End": {
+                            "Line": 8,
+                            "Column": 7,
+                            "Abs": 95
+                          },
+                          "Length": 3
+                        }
+                      },
+                      "End": {
+                        "Types": [
+                          "SEMICOLON"
+                        ],
+                        "Value": ";",
+                        "Pos": {
+                          "Start": {
+                            "Line": 8,
+                            "Column": 28,
+                            "Abs": 116
+                          },
+                          "End": {
+                            "Line": 8,
+                            "Column": 29,
+                            "Abs": 117
+                          },
+                          "Length": 1
+                        }
+                      }
+                    },
+                    "Function": {
+                      "NodeId": 27,
+                      "Token": {
+                        "Types": [
+                          "IDENTIFIER"
+                        ],
+                        "Value": "printf",
+                        "Pos": {
+                          "Start": {
+                            "Line": 8,
+                            "Column": 9,
+                            "Abs": 97
+                          },
+                          "End": {
+                            "Line": 8,
+                            "Column": 15,
+                            "Abs": 103
+                          },
+                          "Length": 6
+                        }
+                      },
+                      "RuleRange": {
+                        "Start": {
+                          "Types": [
+                            "IDENTIFIER"
+                          ],
+                          "Value": "printf",
+                          "Pos": {
+                            "Start": {
+                              "Line": 8,
+                              "Column": 9,
+                              "Abs": 97
+                            },
+                            "End": {
+                              "Line": 8,
+                              "Column": 15,
+                              "Abs": 103
+                            },
+                            "Length": 6
+                          }
+                        },
+                        "End": {
+                          "Types": [
+                            "IDENTIFIER"
+                          ],
+                          "Value": "printf",
+                          "Pos": {
+                            "Start": {
+                              "Line": 8,
+                              "Column": 9,
+                              "Abs": 97
+                            },
+                            "End": {
+                              "Line": 8,
+                              "Column": 15,
+                              "Abs": 103
+                            },
+                            "Length": 6
+                          }
+                        }
+                      },
+                      "Name": "printf"
+                    },
+                    "Receiver": {
+                      "NodeId": 26,
+                      "Token": {
+                        "Types": [
+                          "IDENTIFIER"
+                        ],
+                        "Value": "fmt",
+                        "Pos": {
+                          "Start": {
+                            "Line": 8,
+                            "Column": 4,
+                            "Abs": 92
+                          },
+                          "End": {
+                            "Line": 8,
+                            "Column": 7,
+                            "Abs": 95
+                          },
+                          "Length": 3
+                        }
+                      },
+                      "RuleRange": {
+                        "Start": {
+                          "Types": [
+                            "IDENTIFIER"
+                          ],
+                          "Value": "fmt",
+                          "Pos": {
+                            "Start": {
+                              "Line": 8,
+                              "Column": 4,
+                              "Abs": 92
+                            },
+                            "End": {
+                              "Line": 8,
+                              "Column": 7,
+                              "Abs": 95
+                            },
+                            "Length": 3
+                          }
+                        },
+                        "End": {
+                          "Types": [
+                            "IDENTIFIER"
+                          ],
+                          "Value": "fmt",
+                          "Pos": {
+                            "Start": {
+                              "Line": 8,
+                              "Column": 4,
+                              "Abs": 92
+                            },
+                            "End": {
+                              "Line": 8,
+                              "Column": 7,
+                              "Abs": 95
+                            },
+                            "Length": 3
+                          }
+                        }
+                      },
+                      "Type": "fmt",
+                      "IsPointer": false,
+                      "IsArray": false,
+                      "IsVariadic": false
+                    },
+                    "Args": [
+                      "testing\\n"
+                    ],
+                    "IsStaticAccess": true
+                  }
+                ],
+                "Function": null
+              },
+              "IsStatic": false,
+              "IsBuiltin": false,
+              "IsAnonymous": true,
+              "HasVariadicArgs": false
+            }
+          }
+        ],
+        "Function": null
+      },
+      "IsStatic": false,
+      "IsBuiltin": false,
+      "IsAnonymous": false,
+      "HasVariadicArgs": false
+    }
+  ],
+  "Imports": [],
+  "Declarations": [
+    {
+      "NodeId": 9,
+      "Token": {
+        "Types": [
+          "KEYWORD_FUNC",
+          "IDENTIFIER"
+        ],
+        "Value": "func",
+        "Pos": {
+          "Start": {
+            "Line": 2,
+            "Column": 0,
+            "Abs": 1
+          },
+          "End": {
+            "Line": 2,
+            "Column": 4,
+            "Abs": 5
+          },
+          "Length": 4
+        }
+      },
+      "RuleRange": {
+        "Start": {
+          "Types": [
+            "KEYWORD_FUNC",
+            "IDENTIFIER"
+          ],
+          "Value": "func",
+          "Pos": {
+            "Start": {
+              "Line": 2,
+              "Column": 0,
+              "Abs": 1
+            },
+            "End": {
+              "Line": 2,
+              "Column": 4,
+              "Abs": 5
+            },
+            "Length": 4
+          }
+        },
+        "End": {
+          "Types": [
+            "KEYWORD_FUNC",
+            "IDENTIFIER"
+          ],
+          "Value": "func",
+          "Pos": {
+            "Start": {
+              "Line": 2,
+              "Column": 0,
+              "Abs": 1
+            },
+            "End": {
+              "Line": 2,
+              "Column": 4,
+              "Abs": 5
+            },
+            "Length": 4
+          }
+        }
+      },
+      "Name": "main",
+      "Args": [],
+      "ReturnType": {
+        "NodeId": 10,
+        "Token": {
+          "Types": [
+            "LCURLY"
+          ],
+          "Value": "{",
+          "Pos": {
+            "Start": {
+              "Line": 2,
+              "Column": 12,
+              "Abs": 13
+            },
+            "End": {
+              "Line": 2,
+              "Column": 13,
+              "Abs": 14
+            },
+            "Length": 1
+          }
+        },
+        "RuleRange": null,
+        "Name": "void"
+      },
+      "Receiver": null,
+      "Body": {
+        "NodeId": 11,
+        "Token": {
+          "Types": [
+            "KEYWORD_DEFER",
+            "IDENTIFIER"
+          ],
+          "Value": "defer",
+          "Pos": {
+            "Start": {
+              "Line": 3,
+              "Column": 2,
+              "Abs": 17
+            },
+            "End": {
+              "Line": 3,
+              "Column": 7,
+              "Abs": 22
+            },
+            "Length": 5
+          }
+        },
+        "RuleRange": {
+          "Start": {
+            "Types": [
+              "LCURLY"
+            ],
+            "Value": "{",
+            "Pos": {
+              "Start": {
+                "Line": 2,
+                "Column": 12,
+                "Abs": 13
+              },
+              "End": {
+                "Line": 2,
+                "Column": 13,
+                "Abs": 14
+              },
+              "Length": 1
+            }
+          },
+          "End": {
+            "Types": [
+              "LCURLY"
+            ],
+            "Value": "{",
+            "Pos": {
+              "Start": {
+                "Line": 2,
+                "Column": 12,
+                "Abs": 13
+              },
+              "End": {
+                "Line": 2,
+                "Column": 13,
+                "Abs": 14
+              },
+              "Length": 1
+            }
+          }
+        },
+        "Statements": [
+          {
+            "NodeId": 12,
+            "Token": {
+              "Types": [
+                "LCURLY"
+              ],
+              "Value": "{",
+              "Pos": {
+                "Start": {
+                  "Line": 3,
+                  "Column": 8,
+                  "Abs": 23
+                },
+                "End": {
+                  "Line": 3,
+                  "Column": 9,
+                  "Abs": 24
+                },
+                "Length": 1
+              }
+            },
+            "RuleRange": {
+              "Start": {
+                "Types": [
+                  "KEYWORD_DEFER",
+                  "IDENTIFIER"
+                ],
+                "Value": "defer",
+                "Pos": {
+                  "Start": {
+                    "Line": 3,
+                    "Column": 2,
+                    "Abs": 17
+                  },
+                  "End": {
+                    "Line": 3,
+                    "Column": 7,
+                    "Abs": 22
+                  },
+                  "Length": 5
+                }
+              },
+              "End": {
+                "Types": [
+                  "KEYWORD_DEFER",
+                  "IDENTIFIER"
+                ],
+                "Value": "defer",
+                "Pos": {
+                  "Start": {
+                    "Line": 3,
+                    "Column": 2,
+                    "Abs": 17
+                  },
+                  "End": {
+                    "Line": 3,
+                    "Column": 7,
+                    "Abs": 22
+                  },
+                  "Length": 5
+                }
+              }
+            },
+            "Kind": "block",
+            "Block": {
+              "NodeId": 13,
+              "Token": {
+                "Types": [
+                  "IDENTIFIER"
+                ],
+                "Value": "fmt",
+                "Pos": {
+                  "Start": {
+                    "Line": 4,
+                    "Column": 4,
+                    "Abs": 29
+                  },
+                  "End": {
+                    "Line": 4,
+                    "Column": 7,
+                    "Abs": 32
+                  },
+                  "Length": 3
+                }
+              },
+              "RuleRange": {
+                "Start": {
+                  "Types": [
+                    "LCURLY"
+                  ],
+                  "Value": "{",
+                  "Pos": {
+                    "Start": {
+                      "Line": 3,
+                      "Column": 8,
+                      "Abs": 23
+                    },
+                    "End": {
+                      "Line": 3,
+                      "Column": 9,
+                      "Abs": 24
+                    },
+                    "Length": 1
+                  }
+                },
+                "End": {
+                  "Types": [
+                    "LCURLY"
+                  ],
+                  "Value": "{",
+                  "Pos": {
+                    "Start": {
+                      "Line": 3,
+                      "Column": 8,
+                      "Abs": 23
+                    },
+                    "End": {
+                      "Line": 3,
+                      "Column": 9,
+                      "Abs": 24
+                    },
+                    "Length": 1
+                  }
+                }
+              },
+              "Statements": [
+                {
+                  "NodeId": 17,
+                  "Token": {
+                    "Types": [
+                      "STRING"
+                    ],
+                    "Value": "testing\\n",
+                    "Pos": {
+                      "Start": {
+                        "Line": 4,
+                        "Column": 16,
+                        "Abs": 41
+                      },
+                      "End": {
+                        "Line": 4,
+                        "Column": 27,
+                        "Abs": 52
+                      },
+                      "Length": 11
+                    }
+                  },
+                  "RuleRange": {
+                    "Start": {
+                      "Types": [
+                        "IDENTIFIER"
+                      ],
+                      "Value": "fmt",
+                      "Pos": {
+                        "Start": {
+                          "Line": 4,
+                          "Column": 4,
+                          "Abs": 29
+                        },
+                        "End": {
+                          "Line": 4,
+                          "Column": 7,
+                          "Abs": 32
+                        },
+                        "Length": 3
+                      }
+                    },
+                    "End": {
+                      "Types": [
+                        "SEMICOLON"
+                      ],
+                      "Value": ";",
+                      "Pos": {
+                        "Start": {
+                          "Line": 4,
+                          "Column": 28,
+                          "Abs": 53
+                        },
+                        "End": {
+                          "Line": 4,
+                          "Column": 29,
+                          "Abs": 54
+                        },
+                        "Length": 1
+                      }
+                    }
+                  },
+                  "Function": {
+                    "NodeId": 15,
+                    "Token": {
+                      "Types": [
+                        "IDENTIFIER"
+                      ],
+                      "Value": "printf",
+                      "Pos": {
+                        "Start": {
+                          "Line": 4,
+                          "Column": 9,
+                          "Abs": 34
+                        },
+                        "End": {
+                          "Line": 4,
+                          "Column": 15,
+                          "Abs": 40
+                        },
+                        "Length": 6
+                      }
+                    },
+                    "RuleRange": {
+                      "Start": {
+                        "Types": [
+                          "IDENTIFIER"
+                        ],
+                        "Value": "printf",
+                        "Pos": {
+                          "Start": {
+                            "Line": 4,
+                            "Column": 9,
+                            "Abs": 34
+                          },
+                          "End": {
+                            "Line": 4,
+                            "Column": 15,
+                            "Abs": 40
+                          },
+                          "Length": 6
+                        }
+                      },
+                      "End": {
+                        "Types": [
+                          "IDENTIFIER"
+                        ],
+                        "Value": "printf",
+                        "Pos": {
+                          "Start": {
+                            "Line": 4,
+                            "Column": 9,
+                            "Abs": 34
+                          },
+                          "End": {
+                            "Line": 4,
+                            "Column": 15,
+                            "Abs": 40
+                          },
+                          "Length": 6
+                        }
+                      }
+                    },
+                    "Name": "printf"
+                  },
+                  "Receiver": {
+                    "NodeId": 14,
+                    "Token": {
+                      "Types": [
+                        "IDENTIFIER"
+                      ],
+                      "Value": "fmt",
+                      "Pos": {
+                        "Start": {
+                          "Line": 4,
+                          "Column": 4,
+                          "Abs": 29
+                        },
+                        "End": {
+                          "Line": 4,
+                          "Column": 7,
+                          "Abs": 32
+                        },
+                        "Length": 3
+                      }
+                    },
+                    "RuleRange": {
+                      "Start": {
+                        "Types": [
+                          "IDENTIFIER"
+                        ],
+                        "Value": "fmt",
+                        "Pos": {
+                          "Start": {
+                            "Line": 4,
+                            "Column": 4,
+                            "Abs": 29
+                          },
+                          "End": {
+                            "Line": 4,
+                            "Column": 7,
+                            "Abs": 32
+                          },
+                          "Length": 3
+                        }
+                      },
+                      "End": {
+                        "Types": [
+                          "IDENTIFIER"
+                        ],
+                        "Value": "fmt",
+                        "Pos": {
+                          "Start": {
+                            "Line": 4,
+                            "Column": 4,
+                            "Abs": 29
+                          },
+                          "End": {
+                            "Line": 4,
+                            "Column": 7,
+                            "Abs": 32
+                          },
+                          "Length": 3
+                        }
+                      }
+                    },
+                    "Type": "fmt",
+                    "IsPointer": false,
+                    "IsArray": false,
+                    "IsVariadic": false
+                  },
+                  "Args": [
+                    "testing\\n"
+                  ],
+                  "IsStaticAccess": true
+                }
+              ],
+              "Function": null
+            },
+            "Func": null
+          },
+          {
+            "NodeId": 19,
+            "Token": {
+              "Types": [
+                "KEYWORD_FUNC",
+                "IDENTIFIER"
+              ],
+              "Value": "func",
+              "Pos": {
+                "Start": {
+                  "Line": 7,
+                  "Column": 8,
+                  "Abs": 68
+                },
+                "End": {
+                  "Line": 7,
+                  "Column": 12,
+                  "Abs": 72
+                },
+                "Length": 4
+              }
+            },
+            "RuleRange": {
+              "Start": {
+                "Types": [
+                  "KEYWORD_DEFER",
+                  "IDENTIFIER"
+                ],
+                "Value": "defer",
+                "Pos": {
+                  "Start": {
+                    "Line": 7,
+                    "Column": 2,
+                    "Abs": 62
+                  },
+                  "End": {
+                    "Line": 7,
+                    "Column": 7,
+                    "Abs": 67
+                  },
+                  "Length": 5
+                }
+              },
+              "End": {
+                "Types": [
+                  "KEYWORD_DEFER",
+                  "IDENTIFIER"
+                ],
+                "Value": "defer",
+                "Pos": {
+                  "Start": {
+                    "Line": 7,
+                    "Column": 2,
+                    "Abs": 62
+                  },
+                  "End": {
+                    "Line": 7,
+                    "Column": 7,
+                    "Abs": 67
+                  },
+                  "Length": 5
+                }
+              }
+            },
+            "Kind": "function",
+            "Block": null,
+            "Func": {
+              "NodeId": 20,
+              "Token": {
+                "Types": [
+                  "KEYWORD_FUNC",
+                  "IDENTIFIER"
+                ],
+                "Value": "func",
+                "Pos": {
+                  "Start": {
+                    "Line": 7,
+                    "Column": 8,
+                    "Abs": 68
+                  },
+                  "End": {
+                    "Line": 7,
+                    "Column": 12,
+                    "Abs": 72
+                  },
+                  "Length": 4
+                }
+              },
+              "RuleRange": {
+                "Start": {
+                  "Types": [
+                    "KEYWORD_FUNC",
+                    "IDENTIFIER"
+                  ],
+                  "Value": "func",
+                  "Pos": {
+                    "Start": {
+                      "Line": 7,
+                      "Column": 8,
+                      "Abs": 68
+                    },
+                    "End": {
+                      "Line": 7,
+                      "Column": 12,
+                      "Abs": 72
+                    },
+                    "Length": 4
+                  }
+                },
+                "End": {
+                  "Types": [
+                    "KEYWORD_FUNC",
+                    "IDENTIFIER"
+                  ],
+                  "Value": "func",
+                  "Pos": {
+                    "Start": {
+                      "Line": 7,
+                      "Column": 8,
+                      "Abs": 68
+                    },
+                    "End": {
+                      "Line": 7,
+                      "Column": 12,
+                      "Abs": 72
+                    },
+                    "Length": 4
+                  }
+                }
+              },
+              "Name": "_____anonymous_func",
+              "Args": [
+                {
+                  "NodeId": 22,
+                  "Token": {
+                    "Types": [
+                      "IDENTIFIER"
+                    ],
+                    "Value": "param",
+                    "Pos": {
+                      "Start": {
+                        "Line": 7,
+                        "Column": 14,
+                        "Abs": 74
+                      },
+                      "End": {
+                        "Line": 7,
+                        "Column": 19,
+                        "Abs": 79
+                      },
+                      "Length": 5
+                    }
+                  },
+                  "RuleRange": {
+                    "Start": {
+                      "Types": [
+                        "IDENTIFIER"
+                      ],
+                      "Value": "param",
+                      "Pos": {
+                        "Start": {
+                          "Line": 7,
+                          "Column": 14,
+                          "Abs": 74
+                        },
+                        "End": {
+                          "Line": 7,
+                          "Column": 19,
+                          "Abs": 79
+                        },
+                        "Length": 5
+                      }
+                    },
+                    "End": {
+                      "Types": [
+                        "IDENTIFIER"
+                      ],
+                      "Value": "param",
+                      "Pos": {
+                        "Start": {
+                          "Line": 7,
+                          "Column": 14,
+                          "Abs": 74
+                        },
+                        "End": {
+                          "Line": 7,
+                          "Column": 19,
+                          "Abs": 79
+                        },
+                        "Length": 5
+                      }
+                    }
+                  },
+                  "Name": "param",
+                  "TypeReference": {
+                    "NodeId": 23,
+                    "Token": {
+                      "Types": [
+                        "IDENTIFIER"
+                      ],
+                      "Value": "type",
+                      "Pos": {
+                        "Start": {
+                          "Line": 7,
+                          "Column": 20,
+                          "Abs": 80
+                        },
+                        "End": {
+                          "Line": 7,
+                          "Column": 24,
+                          "Abs": 84
+                        },
+                        "Length": 4
+                      }
+                    },
+                    "RuleRange": {
+                      "Start": {
+                        "Types": [
+                          "IDENTIFIER"
+                        ],
+                        "Value": "type",
+                        "Pos": {
+                          "Start": {
+                            "Line": 7,
+                            "Column": 20,
+                            "Abs": 80
+                          },
+                          "End": {
+                            "Line": 7,
+                            "Column": 24,
+                            "Abs": 84
+                          },
+                          "Length": 4
+                        }
+                      },
+                      "End": {
+                        "Types": [
+                          "IDENTIFIER"
+                        ],
+                        "Value": "type",
+                        "Pos": {
+                          "Start": {
+                            "Line": 7,
+                            "Column": 20,
+                            "Abs": 80
+                          },
+                          "End": {
+                            "Line": 7,
+                            "Column": 24,
+                            "Abs": 84
+                          },
+                          "Length": 4
+                        }
+                      }
+                    },
+                    "Type": "type",
+                    "IsPointer": false,
+                    "IsArray": false,
+                    "IsVariadic": false
+                  }
+                }
+              ],
+              "ReturnType": {
+                "NodeId": 24,
+                "Token": {
+                  "Types": [
+                    "LCURLY"
+                  ],
+                  "Value": "{",
+                  "Pos": {
+                    "Start": {
+                      "Line": 7,
+                      "Column": 26,
+                      "Abs": 86
+                    },
+                    "End": {
+                      "Line": 7,
+                      "Column": 27,
+                      "Abs": 87
+                    },
+                    "Length": 1
+                  }
+                },
+                "RuleRange": null,
+                "Name": "void"
+              },
+              "Receiver": null,
+              "Body": {
+                "NodeId": 25,
+                "Token": {
+                  "Types": [
+                    "IDENTIFIER"
+                  ],
+                  "Value": "fmt",
+                  "Pos": {
+                    "Start": {
+                      "Line": 8,
+                      "Column": 4,
+                      "Abs": 92
+                    },
+                    "End": {
+                      "Line": 8,
+                      "Column": 7,
+                      "Abs": 95
+                    },
+                    "Length": 3
+                  }
+                },
+                "RuleRange": {
+                  "Start": {
+                    "Types": [
+                      "LCURLY"
+                    ],
+                    "Value": "{",
+                    "Pos": {
+                      "Start": {
+                        "Line": 7,
+                        "Column": 26,
+                        "Abs": 86
+                      },
+                      "End": {
+                        "Line": 7,
+                        "Column": 27,
+                        "Abs": 87
+                      },
+                      "Length": 1
+                    }
+                  },
+                  "End": {
+                    "Types": [
+                      "LCURLY"
+                    ],
+                    "Value": "{",
+                    "Pos": {
+                      "Start": {
+                        "Line": 7,
+                        "Column": 26,
+                        "Abs": 86
+                      },
+                      "End": {
+                        "Line": 7,
+                        "Column": 27,
+                        "Abs": 87
+                      },
+                      "Length": 1
+                    }
+                  }
+                },
+                "Statements": [
+                  {
+                    "NodeId": 29,
+                    "Token": {
+                      "Types": [
+                        "STRING"
+                      ],
+                      "Value": "testing\\n",
+                      "Pos": {
+                        "Start": {
+                          "Line": 8,
+                          "Column": 16,
+                          "Abs": 104
+                        },
+                        "End": {
+                          "Line": 8,
+                          "Column": 27,
+                          "Abs": 115
+                        },
+                        "Length": 11
+                      }
+                    },
+                    "RuleRange": {
+                      "Start": {
+                        "Types": [
+                          "IDENTIFIER"
+                        ],
+                        "Value": "fmt",
+                        "Pos": {
+                          "Start": {
+                            "Line": 8,
+                            "Column": 4,
+                            "Abs": 92
+                          },
+                          "End": {
+                            "Line": 8,
+                            "Column": 7,
+                            "Abs": 95
+                          },
+                          "Length": 3
+                        }
+                      },
+                      "End": {
+                        "Types": [
+                          "SEMICOLON"
+                        ],
+                        "Value": ";",
+                        "Pos": {
+                          "Start": {
+                            "Line": 8,
+                            "Column": 28,
+                            "Abs": 116
+                          },
+                          "End": {
+                            "Line": 8,
+                            "Column": 29,
+                            "Abs": 117
+                          },
+                          "Length": 1
+                        }
+                      }
+                    },
+                    "Function": {
+                      "NodeId": 27,
+                      "Token": {
+                        "Types": [
+                          "IDENTIFIER"
+                        ],
+                        "Value": "printf",
+                        "Pos": {
+                          "Start": {
+                            "Line": 8,
+                            "Column": 9,
+                            "Abs": 97
+                          },
+                          "End": {
+                            "Line": 8,
+                            "Column": 15,
+                            "Abs": 103
+                          },
+                          "Length": 6
+                        }
+                      },
+                      "RuleRange": {
+                        "Start": {
+                          "Types": [
+                            "IDENTIFIER"
+                          ],
+                          "Value": "printf",
+                          "Pos": {
+                            "Start": {
+                              "Line": 8,
+                              "Column": 9,
+                              "Abs": 97
+                            },
+                            "End": {
+                              "Line": 8,
+                              "Column": 15,
+                              "Abs": 103
+                            },
+                            "Length": 6
+                          }
+                        },
+                        "End": {
+                          "Types": [
+                            "IDENTIFIER"
+                          ],
+                          "Value": "printf",
+                          "Pos": {
+                            "Start": {
+                              "Line": 8,
+                              "Column": 9,
+                              "Abs": 97
+                            },
+                            "End": {
+                              "Line": 8,
+                              "Column": 15,
+                              "Abs": 103
+                            },
+                            "Length": 6
+                          }
+                        }
+                      },
+                      "Name": "printf"
+                    },
+                    "Receiver": {
+                      "NodeId": 26,
+                      "Token": {
+                        "Types": [
+                          "IDENTIFIER"
+                        ],
+                        "Value": "fmt",
+                        "Pos": {
+                          "Start": {
+                            "Line": 8,
+                            "Column": 4,
+                            "Abs": 92
+                          },
+                          "End": {
+                            "Line": 8,
+                            "Column": 7,
+                            "Abs": 95
+                          },
+                          "Length": 3
+                        }
+                      },
+                      "RuleRange": {
+                        "Start": {
+                          "Types": [
+                            "IDENTIFIER"
+                          ],
+                          "Value": "fmt",
+                          "Pos": {
+                            "Start": {
+                              "Line": 8,
+                              "Column": 4,
+                              "Abs": 92
+                            },
+                            "End": {
+                              "Line": 8,
+                              "Column": 7,
+                              "Abs": 95
+                            },
+                            "Length": 3
+                          }
+                        },
+                        "End": {
+                          "Types": [
+                            "IDENTIFIER"
+                          ],
+                          "Value": "fmt",
+                          "Pos": {
+                            "Start": {
+                              "Line": 8,
+                              "Column": 4,
+                              "Abs": 92
+                            },
+                            "End": {
+                              "Line": 8,
+                              "Column": 7,
+                              "Abs": 95
+                            },
+                            "Length": 3
+                          }
+                        }
+                      },
+                      "Type": "fmt",
+                      "IsPointer": false,
+                      "IsArray": false,
+                      "IsVariadic": false
+                    },
+                    "Args": [
+                      "testing\\n"
+                    ],
+                    "IsStaticAccess": true
+                  }
+                ],
+                "Function": null
+              },
+              "IsStatic": false,
+              "IsBuiltin": false,
+              "IsAnonymous": true,
+              "HasVariadicArgs": false
+            }
+          }
+        ],
+        "Function": null
+      },
+      "IsStatic": false,
+      "IsBuiltin": false,
+      "IsAnonymous": false,
+      "HasVariadicArgs": false
+    }
+  ]
+}

@@ -109,23 +109,22 @@ func (suite *TestParserTestSuite) TearDownSuite() {
 
 }
 func (suite *TestParserTestSuite) BeforeTest(suiteName, testName string) {
-	goldenData, loaded := loadGoldenWithoutTestData(suite.T(), testName)
-	if loaded {
-		suite.rawGoldenData = goldenData
-		if err := json.Unmarshal([]byte(goldenData), &suite.goldenData); err != nil {
-			suite.Failf("failed to unmarshal golden data", err.Error())
-		}
-	}
-
+	// goldenData, loaded := loadGoldenWithoutTestData(suite.T(), testName)
+	// if loaded {
+	// 	suite.rawGoldenData = goldenData
+	// 	if err := json.Unmarshal([]byte(goldenData), &suite.goldenData); err != nil {
+	// 		suite.Failf("failed to unmarshal golden data", err.Error())
+	// 	}
+	// }
+	//
 	inputFileName := testName + "_TEST_INPUT.arc"
-
 	suite.inputData, _ = loadFileContent(suite.T(), inputFileName)
 }
 func (suite *TestParserTestSuite) AfterTest(suiteName, testName string) {
-	if *update {
-		writeGolden(suite.T(), testName, suite.goldenData)
-		suite.T().Logf("updated golden file for %s", testName)
-	}
+	// if *update {
+	// 	writeGolden(suite.T(), testName, suite.goldenData)
+	// 	suite.T().Logf("updated golden file for %s", testName)
+	// }
 }
 
 func (suite *TestParserTestSuite) Test_ParserInput() {
@@ -164,6 +163,35 @@ func (suite *TestParserTestSuite) Test_TokenGrouping() {
 func (suite *TestParserTestSuite) Test_Enums() {
 
 	l := lexer.NewLexer(suite.inputData)
+	p := NewParser(l)
+	program := p.Parse()
+
+	if diff := cmp.Diff(suite.goldenData, program); diff != "" {
+		suite.Failf("Token mismatch (-want +got):\n%s", diff)
+	}
+	suite.goldenData = program
+
+	w := utilities.NewIndentWriter(os.Stdout, " ")
+	program.PrintTree(w.(*utilities.IndentWriter))
+}
+
+func (suite *TestParserTestSuite) Test_Defer() {
+
+	l := lexer.NewLexer(suite.inputData)
+	p := NewParser(l)
+	program := p.Parse()
+
+	if diff := cmp.Diff(suite.goldenData, program); diff != "" {
+		suite.Failf("Token mismatch (-want +got):\n%s", diff)
+	}
+	suite.goldenData = program
+
+	w := utilities.NewIndentWriter(os.Stdout, " ")
+	program.PrintTree(w.(*utilities.IndentWriter))
+}
+func (suite *TestParserTestSuite) Test_Errors() {
+	l := lexer.NewLexer(suite.inputData)
+	l.SetSource("testdata/Test_Errors_TEST_INPUT.arc")
 	p := NewParser(l)
 	program := p.Parse()
 

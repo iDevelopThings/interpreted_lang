@@ -149,3 +149,12 @@ func (self *CallExpression) GetChildren() []Node {
 }
 func (self *CallExpression) IsStatement()  {}
 func (self *CallExpression) IsExpression() {}
+
+type OrExpression struct {
+	*AstNode
+	Left  Expr
+	Right Expr
+}
+
+func (self *OrExpression) IsStatement()  {}
+func (self *OrExpression) IsExpression() {}

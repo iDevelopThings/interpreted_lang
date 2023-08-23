@@ -3,6 +3,7 @@ package ast
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"arc/utilities"
 )
@@ -39,8 +40,21 @@ func (self *FunctionDeclaration) PrintTree(s *utilities.IndentWriter) {
 	s.WriteString("FunctionDeclaration: " + self.Name + "\n")
 
 	w := s.ChildWriter()
+	w.WriteString(fmt.Sprintf("IsStatic: %v\n", self.IsStatic))
+	w.WriteString(fmt.Sprintf("IsBuiltin: %v\n", self.IsBuiltin))
+	w.WriteString(fmt.Sprintf("IsAnonymous: %v\n", self.IsAnonymous))
+	w.WriteString(fmt.Sprintf("HasVariadicArgs: %v\n", self.HasVariadicArgs))
+
+	w.WriteString("Return Type:\n")
+	if self.ReturnType != nil {
+		self.ReturnType.PrintTree(w.ChildWriter())
+	} else {
+		w.WriteString("<nil>\n")
+	}
+
+	w.WriteString("Args: \n")
 	for _, arg := range self.Args {
-		arg.PrintTree(w)
+		arg.PrintTree(w.ChildWriter())
 	}
 	self.Body.PrintTree(w)
 }
@@ -216,10 +230,23 @@ func (self *LoopStatement) PrintTree(s *utilities.IndentWriter) {
 
 }
 
+func (self *DeferStatement) PrintTree(s *utilities.IndentWriter) {
+	s.WriteString("DeferStatement: \n")
+
+	w := s.ChildWriter()
+	if self.Func != nil {
+		w.WriteString("Func: \n")
+		self.Func.PrintTree(w.ChildWriter())
+	} else {
+		w.WriteString("<nil>\n")
+	}
+}
+
 func (self *AssignmentStatement) PrintTree(s *utilities.IndentWriter) {
 	s.WriteString("AssignmentStatement: \n")
 
 	w := s.ChildWriter()
+	w.WriteString("Name: " + self.Name.Name + "\n")
 
 	w.WriteString("LHS: \n")
 	self.Type.PrintTree(w.ChildWriter())
@@ -385,7 +412,20 @@ func (self *BasicType) PrintTree(s *utilities.IndentWriter) {
 
 }
 func (self *TypeReference) PrintTree(s *utilities.IndentWriter) {
-	s.WriteString("TypeReference: " + self.Type + "\n")
+	kv := map[string]string{
+		"IsPointer":    fmt.Sprintf("%v", self.IsPointer),
+		"IsArray":      fmt.Sprintf("%v", self.IsArray),
+		"IsVariadic":   fmt.Sprintf("%v", self.IsVariadic),
+		"IsOptionType": fmt.Sprintf("%v", self.IsOptionType),
+		"IsResultType": fmt.Sprintf("%v", self.IsResultType),
+	}
+	var vals []string
+	for k, v := range kv {
+		vals = append(vals, k+"="+v)
+	}
+
+	s.WriteString("TypeReference[" + self.Type + "](" + strings.Join(vals, ", ") + ")\n")
+
 }
 
 func (self *EnumDeclaration) PrintTree(s *utilities.IndentWriter) {
@@ -442,5 +482,26 @@ func (self *EnumValue) PrintTree(s *utilities.IndentWriter) {
 				p.PrintTree(cw)
 			}
 		}
+	}
+}
+
+func (self *OrExpression) PrintTree(s *utilities.IndentWriter) {
+	s.WriteString("OrExpression: \n")
+
+	w := s.ChildWriter()
+	w.WriteString("LHS: ")
+	if self.Left != nil {
+		w.WriteString("\n")
+		self.Left.PrintTree(w.ChildWriter())
+	} else {
+		w.WriteString("<nil>\n")
+	}
+
+	w.WriteString("RHS: ")
+	if self.Right != nil {
+		w.WriteString("\n")
+		self.Right.PrintTree(w.ChildWriter())
+	} else {
+		w.WriteString("<nil>\n")
 	}
 }

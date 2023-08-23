@@ -63,6 +63,15 @@ func (t *RT_fmt) Static_print(env *Environment, args ...any) interface{} {
 	return nil
 }
 
+//goland:noinspection GoSnakeCaseUsage
+type RT_error struct{}
+
+//goland:noinspection GoSnakeCaseUsage
+func (t *RT_error) Static_panic(env *Environment, args ...any) interface{} {
+	panic(args[0])
+	return nil
+}
+
 func bindStaticRuntimeType(env *Environment, t any) {
 	rPtrType := reflect.TypeOf(t)
 	rType := rPtrType.Elem()
@@ -117,7 +126,11 @@ func bindStaticRuntimeType(env *Environment, t any) {
 		}
 
 		if m.Type.NumOut() > 0 {
-			methodDecl.ReturnType = ast.NewIdentifierWithValue(nil, m.Type.Out(0).Name())
+			ident := ast.NewIdentifierWithValue(nil, m.Type.Out(0).Name())
+			methodDecl.ReturnType = &ast.TypeReference{
+				AstNode: ast.NewAstNode(nil),
+				Type:    ident.Name,
+			}
 		}
 
 		if argsC := m.Type.NumIn(); argsC > 1 {
@@ -285,6 +298,7 @@ func RegisterRuntimeFunctions(env *Environment) {
 	// }
 
 	bindStaticRuntimeType(env, new(RT_fmt))
+	bindStaticRuntimeType(env, new(RT_error))
 
 	/*env.DefineCustomFunctionWithReceiver(
 		ast.NewTypedIdentifierCustom("fmt", "fmt"),

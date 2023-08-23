@@ -2,7 +2,7 @@
 
 ## Routes
 
-```sl
+```arc
 route <method> "<path>" {
     <handler>
 }
@@ -10,7 +10,7 @@ route <method> "<path>" {
 
 Example:
 
-```sl
+```arc
 route POST "/data" {
 }
 ```
@@ -21,7 +21,7 @@ route POST "/data" {
 
 This will convert the json body into a variable of the given type.
 
-```sl
+```arc
 object User {
    name string
 }
@@ -32,12 +32,12 @@ route POST "/data" {
 
 ## Responses:
 
-```sl 
+```arc 
 respond with <json|text|html> <value> <status <number>?>
 ```
 
 Examples:
-```sl
+```arc
 respond with { "error": "Something went wrong!" } status 500
 respond with status 404
 respond with text "Hello world"

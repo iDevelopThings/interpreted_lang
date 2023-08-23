@@ -44,12 +44,13 @@ type FunctionDeclaration struct {
 	*AstNode
 	Name            string
 	Args            []*TypedIdentifier
-	ReturnType      *Identifier
+	ReturnType      *TypeReference
 	Receiver        *TypedIdentifier
 	Body            *Block
 	CustomFuncCb    func(args ...any) any `json:"-"`
 	IsStatic        bool
 	IsBuiltin       bool
+	IsAnonymous     bool
 	HasVariadicArgs bool
 }
 

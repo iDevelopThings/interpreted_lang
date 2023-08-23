@@ -3,12 +3,14 @@ package errors
 import (
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/fatih/color"
 
 	"arc/ast"
+	. "arc/log"
 )
 
 const contextRadius = 3
@@ -64,15 +66,23 @@ func (self *ErrorPresenter) AddAtNode(node ast.Node, format string, a ...any) *E
 }
 
 func (self *ErrorPresenter) Print(filePath string) {
+	log.SetFlags(0)
+
 	lines, _, _ := self.process()
 
 	// panic(fmt.Sprintf("ErrorPresenter.Print() is not implemented yet."))
 
-	log.Printf("\n  --> %s:%d\n\n", filePath, self.firstErrorLineNumber+1)
+	log.Printf("\n  --> %s:%d", filePath, self.firstErrorLineNumber+1)
+
+	callerInfo := Log.CallerInfo(3)
+	d, _ := os.Getwd()
+	log.Printf("  --> %s:%d\n\n", strings.Replace(callerInfo.File, d, "", 1), callerInfo.Line)
+	// fmt.Println(strings.Repeat("-", 80))
 
 	for _, line := range lines {
 		log.Println(line)
 	}
+	log.Println("")
 	log.Println(strings.Repeat("-", 80))
 
 	// for i, line := range self.Lines {

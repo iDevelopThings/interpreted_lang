@@ -70,7 +70,7 @@ func NewRuntimeArray(elementType Declaration) *RuntimeValue {
 
 	rv.Methods["length"] = &FunctionDeclaration{
 		Name:       "length",
-		ReturnType: NewIdentifierWithValue(nil, "int"),
+		ReturnType: NewTypeReferenceWithValue("int"),
 		CustomFuncCb: func(args ...any) any {
 			l := NewLiteral(nil, len(rv.Value.([]*RuntimeValue)))
 			return NewRuntimeValueFromLiteral(
@@ -81,7 +81,7 @@ func NewRuntimeArray(elementType Declaration) *RuntimeValue {
 
 	rv.Methods["add"] = &FunctionDeclaration{
 		Name:       "add",
-		ReturnType: NewIdentifierWithValue(nil, "void"),
+		ReturnType: NewTypeReferenceWithValue("void"),
 		CustomFuncCb: func(args ...any) any {
 			if len(args) == 0 {
 				log.Fatalf("Expected >= 1 argument, got %d", len(args))
@@ -97,7 +97,7 @@ func NewRuntimeArray(elementType Declaration) *RuntimeValue {
 
 	rv.Methods["remove"] = &FunctionDeclaration{
 		Name:       "remove",
-		ReturnType: NewIdentifierWithValue(nil, "bool"),
+		ReturnType: NewTypeReferenceWithValue("bool"),
 		CustomFuncCb: func(args ...any) any {
 			if len(args) == 0 {
 				log.Fatalf("Expected >= 1 argument, got %d", len(args))
