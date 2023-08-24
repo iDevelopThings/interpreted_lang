@@ -203,3 +203,27 @@ func (suite *TestParserTestSuite) Test_Errors() {
 	w := utilities.NewIndentWriter(os.Stdout, " ")
 	program.PrintTree(w.(*utilities.IndentWriter))
 }
+
+func (suite *TestParserTestSuite) Test_GeneratedVisitor() {
+	data, _ := loadFileContent(suite.T(), "Test_Errors_TEST_INPUT.arc")
+	l := lexer.NewLexer(data)
+	l.SetSource("testdata/Test_Errors_TEST_INPUT.arc")
+	p := NewParser(l)
+	program := p.Parse()
+
+	ast.Walk(program, func(node ast.Node) any {
+		switch node := node.(type) {
+		case *ast.FunctionDeclaration:
+			suite.T().Logf("FunctionDeclaration: %#v", node)
+		case *ast.CallExpression:
+			suite.T().Logf("CallExpression: %#v", node)
+		}
+
+		// suite.T().Logf("node: %#v", node)
+
+		return true
+	})
+
+	// w := utilities.NewIndentWriter(os.Stdout, " ")
+	// program.PrintTree(w.(*utilities.IndentWriter))
+}

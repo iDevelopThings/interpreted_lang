@@ -53,7 +53,7 @@ type BinaryExpression struct {
 	*AstNode
 	Kind  BinaryExpressionKind
 	Left  Expr
-	Op    operators.Operator
+	Op    operators.Operator `visitor:"-"`
 	Right Expr
 }
 
@@ -69,7 +69,7 @@ func (self *BinaryExpression) IsStatement()  {}
 type PostfixExpression struct {
 	*AstNode
 	Left Expr
-	Op   operators.Operator
+	Op   operators.Operator `visitor:"-"`
 }
 
 func (self *PostfixExpression) GetChildren() []Node {
@@ -82,7 +82,7 @@ func (self *PostfixExpression) IsStatement()  {}
 
 type UnaryExpression struct {
 	*AstNode
-	Op   operators.Operator
+	Op   operators.Operator `visitor:"-"`
 	Expr Expr
 }
 

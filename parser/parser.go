@@ -79,6 +79,8 @@ func (p *Parser) parseProgram() *ast.Program {
 
 			if decl, ok := node.(ast.Declaration); ok {
 				program.Declarations = append(program.Declarations, decl)
+			} else {
+				panic("Expected declaration but got " + node.GetToken().Value)
 			}
 
 			program.Statements = append(program.Statements, node)

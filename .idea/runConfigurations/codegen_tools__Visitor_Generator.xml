@@ -1,0 +1,26 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="codegen_tools: Visitor Generator" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="ArcInterpreter" />
+    <working_directory value="$PROJECT_DIR$/internal_codegen_tools" />
+    <parameters value="--tool visitor-generator" />
+    <envs>
+      <env name="GOFILE" value="$PROJECT_DIR$/ast/base.go" />
+      <env name="GOPACKAGE" value="ast" />
+    </envs>
+    <EXTENSION ID="net.ashald.envfile">
+      <option name="IS_ENABLED" value="false" />
+      <option name="IS_SUBST" value="false" />
+      <option name="IS_PATH_MACRO_SUPPORTED" value="false" />
+      <option name="IS_IGNORE_MISSING_FILES" value="false" />
+      <option name="IS_ENABLE_EXPERIMENTAL_INTEGRATIONS" value="false" />
+      <ENTRIES>
+        <ENTRY IS_ENABLED="true" PARSER="runconfig" IS_EXECUTABLE="false" />
+      </ENTRIES>
+    </EXTENSION>
+    <kind value="PACKAGE" />
+    <package value="internal_codegen_tools" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$/internal_codegen_tools/main.go" />
+    <method v="2" />
+  </configuration>
+</component>

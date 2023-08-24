@@ -1,6 +1,7 @@
 package ast
 
 type Declaration interface {
+	Node
 	IsDeclaration()
 	TypeName() string
 	GetMethods() map[string]*FunctionDeclaration

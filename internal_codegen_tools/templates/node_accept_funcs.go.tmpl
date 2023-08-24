@@ -1,0 +1,17 @@
+{{- /*gotype: internal_codegen_tools.AstVisitorGenerator*/ -}}
+
+package ast
+
+type Visitable interface {
+    Accept(Visitor)
+}
+{{- range $method := .VisitorMethods }}
+{{- if $method.IsStruct }}
+
+func (self *{{$method.TypeName}}) Accept(visitor Visitor) {
+    visitor.Visit{{$method.TypeName}}(self)
+}
+{{- else}}
+
+{{- end}}
+{{- end}}

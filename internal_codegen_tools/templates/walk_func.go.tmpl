@@ -1,0 +1,77 @@
+{{- /*gotype: internal_codegen_tools.AstVisitorGenerator*/ -}}
+
+package ast
+
+type VisitFunc func(node Node) any
+
+func Walk(root Node, cb VisitFunc) {
+    visited := make(map[Node]bool)
+    visited[root] = true
+
+    var visitFunc func(node Node, cb VisitFunc, visited map[Node]bool) bool
+    visitFunc = func(node Node, cb VisitFunc, visited map[Node]bool) bool {
+        if visited[node]  && node != root {
+            return true
+        }
+        visited[node] = true
+
+        vResult := cb(node)
+        if vResult == false {
+            return false
+        }
+
+        switch node := node.(type) {
+        {{- range $s := .VisitorStructs }}
+        case *{{ $s.AstStruct.Name }}:
+            {
+
+                {{/*if !visitFunc(node, cb, visited) {*/}}
+                {{/*    return false*/}}
+                {{/*}*/}}
+
+                {{- range $f := $s.VisitArgs }}
+
+                {{- if $f.IsArray }}
+                    for _, item := range node.{{ $f.StructKey }} {
+                        if !visitFunc(item, cb, visited) {
+                            return false
+                        }
+                    }
+                {{- else if $f.IsMap }}
+                for _, item := range node.{{ $f.StructKey }} {
+                    if !visitFunc(item, cb, visited) {
+                        return false
+                    }
+                }
+                {{- else if $f.IsStructType }}
+                    if node.{{$f.StructKey}} != nil && !visitFunc(node.{{$f.StructKey}}, cb, visited) {
+                        return false
+                    }
+                {{- else if $f.IsInterfaceType }}
+                    if node.{{$f.StructKey}} != nil && !visitFunc(node.{{$f.StructKey}}, cb, visited) {
+                        return false
+                    }
+                {{- else}}
+
+                    {{ printf "// type skiped: %s" $f.StructKey }}
+                    {{ printf "// Info: " }}
+                    {{ printf "// - Type:  %s" $f.Type }}
+                    {{ printf "// - IsArray:  %s" $f.IsArray }}
+                    {{ printf "// - IsPtr:  %s" $f.IsPtr }}
+                    {{ printf "// - IsInterfaceType:  %s" $f.IsInterfaceType }}
+                    {{ printf "// - IsStructType:  %s" $f.IsStructType }}
+
+
+                {{- end}}
+
+                {{- end}}
+            }
+        {{- end}}
+        }
+
+        return true
+
+    }
+
+    visitFunc(root, cb, visited)
+}
