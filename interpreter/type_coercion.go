@@ -1,7 +1,6 @@
 package interpreter
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -15,8 +14,8 @@ type TypeCoercionInstance struct {
 var TypeCoercion = &TypeCoercionInstance{}
 
 var (
-	InvalidCastError      = fmt.Errorf("Invalid cast, cannot cast value of type %s to type %s", "%s", "%s")
-	InvalidCastConstraint = fmt.Errorf("Invalid constraint, cannot use value type %s here, only %s is possible due to %s", "%s", "%s", "%s")
+	InvalidCastError      = errors.New("Invalid cast, cannot cast value of type %s to type %s")
+	InvalidCastConstraint = errors.New("Invalid constraint, cannot use value type %s here, only %s is possible due to %s")
 )
 
 func (t *TypeCoercionInstance) Coerce(lhsRv, rhsRv *ast.RuntimeValue, to *ast.BasicType) (*ast.RuntimeValue, *ast.RuntimeValue) {
@@ -49,7 +48,7 @@ func (t *TypeCoercionInstance) Cast(rv *ast.RuntimeValue, to *ast.BasicType) (*a
 		case ast.BoolType:
 			newValue = rv.Value.(int) != 0
 		default:
-			return nil, errors.Wrapf(InvalidCastError, rv.TypeName, to.TypeName())
+			return nil, &CastError{rv.TypeName, to.TypeName()}
 		}
 
 	case ast.RuntimeValueKindFloat:
@@ -61,7 +60,7 @@ func (t *TypeCoercionInstance) Cast(rv *ast.RuntimeValue, to *ast.BasicType) (*a
 		case ast.BoolType:
 			newValue = rv.Value.(float64) != 0
 		default:
-			return nil, errors.Wrapf(InvalidCastError, rv.TypeName, to.TypeName())
+			return nil, &CastError{rv.TypeName, to.TypeName()}
 		}
 
 	case ast.RuntimeValueKindBoolean:
@@ -85,11 +84,88 @@ func (t *TypeCoercionInstance) Cast(rv *ast.RuntimeValue, to *ast.BasicType) (*a
 				newValue = "false"
 			}
 		default:
-			return nil, errors.Wrapf(InvalidCastError, rv.TypeName, to.TypeName())
+			return nil, &CastError{rv.TypeName, to.TypeName()}
 		}
 
 	default:
-		return nil, errors.Wrapf(InvalidCastError, rv.TypeName, to.TypeName())
+		return nil, &CastError{rv.TypeName, to.TypeName()}
+	}
+
+	newRv := ast.NewRuntimeValueClone(rv)
+	newRv.Kind = ast.RuntimeValueKind(to.Name)
+	newRv.TypeName = to.Name
+	newRv.Value = newValue
+
+	return newRv, nil
+}
+func (t *TypeCoercionInstance) CastWithConstraint(lv, rv *ast.RuntimeValue, to *ast.BasicType) (*ast.RuntimeValue, error) {
+	if rv.TypeName == to.TypeName() {
+		// TODO: Maybe we should actually check here that the underlying value is actually of the correct go type
+		return rv, nil
+	}
+
+	var newValue any
+
+	switch rv.Kind {
+
+	case ast.RuntimeValueKindInteger:
+		switch to {
+		case ast.FloatType:
+			newValue = float64(rv.Value.(int))
+		case ast.StringType:
+			newValue = strconv.Itoa(rv.Value.(int))
+		case ast.BoolType:
+			newValue = rv.Value.(int) != 0
+		default:
+			return nil, &CastError{rv.TypeName, to.TypeName()}
+		}
+
+	case ast.RuntimeValueKindFloat:
+		switch to {
+		case ast.IntType:
+			newValue = int(rv.Value.(float64))
+		case ast.StringType:
+			newValue = strconv.FormatFloat(rv.Value.(float64), 'f', -1, 64)
+		case ast.BoolType:
+			newValue = rv.Value.(float64) != 0
+		default:
+			return nil, &CastError{rv.TypeName, to.TypeName()}
+		}
+
+	case ast.RuntimeValueKindBoolean:
+		switch to {
+		case ast.IntType:
+			if rv.Value.(bool) {
+				newValue = 1
+			} else {
+				newValue = 0
+			}
+		case ast.FloatType:
+			if rv.Value.(bool) {
+				newValue = 1.0
+			} else {
+				newValue = 0.0
+			}
+		case ast.StringType:
+			if rv.Value.(bool) {
+				newValue = "true"
+			} else {
+				newValue = "false"
+			}
+		default:
+			return nil, &CastError{rv.TypeName, to.TypeName()}
+		}
+
+	// case ast.RuntimeValueKindNone:
+	// 	switch to {
+	// 	case ast.StringType:
+	// 		if lv.IsOptionKind() && !lv.HasValue() {
+	//
+	// 		}
+	// 	}
+
+	default:
+		return nil, &CastError{rv.TypeName, to.TypeName()}
 	}
 
 	newRv := ast.NewRuntimeValueClone(rv)

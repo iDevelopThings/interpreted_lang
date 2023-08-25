@@ -237,7 +237,13 @@ func (self *Evaluator) executeWrappedFunction(
 	} else {
 
 		if fn.Body != nil {
-			r.Merge(self.Eval(fn.Body))
+			result := self.Eval(fn.Body)
+
+			if fn.ReturnType.IsOptionType {
+				self.wrapResultInOptionType(result, fn.ReturnType)
+			}
+
+			r.Merge(result)
 		}
 
 	}

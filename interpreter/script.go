@@ -1,9 +1,12 @@
 package interpreter
 
 import (
+	"os"
+
 	"github.com/charmbracelet/log"
 
 	"arc/ast"
+	"arc/utilities"
 )
 
 type SourceFile struct {
@@ -38,4 +41,9 @@ func (self *SourceFile) GetFunc(name string) *ast.FunctionDeclaration {
 }
 func (self *SourceFile) GetMainFunc() *ast.FunctionDeclaration {
 	return self.GetFunc("main")
+}
+
+func (self *SourceFile) Print() {
+	w := utilities.NewIndentWriter(os.Stdout, " ")
+	self.Program.PrintTree(w.(*utilities.IndentWriter))
 }

@@ -331,9 +331,6 @@ func (self *InterpreterEngine) Run() {
 
 	// wg := &sync.WaitGroup{}
 
-	w := utilities.NewIndentWriter(os.Stdout, " ")
-	self.SourceFiles[0].Program.PrintTree(w.(*utilities.IndentWriter))
-
 	self.runMainAndServer()
 }
 

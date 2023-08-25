@@ -134,7 +134,7 @@ func (p *Parser) bindInfixParseFns() {
 
 func (p *Parser) getTokenPrecedence(token *lexer.Token) int {
 	for _, tokenType := range token.Types {
-		pr := getPrecedence(tokenType)
+		pr := getPrecedence(lexer.TokenType(tokenType))
 		if pr != -1 {
 			return pr
 		}

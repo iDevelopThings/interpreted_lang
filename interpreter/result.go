@@ -1,5 +1,9 @@
 package interpreter
 
+import (
+	"arc/ast"
+)
+
 type ResultStatus string
 
 const (
@@ -14,18 +18,18 @@ type BoxedResult struct {
 	Status ResultStatus
 }
 
-func NewBoxedResult(value any, status ResultStatus) BoxedResult {
-	return BoxedResult{
+func NewBoxedResult(value any, status ResultStatus) *BoxedResult {
+	return &BoxedResult{
 		Value:  value,
 		Status: status,
 	}
 }
 
-func NewBoxedResults(values ...any) []BoxedResult {
-	results := make([]BoxedResult, 0)
+func NewBoxedResults(values ...any) []*BoxedResult {
+	results := make([]*BoxedResult, 0)
 
 	for _, v := range values {
-		results = append(results, BoxedResult{
+		results = append(results, &BoxedResult{
 			Value:  v,
 			Status: ResultStatusNone,
 		})
@@ -35,12 +39,12 @@ func NewBoxedResults(values ...any) []BoxedResult {
 }
 
 type Result struct {
-	Values []BoxedResult
+	Values []*BoxedResult
 }
 
 func NewResult(values ...any) *Result {
 	r := &Result{
-		Values: make([]BoxedResult, 0),
+		Values: make([]*BoxedResult, 0),
 	}
 
 	if values != nil {
@@ -51,7 +55,7 @@ func NewResult(values ...any) *Result {
 }
 func NewResultWithStatus(value any, status ResultStatus) *Result {
 	r := &Result{
-		Values: make([]BoxedResult, 0),
+		Values: make([]*BoxedResult, 0),
 	}
 
 	r.Values = append(r.Values, NewBoxedResult(value, status))
@@ -69,7 +73,7 @@ func (self *Result) Add(value any, resultStatus ...ResultStatus) *Result {
 	return self
 }
 
-func (self *Result) AddExisting(result BoxedResult) *Result {
+func (self *Result) AddExisting(result *BoxedResult) *Result {
 	self.Values = append(self.Values, result)
 	return self
 }
@@ -90,12 +94,17 @@ func (self *Result) Merge(results ...*Result) *Result {
 	return self
 }
 
-func (self *Result) FirstBoxedResult() (BoxedResult, bool) {
+func (self *Result) FirstBoxedResult() (*BoxedResult, bool) {
 	if len(self.Values) == 0 {
-		return BoxedResult{}, false
+		return nil, false
 	}
 
-	return self.Values[0], true
+	val := self.Values[0]
+	if r, ok := val.Value.(*Result); ok {
+		return r.FirstBoxedResult()
+	}
+
+	return val, true
 }
 
 func (self *Result) First() any {
@@ -108,6 +117,15 @@ func (self *Result) First() any {
 		result = r.First()
 	}
 	return result
+}
+
+func (self *Result) ReplaceFirstBoxedValue(value *ast.RuntimeValue) {
+	val, ok := self.FirstBoxedResult()
+	if !ok {
+		return
+	}
+
+	val.Value = value
 }
 
 func (self *Result) HasValue() bool {
@@ -133,9 +151,9 @@ func (self *Result) Last() any {
 	return self.Values[len(self.Values)-1]
 }
 
-func (self *Result) HasStatus(statusBreak ResultStatus) (BoxedResult, bool) {
+func (self *Result) HasStatus(statusBreak ResultStatus) (*BoxedResult, bool) {
 	if self.Values == nil || len(self.Values) <= 0 {
-		return BoxedResult{}, false
+		return nil, false
 	}
 
 	for _, value := range self.Values {
@@ -144,7 +162,7 @@ func (self *Result) HasStatus(statusBreak ResultStatus) (BoxedResult, bool) {
 		}
 	}
 
-	return BoxedResult{}, false
+	return nil, false
 }
 
 func (self *Result) HasAnyStatus(status ...ResultStatus) bool {

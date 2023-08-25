@@ -172,6 +172,10 @@ func (suite *TestInterpreterExpressionsTestSuite) Test_Comparison() {
 		expected any
 	}{
 		{input: `
+if testOption(1) == "hi" {
+	fmt::println("we is hi")
+}`, expected: 1},
+		{input: `
 var i int = 0
 if testOption(i) == "hi" && testOption(i) == none {
 	fmt::println("we is hi")
@@ -210,12 +214,13 @@ func eval() {
 				Function: ast.NewIdentifierWithValue(nil, "eval"),
 			}
 
-			result := engine.Evaluator.MustEvalValue(call)
+			rValue := engine.Evaluator.Eval(call)
+			result := rValue.First()
 
 			assert.IsType(suite.T(), new(ast.RuntimeValue), result)
 
-			rtResult := result.(*ast.RuntimeValue)
-			assert.NotNil(suite.T(), rtResult.Value)
+			assert.NotNil(suite.T(), result)
+			// rtResult := result.(*ast.RuntimeValue)
 
 		})
 	}

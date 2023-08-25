@@ -126,3 +126,22 @@ func NewErrorAtNode(node ast.Node, format string, a ...any) {
 // 	Errors().AddAtNode(node, format, a...)
 // 	ErrorManager.Print()
 // }
+
+type CastError struct {
+	LhsType string
+	RhsType string
+}
+
+func (t *CastError) Error() string {
+	return fmt.Sprintf("Invalid cast, cannot cast value of type %s to type %s", t.LhsType, t.RhsType)
+}
+
+type ConstraintError struct {
+	LhsType        string
+	RhsType        string
+	ConstraintInfo string
+}
+
+func (t *ConstraintError) Error() string {
+	return fmt.Sprintf("Invalid constraint, cannot use value type %s here, only %s is possible; %s", t.LhsType, t.RhsType, t.ConstraintInfo)
+}

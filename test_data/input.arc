@@ -1,5 +1,6 @@
 object MyObject {
     StrValue string
+    StrValue string
     IntValue int
     Nested MyObject
 }

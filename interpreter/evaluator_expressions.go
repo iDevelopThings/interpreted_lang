@@ -3,8 +3,6 @@ package interpreter
 import (
 	"fmt"
 
-	"github.com/charmbracelet/log"
-
 	"arc/ast"
 	"arc/ast/operators"
 )
@@ -83,7 +81,10 @@ func evalBinaryOperation(
 				rawResult, opError = Expression.LessThanOrEqual(originalLeft, originalRight)
 
 			case operators.And:
+				rawResult, opError = Expression.And(originalLeft, originalRight)
 
+			default:
+				NewErrorAtNode(mainNode, "Error evaluating binary expression, unhandled comparison operator: %v", op)
 			}
 		}
 
@@ -233,9 +234,9 @@ func (self *Evaluator) evalBinaryExpression(node *ast.BinaryExpression) *Result 
 	// if (isType(left, int(0)) && isType(right, float64(0))) || (isType(left, float64(0)) && isType(right, int(0))) {
 	// 	log.Warnf("Unsupported operation, arithmetic operations between int and float are not supported, please cast both sides: %v - %s", node, node.GetToken())
 	// }
+	NewErrorAtNode(node, "Error evaluating binary expression")
 
-	log.Warnf("Error evaluating binary expression: %v - %s", self, node.GetToken())
-	return NewResult(false)
+	return nil
 }
 
 func (self *Evaluator) evalUnaryExpression(node *ast.UnaryExpression) *Result {

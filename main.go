@@ -41,10 +41,10 @@ func main() {
 
 	engine := interpreter.Engine
 	// engine.LoadScript("test_data/http_basic_test.arc")
-	// engine.LoadScript("test_data/http.arc")
+	engine.LoadScript("test_data/http.arc")
 	// engine.LoadScript("test_data/type_checking.arc")
 	// engine.LoadScript("test_data/testing.arc")
-	engine.LoadScript("test_data/errors_pls.arc")
+	// engine.LoadScript("test_data/errors_pls.arc")
 	// engine.LoadScript("test_data/enums.arc")
 	// engine.LoadScript("test_data/imports.arc")
 	// engine.LoadScript("test_data/loops.arc")

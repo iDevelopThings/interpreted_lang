@@ -635,3 +635,18 @@ func (self *Evaluator) evalBlock(node *ast.Block) *Result {
 
 	return r
 }
+
+func (self *Evaluator) wrapResultInOptionType(result *Result, returnType *ast.TypeReference) {
+	if !result.HasValue() {
+		return
+	}
+
+	value := result.First().(*ast.RuntimeValue)
+
+	if value.Kind == ast.RuntimeValueKindOption {
+		return
+	}
+
+	optionValue := ast.NewRuntimeOptionValue(value)
+	result.ReplaceFirstBoxedValue(optionValue)
+}

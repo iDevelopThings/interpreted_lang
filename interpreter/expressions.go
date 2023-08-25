@@ -24,6 +24,10 @@ func (self *ExpressionInstance) Equal(lhs, rhs *ast.RuntimeValue) (bool, error) 
 	var rv *ast.RuntimeValue
 	var err error
 
+	if lhs.IsOptionKind() {
+		lhs = lhs.Unwrap()
+	}
+
 	switch l := lhs.Value.(type) {
 
 	case int:
@@ -39,9 +43,34 @@ func (self *ExpressionInstance) Equal(lhs, rhs *ast.RuntimeValue) (bool, error) 
 			r = l == ast.RuntimeValueAs[bool](rv)
 		}
 	case string:
+		if !rhs.HasValue() && rhs.IsNoneKind() {
+			if !lhs.IsOptionKind(true) {
+				return false, errors.New("Invalid operation, rhs is none, and lhs is not option type")
+			}
+			return false, nil
+		}
+
 		if rv, err = TypeCoercion.Cast(rhs, ast.StringType); rv != nil {
 			r = l == ast.RuntimeValueAs[string](rv)
 		}
+
+		if err != nil {
+			return false, err
+		}
+
+	case nil:
+		if lhs == nil {
+			return false, errors.New("Invalid operation, lhs is nil")
+		}
+		if !lhs.IsOptionKind(true) {
+			return false, errors.New("Invalid operation, lhs value is nil, and not an option type")
+		}
+
+		if rhs.IsNoneKind() {
+			return true, nil
+		}
+
+		r = false
 	}
 
 	return r, err
@@ -251,7 +280,11 @@ func (self *ExpressionInstance) Mul(lhs, rhs *ast.RuntimeValue) (*ast.RuntimeVal
 		// "ab" * 2 = "abab"
 
 		if !rhs.IsNumeric() {
-			return nil, errors.Wrapf(InvalidCastConstraint, rv.TypeName, ast.IntType.TypeName(), `"ab" * 2 = "abab" - Lhs is duplicated n times`)
+			return nil, &ConstraintError{
+				LhsType:        rv.TypeName,
+				RhsType:        ast.IntType.TypeName(),
+				ConstraintInfo: `"ab" * 2 = "abab" - Lhs is duplicated n times`,
+			}
 		}
 
 		if rv, err = TypeCoercion.Cast(rhs, ast.IntType); rv != nil {
