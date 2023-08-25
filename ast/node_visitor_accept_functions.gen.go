@@ -240,6 +240,14 @@ func Walk(root Node, cb VisitFunc) {
 				// - IsInterfaceType:  %!s(bool=false)
 				// - IsStructType:  %!s(bool=false)
 			}
+		case *HttpBlock:
+			{
+				for _, item := range node.RouteDeclarations {
+					if !visitFunc(item, cb, visited) {
+						return false
+					}
+				}
+			}
 		case *HttpResponseData:
 			{
 
@@ -257,12 +265,15 @@ func Walk(root Node, cb VisitFunc) {
 					return false
 				}
 			}
-		case *HttpRouteBodyInjection:
+		case *HttpRouteBodyInjectionStatement:
 			{
+				if node.FromNode != nil && !visitFunc(node.FromNode, cb, visited) {
+					return false
+				}
 
 				// type skiped: From
 				// Info:
-				// - Type:  string
+				// - Type:  BodyInjectionFromKind
 				// - IsArray:  %!s(bool=false)
 				// - IsPtr:  %!s(bool=false)
 				// - IsInterfaceType:  %!s(bool=false)
@@ -300,15 +311,6 @@ func Walk(root Node, cb VisitFunc) {
 				// - IsPtr:  %!s(bool=false)
 				// - IsInterfaceType:  %!s(bool=false)
 				// - IsStructType:  %!s(bool=false)
-			}
-		case *HttpServerConfig:
-			{
-				if node.Port != nil && !visitFunc(node.Port, cb, visited) {
-					return false
-				}
-				if node.FormMaxMemory != nil && !visitFunc(node.FormMaxMemory, cb, visited) {
-					return false
-				}
 			}
 		case *Identifier:
 			{

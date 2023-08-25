@@ -16,12 +16,23 @@ const (
 	HttpMethodPatch  HttpMethod = "PATCH"
 )
 
+type HttpBlock struct {
+	*AstNode
+	RouteDeclarations []*HttpRouteDeclaration
+}
+
+func (self *HttpBlock) IsStatement()                                {}
+func (self *HttpBlock) IsDeclaration()                              {}
+func (self *HttpBlock) IsTopLevelStatement()                        {}
+func (self *HttpBlock) TypeName() string                            { return "http_block" }
+func (self *HttpBlock) GetMethods() map[string]*FunctionDeclaration { return nil }
+
 type HttpRouteDeclaration struct {
 	*AstNode
 	Method      HttpMethod
 	Path        *Literal
 	Body        *Block
-	Injections  []*HttpRouteBodyInjection
+	Injections  []*HttpRouteBodyInjectionStatement
 	HandlerFunc func(writer http.ResponseWriter, request *http.Request, params http_server.Params)
 }
 
@@ -37,7 +48,7 @@ func (self *HttpRouteDeclaration) GetChildren() []Node {
 
 	return nodes
 }
-func (self *HttpRouteDeclaration) GetInjection(from string) *HttpRouteBodyInjection {
+func (self *HttpRouteDeclaration) GetInjection(from BodyInjectionFromKind) *HttpRouteBodyInjectionStatement {
 	for _, injection := range self.Injections {
 		if injection.From == from {
 			return injection
@@ -45,27 +56,6 @@ func (self *HttpRouteDeclaration) GetInjection(from string) *HttpRouteBodyInject
 	}
 	return nil
 }
-
-type HttpRequestObject struct {
-	*RuntimeValue
-	Request *http.Request
-	Params  http_server.Params
-}
-
-func (self *HttpRouteDeclaration) IsTopLevelStatement() {}
-func (self *HttpRouteDeclaration) IsStatement()         {}
-
-type HttpServerConfig struct {
-	*AstNode
-	Port          *Literal
-	FormMaxMemory *Literal
-}
-
-func (self *HttpServerConfig) GetChildren() []Node {
-	return []Node{self.Port, self.FormMaxMemory}
-}
-func (self *HttpServerConfig) IsTopLevelStatement() {}
-func (self *HttpServerConfig) IsStatement()         {}
 
 type HttpResponseKind string
 
@@ -75,6 +65,40 @@ const (
 	HttpResponseKindHtml HttpResponseKind = "html"
 	HttpResponseKindText HttpResponseKind = "text"
 )
+
+type BodyInjectionFromKind string
+
+const (
+	BodyInjectionFromKindNone           BodyInjectionFromKind = "none"
+	BodyInjectionFromKindBody           BodyInjectionFromKind = "body"
+	BodyInjectionFromKindQuery          BodyInjectionFromKind = "query"
+	BodyInjectionFromKindRouteParameter BodyInjectionFromKind = "route"
+)
+
+var BodyInjectionFromKinds = []BodyInjectionFromKind{
+	BodyInjectionFromKindBody,
+	BodyInjectionFromKindQuery,
+	BodyInjectionFromKindRouteParameter,
+}
+
+type HttpRouteBodyInjectionStatement struct {
+	*AstNode
+
+	// Purely for error reporting support
+	FromNode *AstNode
+	From     BodyInjectionFromKind
+
+	Var *TypedIdentifier
+}
+
+func (self *HttpRouteBodyInjectionStatement) GetChildren() []Node {
+	var nodes []Node
+	if self.Var != nil {
+		nodes = append(nodes, self.Var)
+	}
+	return nodes
+}
+func (self *HttpRouteBodyInjectionStatement) IsStatement() {}
 
 type HttpResponseData struct {
 	*AstNode
@@ -95,18 +119,3 @@ func (self *HttpResponseData) GetChildren() []Node {
 	return nodes
 }
 func (self *HttpResponseData) IsStatement() {}
-
-type HttpRouteBodyInjection struct {
-	*AstNode
-	From string
-	Var  *TypedIdentifier
-}
-
-func (self *HttpRouteBodyInjection) GetChildren() []Node {
-	var nodes []Node
-	if self.Var != nil {
-		nodes = append(nodes, self.Var)
-	}
-	return nodes
-}
-func (self *HttpRouteBodyInjection) IsStatement() {}

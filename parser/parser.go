@@ -12,12 +12,21 @@ const (
 	AnonymousFunctionName = "_____anonymous_func"
 )
 
+type ParserState string
+
+const (
+	ParserStateNormal     ParserState = "normal"
+	ParserStateHttpBlocks ParserState = "http_blocks"
+)
+
 type Parser struct {
 	lexer *lexer.Lexer
 
 	curr *lexer.Token
 	peek *lexer.Token
 	prev *lexer.Token
+
+	state ParserState
 
 	prefixParseFns map[lexer.TokenType]prefixParseFn
 
@@ -30,9 +39,11 @@ type Parser struct {
 
 func NewParser(l *lexer.Lexer) *Parser {
 	p := &Parser{
-		lexer:          l,
-		prefixParseFns: make(map[lexer.TokenType]prefixParseFn),
+		lexer: l,
 
+		state: ParserStateNormal,
+
+		prefixParseFns:        make(map[lexer.TokenType]prefixParseFn),
 		infixParseFns:         make(map[lexer.TokenType]infixParseFn),
 		disabledInfixParseFns: make(map[lexer.TokenType]infixParseFn),
 	}
@@ -123,6 +134,9 @@ func (p *Parser) parseTopLevelStatement() ast.TopLevelStatement {
 
 	case p.is(lexer.TokenKeywordFunc):
 		return p.parseFunctionDeclaration()
+
+	case p.is(lexer.TokenKeywordHttp):
+		return p.parseHttpBlock()
 
 	}
 

@@ -3,9 +3,12 @@ package ast
 import (
 	"errors"
 	"maps"
+	"net/http"
 	"sync/atomic"
 
 	"github.com/charmbracelet/log"
+
+	"arc/http_server"
 )
 
 var runtimeObjectUid = atomic.Int64{}
@@ -30,6 +33,10 @@ const (
 	// This allows for calling the `value constructors` like methods on the enum
 	RuntimeValueKindEnumDecl  RuntimeValueKind = "enum"
 	RuntimeValueKindEnumValue RuntimeValueKind = "enum_value"
+
+	// The wrapper object that we throw all of the main request data into when handling http requests
+	// This is the object bound to the environment & accessible in the language route handler
+	RuntimeValueKindRequestObject RuntimeValueKind = "request_object"
 )
 
 type RuntimeValue struct {
@@ -234,6 +241,31 @@ func NewRuntimeOptionValue(value *RuntimeValue) *RuntimeValue {
 	return rv
 }
 
+func NewRuntimeRequestObject(route *HttpRouteDeclaration, req *http.Request, res http.ResponseWriter, params http_server.Params) *RuntimeValue {
+	rv := newRuntimeValue(route)
+
+	rv.Kind = RuntimeValueKindRequestObject
+	rv.TypeName = "HttpRequestWrapper"
+
+	requestObj := NewRuntimeObject(nil)
+	requestObj.TypeName = "HttpRequest"
+
+	resObj := NewRuntimeObject(nil)
+	resObj.TypeName = "HttpResponse"
+	resObj.Value = res
+
+	rv.Value = map[string]any{
+		"internal_request":  req,
+		"internal_response": resObj,
+		"params":            params,
+		"request":           requestObj,
+	}
+
+	rv.Methods = map[string]*FunctionDeclaration{}
+
+	return rv
+}
+
 func RuntimeValueAs[T any](rv *RuntimeValue) T {
 	value, ok := rv.Value.(T)
 	if !ok {
@@ -249,17 +281,49 @@ func (self *RuntimeValue) GetField(fieldName string) *RuntimeValue {
 	if self.Kind != RuntimeValueKindObject &&
 		self.Kind != RuntimeValueKindDict &&
 		self.Kind != RuntimeValueKindEnumValue &&
-		self.Kind != RuntimeValueKindEnumDecl {
+		self.Kind != RuntimeValueKindEnumDecl &&
+		self.Kind != RuntimeValueKindRequestObject {
 		return nil
 	}
 
-	fields, ok := self.Value.(map[string]*RuntimeValue)
-	if !ok {
+	switch v := self.Value.(type) {
+	case map[string]*RuntimeValue:
+		if field, ok := v[fieldName]; ok {
+			return field
+		}
+	case map[string]any:
+		if field, ok := v[fieldName]; ok {
+			if v, ok := field.(*RuntimeValue); ok {
+				return v
+			}
+		}
+	}
+
+	return nil
+}
+func (self *RuntimeValue) GetFieldValue(fieldName string) any {
+	if self == nil {
+		return nil
+	}
+	if self.Kind != RuntimeValueKindObject &&
+		self.Kind != RuntimeValueKindDict &&
+		self.Kind != RuntimeValueKindEnumValue &&
+		self.Kind != RuntimeValueKindEnumDecl &&
+		self.Kind != RuntimeValueKindRequestObject {
 		return nil
 	}
 
-	if field, ok := fields[fieldName]; ok {
-		return field
+	switch v := self.Value.(type) {
+	case map[string]*RuntimeValue:
+		if field, ok := v[fieldName]; ok {
+			return field
+		}
+	case map[string]any:
+		if field, ok := v[fieldName]; ok {
+			return field
+		}
+	default:
+		log.Warnf("Unhandled field value type from `GetFieldValue`: %T - field: %s, struct: %#v", v, fieldName, self)
 	}
 
 	return nil
@@ -267,7 +331,8 @@ func (self *RuntimeValue) GetField(fieldName string) *RuntimeValue {
 func (self *RuntimeValue) SetField(fieldName string, value *RuntimeValue) {
 	if self.Kind != RuntimeValueKindObject &&
 		self.Kind != RuntimeValueKindDict &&
-		self.Kind != RuntimeValueKindEnumValue {
+		self.Kind != RuntimeValueKindEnumValue &&
+		self.Kind != RuntimeValueKindRequestObject {
 		return
 	}
 

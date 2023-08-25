@@ -64,13 +64,13 @@ func (self *Evaluator) Eval(n any) *Result {
 		// So when we bind declarations, we'll eval enums then & bind their values
 		// return self.evalEnumDeclaration(node)
 
+	case *ast.HttpBlock:
+		return self.evalHttpBlock(node)
 	case *ast.HttpRouteDeclaration:
 		return self.evalHttpRouteDeclaration(node)
-	case *ast.HttpServerConfig:
-		return self.evalHttpServerConfig(node)
 	case *ast.HttpResponseData:
 		return self.evalHttpResponseData(node)
-	case *ast.HttpRouteBodyInjection:
+	case *ast.HttpRouteBodyInjectionStatement:
 		return self.evalHttpRouteBodyInjection(node)
 
 	case *ast.IfStatement:
@@ -130,7 +130,7 @@ func (self *Evaluator) Eval(n any) *Result {
 			NewErrorAtNode(node, "Unhandled AST Node Type: %T - Content: %s", node, node.GetToken())
 			return nil
 		}
-		log.Fatalf("Unhandled AST Node Type: %T", node)
+		log.Warnf("Unhandled AST Node Type: %T", node)
 		return nil
 	}
 }

@@ -132,6 +132,7 @@ func (l *Lexer) matchToken() (*Token, bool) {
 
 	// Find the longest matching token
 	for seq, tokenType := range tokenMap {
+		// c := strings.ToLower(l.remaining())
 		if len(seq) > maxLength && strings.HasPrefix(l.remaining(), seq) {
 			maxLength = len(seq)
 			matchedToken = tokenType
@@ -144,6 +145,8 @@ func (l *Lexer) matchToken() (*Token, bool) {
 			l.advance()
 		}
 		val := l.input[start : start+maxLength]
+		// val = strings.ToLower(val)
+
 		tok := l.newToken(matchedToken, val)
 
 		// If we matched a keyword, we need to add the identifier type to the state also

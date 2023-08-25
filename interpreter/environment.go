@@ -9,8 +9,7 @@ import (
 type FunctionTypeCallback = func(args ...any) any
 
 type HttpEnv struct {
-	Options *ast.HttpServerConfig
-	Routes  []*ast.HttpRouteDeclaration
+	Routes []*ast.HttpRouteDeclaration
 }
 
 type Environment struct {
@@ -34,10 +33,6 @@ func NewEnvironment() *Environment {
 		enums:     map[string]*ast.EnumDeclaration{},
 		functions: map[string]*ast.FunctionDeclaration{},
 		HttpEnv: &HttpEnv{
-			Options: &ast.HttpServerConfig{
-				Port:          ast.NewLiteral(nil, 8080),
-				FormMaxMemory: ast.NewLiteral(nil, 10<<20), // 10 MB
-			},
 			Routes: make([]*ast.HttpRouteDeclaration, 0),
 		},
 	}
@@ -210,11 +205,8 @@ func (self *Environment) GetRoot() *Environment {
 func (self *Environment) RegisterRoute(route *ast.HttpRouteDeclaration) {
 	root := self.GetRoot()
 	root.HttpEnv.Routes = append(root.HttpEnv.Routes, route)
-}
 
-func (self *Environment) SetHttpConfig(config *ast.HttpServerConfig) {
-	root := self.GetRoot()
-	root.HttpEnv.Options = config
+	log.Debugf("Registered route: %s %s", route.Method, route.Path.Value)
 }
 
 func (self *Environment) SetEnum(t *ast.EnumDeclaration, evaluator *Evaluator) {

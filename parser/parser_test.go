@@ -226,3 +226,14 @@ func (suite *TestParserTestSuite) Test_GeneratedVisitor() {
 	// w := utilities.NewIndentWriter(os.Stdout, " ")
 	// program.PrintTree(w.(*utilities.IndentWriter))
 }
+
+func (suite *TestParserTestSuite) Test_HttpBlocks() {
+	data, _ := loadFileContent(suite.T(), "Test_HttpBlocks_TEST_INPUT.arc")
+	l := lexer.NewLexer(data)
+	l.SetSource("testdata/Test_HttpBlocks_TEST_INPUT.arc")
+	p := NewParser(l)
+	program := p.Parse()
+
+	w := utilities.NewIndentWriter(os.Stdout, " ")
+	program.PrintTree(w.(*utilities.IndentWriter))
+}

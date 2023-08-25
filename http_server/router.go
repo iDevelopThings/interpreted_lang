@@ -207,13 +207,6 @@ type Router struct {
 	// The handler can be used to keep your server from crashing because of
 	// unrecovered panics.
 	PanicHandler func(http.ResponseWriter, *http.Request, interface{})
-
-	Options *RouterServerOptions
-}
-
-type RouterServerOptions struct {
-	Port               int
-	FormParseMaxMemory int64
 }
 
 // Make sure the Router conforms with the http.Handler interface
@@ -229,9 +222,6 @@ func New() *Router {
 		RedirectFixedPath:      true,
 		HandleMethodNotAllowed: true,
 		HandleOPTIONS:          true,
-		Options: &RouterServerOptions{
-			Port: 8080,
-		},
 	}
 
 	if instance == nil {

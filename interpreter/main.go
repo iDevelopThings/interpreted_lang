@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 
 	"arc/ast"
 	"arc/http_server"
+	"arc/interpreter/config"
 	"arc/lexer"
 	"arc/parser"
 	"arc/utilities"
@@ -143,7 +145,8 @@ func (self *InterpreterEngine) setScriptLogger(script *SourceFile) {
 				script.Logger.SetOutput(self.loggingWriter)
 			}
 			script.Logger.SetReportCaller(true)
-			script.Logger.SetPrefix(fmt.Sprintf("[%s]", script.Path))
+			relScriptPath, _ := filepath.Rel(config.CliConfig.WorkingDirectory, script.Path)
+			script.Logger.SetPrefix(fmt.Sprintf("[%s]", relScriptPath))
 		}
 
 		ErrorManager.SetSource(
@@ -245,6 +248,8 @@ func (self *InterpreterEngine) linkScript(script *SourceFile) {
 	if len(script.Program.Declarations) > 0 {
 		for _, declaration := range script.Program.Declarations {
 			switch t := declaration.(type) {
+			case *ast.HttpBlock:
+				self.Evaluator.bindHttpDeclarations(t)
 			case *ast.FunctionDeclaration:
 				self.Env.SetFunction(t)
 			case *ast.ObjectDeclaration:
@@ -346,39 +351,42 @@ func (self *InterpreterEngine) runMainAndServer() {
 
 	if !self.IsTesting {
 		if len(self.Env.HttpEnv.Routes) > 0 {
-			router := http_server.GetRouter()
-			// wg.Add(1)
-
-			strPort := strconv.Itoa(router.Options.Port)
-			log.Printf("Http Server running http://127.0.0.1:%v\n", router.Options.Port)
-
-			server := &http.Server{Addr: ":" + strPort, Handler: router}
-
-			go func() {
-				if err := server.ListenAndServe(); err != nil {
-					// handle err
-					log.Errorf("Error starting server: %v", err)
-				}
-			}()
-
-			// Setting up signal capturing
-			stop := make(chan os.Signal, 1)
-			signal.Notify(stop, os.Interrupt)
-
-			// Waiting for SIGINT (kill -2)
-			<-stop
-
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-			if err := server.Shutdown(ctx); err != nil {
-				// handle err
-				log.Errorf("Error shutting down server: %v", err)
-			}
+			self.runHttpServer()
 		}
-
-		// wg.Wait()
 	}
 
+}
+
+func (self *InterpreterEngine) runHttpServer() {
+	router := http_server.GetRouter()
+
+	addr := config.ProjectConfig.HttpServer.Address.Value
+	port := config.ProjectConfig.HttpServer.Port.Value
+	host := addr + ":" + strconv.Itoa(port)
+
+	log.Printf("Http Server running http://%s\n", host)
+
+	server := &http.Server{Addr: host, Handler: router}
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil {
+			log.Errorf("Error starting server: %v", err)
+		}
+	}()
+
+	// Setting up signal capturing
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt)
+
+	// Waiting for SIGINT (kill -2)
+	<-stop
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		// handle err
+		log.Errorf("Error shutting down server: %v", err)
+	}
 }
 
 func (self *InterpreterEngine) DisableLogging(w io.Writer) {

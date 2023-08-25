@@ -2,6 +2,7 @@ package lexer
 
 import (
 	"fmt"
+	"strings"
 )
 
 type TokenTypeState struct {
@@ -146,22 +147,40 @@ const (
 	// Keywords
 	//
 
-	TokenKeywordVar      = "KEYWORD_VAR"
 	TokenKeywordFunc     = "KEYWORD_FUNC"
 	TokenKeywordObject   = "KEYWORD_OBJECT"
+	TokenKeywordImport   = "KEYWORD_IMPORT"
+	TokenKeywordEnum     = "KEYWORD_ENUM"
+	TokenKeywordVar      = "KEYWORD_VAR"
 	TokenKeywordReturn   = "KEYWORD_RETURN"
 	TokenKeywordBreak    = "KEYWORD_BREAK"
 	TokenKeywordContinue = "KEYWORD_CONTINUE"
+	TokenKeywordDelete   = "KEYWORD_DELETE"
 	TokenKeywordIf       = "KEYWORD_IF"
 	TokenKeywordElse     = "KEYWORD_ELSE"
 	TokenKeywordFor      = "KEYWORD_FOR"
 	TokenKeywordAs       = "KEYWORD_AS"
 	TokenKeywordStep     = "KEYWORD_STEP"
-	TokenKeywordImport   = "KEYWORD_IMPORT"
-	TokenKeywordEnum     = "KEYWORD_ENUM"
 	TokenKeywordDefer    = "KEYWORD_DEFER"
 	TokenKeywordOr       = "KEYWORD_OR"
 	TokenKeywordNone     = "KEYWORD_NONE"
+
+	//
+	// Http implementation keywords
+	//
+	TokenKeywordHttp          = "KEYWORD_HTTP"
+	TokenKeywordRoute         = "KEYWORD_ROUTE"
+	TokenKeywordFrom          = "KEYWORD_FROM"
+	TokenKeywordWith          = "KEYWORD_WITH"
+	TokenKeywordText          = "KEYWORD_TEXT"
+	TokenKeywordJson          = "KEYWORD_JSON"
+	TokenKeywordHtml          = "KEYWORD_HTML"
+	TokenKeywordStatus        = "KEYWORD_STATUS"
+	TokenKeywordMethodGet     = "KEYWORD_METHOD_GET"
+	TokenKeywordMethodPost    = "KEYWORD_METHOD_POST"
+	TokenKeywordMethodPut     = "KEYWORD_METHOD_PUT"
+	TokenKeywordMethodHead    = "KEYWORD_METHOD_HEAD"
+	TokenKeywordMethodOptions = "KEYWORD_METHOD_OPTIONS"
 
 	//
 	// Other
@@ -223,38 +242,62 @@ var tokenMap = map[string]TokenType{
 }
 
 var tokenKeywordMap = map[string]TokenType{
-	// Keywords
-	"var":      TokenKeywordVar,
 	"func":     TokenKeywordFunc,
 	"object":   TokenKeywordObject,
+	"import":   TokenKeywordImport,
+	"enum":     TokenKeywordEnum,
+	"var":      TokenKeywordVar,
 	"return":   TokenKeywordReturn,
 	"break":    TokenKeywordBreak,
 	"continue": TokenKeywordContinue,
+	"delete":   TokenKeywordDelete,
 	"if":       TokenKeywordIf,
 	"else":     TokenKeywordElse,
 	"for":      TokenKeywordFor,
 	"as":       TokenKeywordAs,
 	"step":     TokenKeywordStep,
-	"import":   TokenKeywordImport,
-	"enum":     TokenKeywordEnum,
 	"or":       TokenKeywordOr,
 	"defer":    TokenKeywordDefer,
 
 	"none":  TokenKeywordNone,
 	"true":  TokenBool,
 	"false": TokenBool,
+
+	// Http implementation keywords
+	"http":   TokenKeywordHttp,
+	"route":  TokenKeywordRoute,
+	"from":   TokenKeywordFrom,
+	"with":   TokenKeywordWith,
+	"status": TokenKeywordStatus,
+
+	"text": TokenKeywordText,
+	"json": TokenKeywordJson,
+	"html": TokenKeywordHtml,
+
+	"get":     TokenKeywordMethodGet,
+	"post":    TokenKeywordMethodPost,
+	"put":     TokenKeywordMethodPut,
+	"head":    TokenKeywordMethodHead,
+	"options": TokenKeywordMethodOptions,
 }
 
 var KeywordTokens []TokenType
 
 func init() {
 	for k, v := range tokenKeywordMap {
-		if _, ok := tokenMap[k]; ok {
-			panic("keyword already exists as token")
+		if _, ok := tokenMap[k]; !ok {
+			tokenMap[k] = v
+			KeywordTokens = append(KeywordTokens, v)
 		}
-		tokenMap[k] = v
 
-		KeywordTokens = append(KeywordTokens, v)
+		kk := strings.ToUpper(k)
+		if _, ok := tokenMap[kk]; !ok {
+			tokenMap[kk] = v
+		}
+		if _, ok := tokenKeywordMap[kk]; !ok {
+			tokenKeywordMap[kk] = v
+		}
+
 	}
 }
 

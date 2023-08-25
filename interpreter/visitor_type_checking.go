@@ -69,13 +69,10 @@ func (self *TypeCheckingVisitor) Visit(node ast.Node) {
 	case *ast.HttpRouteDeclaration:
 		// self.VisitHttpRouteDeclaration(node)
 		node.Accept(self)
-	case *ast.HttpServerConfig:
-		// self.VisitHttpServerConfig(node)
-		node.Accept(self)
 	case *ast.HttpResponseData:
 		// self.VisitHttpResponseData(node)
 		node.Accept(self)
-	case *ast.HttpRouteBodyInjection:
+	case *ast.HttpRouteBodyInjectionStatement:
 		// self.VisitHttpRouteBodyInjection(node)
 		node.Accept(self)
 	case *ast.Literal:

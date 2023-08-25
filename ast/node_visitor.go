@@ -138,17 +138,6 @@ func (self *HttpRouteDeclaration) Accept(visitor NodeVisitor) {
 	// 	}
 	// }
 }
-func (self *HttpServerConfig) Accept(visitor NodeVisitor) {
-	// visitor.Visit(self)
-	visitor.VisitHttpServerConfig(self)
-
-	if self.Port != nil {
-		visitor.Visit(self.Port)
-	}
-	if self.FormMaxMemory != nil {
-		visitor.Visit(self.FormMaxMemory)
-	}
-}
 func (self *HttpResponseData) Accept(visitor NodeVisitor) {
 	// visitor.Visit(self)
 	visitor.VisitHttpResponseData(self)
@@ -159,7 +148,7 @@ func (self *HttpResponseData) Accept(visitor NodeVisitor) {
 		visitor.Visit(self.Data)
 	}
 }
-func (self *HttpRouteBodyInjection) Accept(visitor NodeVisitor) {
+func (self *HttpRouteBodyInjectionStatement) Accept(visitor NodeVisitor) {
 	// visitor.Visit(self)
 	visitor.VisitHttpRouteBodyInjection(self)
 	if self.Var != nil {
@@ -284,9 +273,8 @@ type NodeVisitor interface {
 	VisitIndexAccessExpression(node *IndexAccessExpression)
 	VisitCallExpression(node *CallExpression)
 	VisitHttpRouteDeclaration(node *HttpRouteDeclaration)
-	VisitHttpServerConfig(node *HttpServerConfig)
 	VisitHttpResponseData(node *HttpResponseData)
-	VisitHttpRouteBodyInjection(node *HttpRouteBodyInjection)
+	VisitHttpRouteBodyInjection(node *HttpRouteBodyInjectionStatement)
 	VisitLiteral(node *Literal)
 	VisitArrayInstantiation(node *ArrayInstantiation)
 	VisitObjectInstantiation(node *ObjectInstantiation)
@@ -349,13 +337,10 @@ func (self *NodeVisitorAdapter) Visit(node Node) {
 	case *HttpRouteDeclaration:
 		// self.VisitHttpRouteDeclaration(node)
 		node.Accept(self)
-	case *HttpServerConfig:
-		// self.VisitHttpServerConfig(node)
-		node.Accept(self)
 	case *HttpResponseData:
 		// self.VisitHttpResponseData(node)
 		node.Accept(self)
-	case *HttpRouteBodyInjection:
+	case *HttpRouteBodyInjectionStatement:
 		// self.VisitHttpRouteBodyInjection(node)
 		node.Accept(self)
 	case *Literal:
@@ -455,15 +440,11 @@ func (self *NodeVisitorAdapter) VisitHttpRouteDeclaration(node *HttpRouteDeclara
 
 }
 
-func (self *NodeVisitorAdapter) VisitHttpServerConfig(node *HttpServerConfig) {
-
-}
-
 func (self *NodeVisitorAdapter) VisitHttpResponseData(node *HttpResponseData) {
 
 }
 
-func (self *NodeVisitorAdapter) VisitHttpRouteBodyInjection(node *HttpRouteBodyInjection) {
+func (self *NodeVisitorAdapter) VisitHttpRouteBodyInjection(node *HttpRouteBodyInjectionStatement) {
 
 }
 

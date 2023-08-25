@@ -1,47 +1,39 @@
 package main
 
 import (
-	"flag"
 	"os"
+	"os/signal"
 	"runtime/pprof"
+	"syscall"
 
 	"github.com/charmbracelet/log"
 
 	"arc/interpreter"
+	"arc/interpreter/config"
 	"arc/lsp"
 )
 
-var env = interpreter.NewEnvironment()
-
-var cpuprofile = flag.Bool("cpuprofile", false, "write cpu profile to file")
-var memprofile = flag.Bool("memprofile", false, "write memory profile to this file")
-var runLsp = flag.Bool("lsp", false, "run the lsp only")
-var lspProtocol = flag.String("lsp-protocol", "stdio", "run the lsp using the protocol")
-
 func main() {
-	flag.Parse()
+	cliConf := config.PrepareConfiguration()
+	config.LoadProjectConfiguration()
 
-	if *runLsp {
-		lsp.Run(*lspProtocol)
+	if cliConf.RunLsp {
+		lsp.Run(cliConf.LspProtocol)
 		return
 	}
 
-	if *cpuprofile {
-		f, err := os.Create("cpu.prof")
-		if err != nil {
-			log.Fatal(err)
-		}
-		err = pprof.StartCPUProfile(f)
-		if err != nil {
-			log.Fatalf("could not start cpu profile: %v", err)
-			return
-		}
+	if cliConf.CpuProfile {
+		runCpuProfiling()
 		defer pprof.StopCPUProfile()
 	}
+	if cliConf.MemProfile {
+		defer memProfile()
+	}
 
-	engine := interpreter.Engine
+	// engine := interpreter.Engine
+	// engine.LoadScript(cliConf.File)
+	// engine.LoadScript("test_data/http.arc")
 	// engine.LoadScript("test_data/http_basic_test.arc")
-	engine.LoadScript("test_data/http.arc")
 	// engine.LoadScript("test_data/type_checking.arc")
 	// engine.LoadScript("test_data/testing.arc")
 	// engine.LoadScript("test_data/errors_pls.arc")
@@ -50,15 +42,53 @@ func main() {
 	// engine.LoadScript("test_data/loops.arc")
 	// engine.LoadScript("test_data/dictionaries.arc")
 	// engine.LoadScript("test_data/input.arc")
+	// engine.Run()
+
+	runEngineAndScript(cliConf.File)
+
+}
+
+func runEngineAndScript(filepath string) {
+	engine := interpreter.Engine
+	engine.LoadScript(filepath)
 	engine.Run()
 
-	if *memprofile {
-		f, err := os.Create("mem.mprof")
-		if err != nil {
-			log.Fatal(err)
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM) // subscribe to system signals
+	onKill := func(c chan os.Signal) {
+		select {
+		case <-c:
+			defer pprof.StopCPUProfile()
+			defer os.Exit(0)
 		}
-		pprof.WriteHeapProfile(f)
-		f.Close()
 	}
 
+	// try to handle os interrupt(signal terminated)
+	go onKill(c)
+}
+
+func runCpuProfiling() {
+	f, err := os.Create("cpu.prof")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = pprof.StartCPUProfile(f)
+	if err != nil {
+		log.Fatalf("could not start cpu profile: %v", err)
+	}
+}
+
+func memProfile() {
+	f, err := os.Create("mem.mprof")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = pprof.WriteHeapProfile(f)
+	if err != nil {
+		log.Fatalf("could not write heap profile: %v", err)
+	}
+	err = f.Close()
+	if err != nil {
+		log.Fatalf("could not close file: %v", err)
+	}
 }

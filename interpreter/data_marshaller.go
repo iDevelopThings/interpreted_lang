@@ -225,7 +225,16 @@ func UnmarshalRuntimeObject(decl *ast.ObjectDeclaration, env *Environment, value
 			log.Warnf("cannot unmarshal field %s of type %s", field.Name, field.TypeReference.Type)
 			continue
 		}
-		if nestedDecl := env.LookupObject(field.TypeReference.Type); nestedDecl != nil {
+
+		// If we have a basic type, it's likely a literal value assign
+		if bt := field.TypeReference.GetBasicType(); bt != nil {
+			val, err := UnmarshalRuntimeValue(env, value)
+			if err != nil {
+				log.Warnf("cannot unmarshal field %s of type %s - error: %s", field.Name, field.TypeReference.Type, err)
+				continue
+			}
+			fields[field.Name] = val
+		} else if nestedDecl := env.LookupObject(field.TypeReference.Type); nestedDecl != nil {
 			m, ok := value.(map[string]any)
 			if !ok {
 				log.Warnf("cannot unmarshal field %s of type %s - expected object", field.Name, field.TypeReference.Type)

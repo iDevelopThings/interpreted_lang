@@ -84,7 +84,9 @@ func (p *Parser) parseDictionary() *ast.DictionaryInstantiation {
 		node.Fields[key.Value.(string)] = value
 		node.AddChildren(node, key, value)
 
-		p.expect(lexer.TokenComma)
+		if !p.is(lexer.TokenRCurly) {
+			p.expect(lexer.TokenComma)
+		}
 	})
 
 	p.expect(lexer.TokenRCurly)

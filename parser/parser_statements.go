@@ -6,6 +6,17 @@ import (
 )
 
 func (p *Parser) parseStatement() ast.Statement {
+
+	// Kinda gross but When in `ParserStateHttpBlocks` state, we
+	// can override specific parser functions/statement keywords
+	// mainly, the `return` keyword
+
+	if p.state == ParserStateHttpBlocks {
+		if stmt := p.parseHttpBlockStatement(); stmt != nil {
+			return stmt
+		}
+	}
+
 	switch {
 
 	case p.is(lexer.TokenKeywordDefer):
@@ -21,40 +32,45 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseLoopStatement()
 
 	case p.is(lexer.TokenKeywordBreak):
-		s := p.curr
-		node := &ast.BreakStatement{
-			AstNode: ast.NewAstNode(p.curr),
-		}
-		defer node.SetRuleRange(s, p.prev)
-		p.next()
-		p.skipSemi()
-
-		return node
+		return p.parseBreakStatement()
 
 	case p.is(lexer.TokenKeywordReturn):
 		return p.parseReturnStatement()
 
 	default:
-		s := p.curr
+		return p.parseExpressionStatement()
+	}
+}
 
-		p.identifiersAsVarRefs = true
-		defer func() { p.identifiersAsVarRefs = false }()
+func (p *Parser) parseExpressionStatement() ast.Statement {
+	s := p.curr
 
-		expr := p.parseExpression(0)
-		p.skipSemi()
+	p.identifiersAsVarRefs = true
+	defer func() { p.identifiersAsVarRefs = false }()
 
-		if stmt, ok := expr.(ast.Statement); ok {
-			if stmt.GetRuleRange() == nil {
-				stmt.SetRuleRange(s, p.prev)
-			}
-			return stmt
-		} else {
-			p.error("Expected statement")
-		}
+	expr := p.parseExpression(0)
+	p.skipSemi()
 
+	stmt, ok := expr.(ast.Statement)
+	if !ok {
+		p.error("Expected statement")
 	}
 
-	return nil
+	if stmt.GetRuleRange() == nil {
+		stmt.SetRuleRange(s, p.prev)
+	}
+	return stmt
+}
+func (p *Parser) parseBreakStatement() ast.Statement {
+	s := p.curr
+	node := &ast.BreakStatement{
+		AstNode: ast.NewAstNode(p.curr),
+	}
+	defer node.SetRuleRange(s, p.prev)
+	p.next()
+	p.skipSemi()
+
+	return node
 }
 
 func (p *Parser) parseImportStatement() ast.TopLevelStatement {

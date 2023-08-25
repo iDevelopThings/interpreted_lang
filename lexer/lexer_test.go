@@ -240,3 +240,16 @@ func (suite *TestLexerTestSuite) Test_ArgList() {
 
 	l.debugDisplayTokens(suite.T().Logf, tokens)
 }
+func (suite *TestLexerTestSuite) Test_Casing() {
+	l := NewLexer(suite.inputData)
+	tokens := l.readAll()
+	checkForUnknownTokens(suite.T(), tokens)
+
+	if diff := cmp.Diff(suite.goldenData, tokens); diff != "" {
+		suite.Failf("Token mismatch (-want +got):\n%s", diff)
+	}
+
+	suite.goldenData = tokens
+
+	l.debugDisplayTokens(suite.T().Logf, tokens)
+}

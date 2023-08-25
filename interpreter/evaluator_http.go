@@ -8,26 +8,80 @@ import (
 
 	"arc/ast"
 	"arc/http_server"
+	"arc/interpreter/config"
 	"arc/utilities"
 )
 
-func NewHttpRequestObject(
-	route *ast.HttpRouteDeclaration,
-	env *Environment,
-	r *http.Request,
-	params http_server.Params,
-) *ast.HttpRequestObject {
+func (self *Evaluator) evalHttpBlock(node *ast.HttpBlock) *Result                       { return nil }
+func (self *Evaluator) evalHttpRouteDeclaration(node *ast.HttpRouteDeclaration) *Result { return nil }
 
-	request := &ast.HttpRequestObject{
-		Request: r,
-		Params:  params,
+//
+// These eval funcs above need to be here to stop the bitch ass evaluator from
+// complaining that it can't process the nodes in the program
+// ALL bindings should be registered before evaluation time
+//
 
-		RuntimeValue: &ast.RuntimeValue{
-			TypeName: "HttpRequest",
-			Value:    map[string]*ast.RuntimeValue{},
-			Kind:     ast.RuntimeValueKindObject,
-		},
+func (self *Evaluator) bindHttpDeclarations(node *ast.HttpBlock) {
+	for _, declaration := range node.RouteDeclarations {
+		self.bindHttpRoute(declaration)
 	}
+
+}
+
+func (self *Evaluator) bindHttpRoute(node *ast.HttpRouteDeclaration) {
+	router := http_server.GetRouter()
+
+	node.HandlerFunc = func(writer http.ResponseWriter, request *http.Request, params http_server.Params) {
+		timer := utilities.NewTimer("Request Time: " + request.URL.Path)
+		defer timer.StopAndLog()
+
+		eval := self.CreateChild()
+
+		paramsDict := ast.NewRuntimeDictionary()
+		for _, param := range params {
+			paramsDict.SetField(param.Key, ast.NewRuntimeLiteral(param.Value))
+			// eval.Env.SetVar(param.Key, param.Value)
+		}
+
+		eval.Env.SetVar("params", paramsDict)
+
+		requestWrapperObject, requestObject, responseObject := NewHttpRequestObject(node, eval.Env, request, writer, params)
+
+		eval.Env.SetVar("request_wrapper", requestWrapperObject)
+		eval.Env.SetVar("request", requestObject)
+		eval.Env.SetVar("response", responseObject)
+
+		bodyResult := eval.Eval(node.Body)
+		if bodyResult != nil {
+
+		}
+	}
+
+	router.Handle(
+		string(node.Method),
+		node.Path.Value.(string),
+		node.HandlerFunc,
+	)
+
+	self.Env.RegisterRoute(node)
+}
+
+func NewHttpRequestObject(route *ast.HttpRouteDeclaration, env *Environment, r *http.Request, res http.ResponseWriter, params http_server.Params) (*ast.RuntimeValue, *ast.RuntimeValue, *ast.RuntimeValue) {
+
+	requestWrapper := ast.NewRuntimeRequestObject(route, r, res, params)
+
+	// request := &ast.HttpRequestObject{
+	// 	Request: r,
+	// 	Params:  params,
+	// 	RuntimeValue: &ast.RuntimeValue{
+	// 		TypeName: "HttpRequest",
+	// 		Value:    map[string]*ast.RuntimeValue{},
+	// 		Kind:     ast.RuntimeValueKindObject,
+	// 	},
+	// }
+
+	request := requestWrapper.GetField("request")
+	response := requestWrapper.GetField("internal_response")
 
 	switch r.Header.Get("Content-Type") {
 	case "application/json":
@@ -38,7 +92,7 @@ func NewHttpRequestObject(
 				log.Fatalf("Error decoding request body: %v", err)
 			}
 
-			bodyDict, err := UnmarshalRuntimeValue(nil, body)
+			bodyDict, err := UnmarshalRuntimeValue(env, body)
 			if err != nil {
 				log.Fatalf("Error decoding request body: %v", err)
 			}
@@ -87,70 +141,21 @@ func NewHttpRequestObject(
 
 	case "multipart/form-data":
 		{
-			if err := r.ParseMultipartForm(int64(env.HttpEnv.Options.FormMaxMemory.Value.(int))); err != nil {
+			if err := r.ParseMultipartForm(config.ProjectConfig.HttpServer.FormMaxMemory); err != nil {
 				log.Fatalf("Error parsing multipart form: %v", err)
 			}
 		}
 	}
 
-	return request
-}
-
-func (self *Evaluator) evalHttpRouteDeclaration(node *ast.HttpRouteDeclaration) *Result {
-	r := NewResult()
-
-	router := http_server.GetRouter()
-
-	node.HandlerFunc = func(writer http.ResponseWriter, request *http.Request, params http_server.Params) {
-		timer := utilities.NewTimer("Request Time: " + request.URL.Path)
-		defer timer.StopAndLog()
-
-		eval := self.CreateChild()
-		for _, param := range params {
-			eval.Env.SetVar(param.Key, param.Value)
-		}
-
-		requestObject := NewHttpRequestObject(node, eval.Env, request, params)
-		eval.Env.SetVar("request", requestObject)
-		eval.Env.SetVar("response", writer)
-
-		bodyResult := eval.Eval(node.Body)
-		if bodyResult != nil {
-
-		}
-	}
-
-	router.Handle(
-		string(node.Method),
-		node.Path.Value.(string),
-		node.HandlerFunc,
-	)
-
-	self.Env.RegisterRoute(node)
-
-	return r
-}
-
-func (self *Evaluator) evalHttpServerConfig(node *ast.HttpServerConfig) *Result {
-	r := NewResult()
-
-	self.Eval(node.Port)
-
-	router := http_server.GetRouter()
-	if node.Port != nil {
-		router.Options.Port = node.Port.Value.(int)
-	}
-
-	self.Env.SetHttpConfig(node)
-
-	return r
+	return requestWrapper, request, response
 }
 
 func (self *Evaluator) evalHttpResponseData(node *ast.HttpResponseData) *Result {
 	r := NewResult()
 
 	// request := self.Env.LookupVar("request").(*http.Request)
-	response := self.Env.LookupVar("response").(http.ResponseWriter)
+	responseRv := self.Env.LookupVar("response").(*ast.RuntimeValue)
+	response := responseRv.Value.(http.ResponseWriter)
 
 	if node.Kind == ast.HttpResponseKindNone {
 		response.WriteHeader(http.StatusNoContent)
@@ -199,16 +204,48 @@ func (self *Evaluator) evalHttpResponseData(node *ast.HttpResponseData) *Result 
 	return r
 }
 
-func (self *Evaluator) evalHttpRouteBodyInjection(node *ast.HttpRouteBodyInjection) *Result {
+func (self *Evaluator) evalHttpRouteBodyInjection(node *ast.HttpRouteBodyInjectionStatement) *Result {
 	r := NewResult()
-	if node.From == "body" {
-		// request := env.LookupVar("request").(*HttpRequestObject)
-		// // body := request.GetField("body").(map[string]any)
-		// // requestBody := request.GetField("body").(map[string]any)
-		// // requestBody.GetField(self.Var.Name)
-		// if request != nil {
-		//
-		// }
+
+	switch node.From {
+
+	case ast.BodyInjectionFromKindRouteParameter:
+		{
+			params := self.Env.LookupVar("params")
+			if params == nil {
+				log.Warnf("Cannot find params in environment")
+			}
+
+			paramsDict := params.(*ast.RuntimeValue)
+			paramValue := paramsDict.GetField(node.Var.Name)
+			if paramValue == nil {
+				log.Warnf("Cannot find param %s in params", node.Var.Name)
+			}
+
+			casted := TypeCoercion.MustCast(paramValue, node.Var.TypeReference.GetBasicType().(*ast.BasicType))
+			paramValue.Apply(casted)
+			self.Env.SetVar(node.Var.Name, paramValue)
+		}
+
+	case ast.BodyInjectionFromKindQuery:
+		{
+			internalRequestWrapper := self.Env.LookupVar("request_wrapper")
+			if internalRequestWrapper == nil {
+				log.Warnf("Cannot find request_wrapper in environment")
+			}
+
+			internalRequest := internalRequestWrapper.(*ast.RuntimeValue).GetFieldValue("internal_request")
+			request := internalRequest.(*http.Request)
+
+			query := request.URL.Query()
+			queryValue := query.Get(node.Var.Name)
+
+			casted := TypeCoercion.MustCast(ast.NewRuntimeLiteral(queryValue), node.Var.TypeReference.GetBasicType().(*ast.BasicType))
+
+			self.Env.SetVar(node.Var.Name, casted)
+		}
+
 	}
+
 	return r
 }

@@ -41,8 +41,10 @@ type Node interface {
 	GetTokenTypes() []lexer.TokenType
 	GetChildren() []Node
 	SetParent(node Node)
-	Accept(visitor NodeVisitor)
 	GetParent() Node
+	AddChildren(parent Node, nodes ...Node)
+	RemoveChild(node Node)
+	Accept(visitor NodeVisitor)
 }
 
 type Statement interface {
@@ -136,6 +138,19 @@ func (self *AstNode) AddChildren(parent Node, nodes ...Node) {
 				continue
 			}
 			node.SetParent(parent)
+		}
+	}
+}
+
+func (self *AstNode) RemoveChild(node Node) {
+	if self == nil || self.Children == nil {
+		return
+	}
+
+	for i, child := range self.Children {
+		if child == node {
+			self.Children = append(self.Children[:i], self.Children[i+1:]...)
+			return
 		}
 	}
 }

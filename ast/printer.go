@@ -100,20 +100,77 @@ func (self *CallExpression) PrintTree(s *utilities.IndentWriter) {
 	}
 }
 
-func (self *HttpRouteDeclaration) PrintTree(s *utilities.IndentWriter) {
-	s.WriteString("HttpRouteDeclaration: TODO Printing\n")
-}
+func (self *HttpBlock) PrintTree(s *utilities.IndentWriter) {
+	s.WriteString("HttpBlock: \n")
 
-func (self *HttpServerConfig) PrintTree(s *utilities.IndentWriter) {
-	s.WriteString("HttpServerConfig: TODO Printing\n")
+	w := s.ChildWriter()
+	w.WriteString("Routes: \n")
+	for _, route := range self.RouteDeclarations {
+		route.PrintTree(w.ChildWriter())
+	}
+}
+func (self *HttpRouteDeclaration) PrintTree(s *utilities.IndentWriter) {
+	s.WriteString("HttpRouteDeclaration: \n")
+	w := s.ChildWriter()
+	w.WriteString("Method: " + string(self.Method) + "\n")
+	w.WriteString("Path: ")
+	if self.Path != nil {
+		w.WriteString(self.Path.Value.(string) + "\n")
+	} else {
+		w.WriteString("<nil>\n")
+	}
+
+	w.WriteString("Body: ")
+	if self.Body != nil {
+		w.WriteString("\n")
+		self.Body.PrintTree(w.ChildWriter())
+	} else {
+		w.WriteString("<nil>\n")
+	}
+
+	w.WriteString("Injections:")
+	if len(self.Injections) == 0 {
+		w.WriteString("<none>\n")
+	} else {
+		w.WriteString("\n")
+		for _, injection := range self.Injections {
+			injection.PrintTree(w.ChildWriter())
+		}
+	}
 }
 
 func (self *HttpResponseData) PrintTree(s *utilities.IndentWriter) {
-	s.WriteString("HttpResponseData: TODO Printing\n")
+	s.WriteString("HttpResponseData: \n")
+	w := s.ChildWriter()
+	w.WriteString("Kind: " + string(self.Kind) + "\n")
+
+	w.WriteString("ResponseCode: ")
+	if self.ResponseCode != nil {
+		w.WriteString(strconv.Itoa(self.ResponseCode.Value.(int)) + "\n")
+	} else {
+		w.WriteString("<nil>\n")
+	}
+
+	w.WriteString("Data: ")
+	if self.Data != nil {
+		w.WriteString("\n")
+		self.Data.PrintTree(w.ChildWriter())
+	} else {
+		w.WriteString("<nil>\n")
+	}
 }
 
-func (self *HttpRouteBodyInjection) PrintTree(s *utilities.IndentWriter) {
-	s.WriteString("HttpRouteBodyInjection: TODO Printing\n")
+func (self *HttpRouteBodyInjectionStatement) PrintTree(s *utilities.IndentWriter) {
+	s.WriteString("HttpRouteBodyInjection: \n")
+	w := s.ChildWriter()
+	w.WriteString("From: " + string(self.From) + "\n")
+	w.WriteString("Var: ")
+	if self.Var != nil {
+		w.WriteString("\n")
+		self.Var.PrintTree(w.ChildWriter())
+	} else {
+		w.WriteString("<nil>\n")
+	}
 }
 
 func (self *ArrayInstantiation) PrintTree(s *utilities.IndentWriter) {

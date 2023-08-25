@@ -1,0 +1,6 @@
+{
+  "http_server": {
+    "port": "env:PORT",
+    "address": "localhost"
+  }
+}

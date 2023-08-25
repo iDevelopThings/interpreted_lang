@@ -106,6 +106,17 @@ func evalBinaryOperation(
 				er = evalBinaryOperation(mainNode, ast.BinaryExpressionKindRegular, operators.Multiply, originalLeft, originalRight, leftNode, rightNode)
 			case operators.DivideEqual:
 				er = evalBinaryOperation(mainNode, ast.BinaryExpressionKindRegular, operators.Divide, originalLeft, originalRight, leftNode, rightNode)
+			case operators.Equal:
+				rhs := originalRight
+				if originalLeft.Kind != originalRight.Kind {
+					bt, ok := ast.BasicTypes[rhs.TypeName]
+					if !ok {
+						NewErrorAtNode(mainNode, "Lhs & rhs types are not the same, and rhs is not a basic type: %v", op)
+					}
+					rhs = TypeCoercion.MustCast(rhs, bt.(*ast.BasicType))
+				}
+
+				er = NewResult(rhs)
 			default:
 				NewErrorAtNode(mainNode, "Error evaluating binary expression, unhandled assignment operator: %v", op)
 			}
