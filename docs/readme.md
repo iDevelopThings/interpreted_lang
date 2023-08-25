@@ -12,5 +12,4 @@ This isn't even documentation, more just a place so i don't forget my own syntax
 - [errors](errors.md)
 - [http](http.md)
 - [objects](objects.md)
-- [readme](readme.md)
 - [syntax](syntax.md)
