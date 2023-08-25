@@ -254,3 +254,13 @@ func (p *Parser) parseTypeReference() *ast.TypeReference {
 
 	return node
 }
+
+func (p *Parser) parseParenExpression() ast.Expr {
+	p.expect(lexer.TokenLParen)
+
+	node := p.parseExpression(0)
+
+	p.expect(lexer.TokenRParen)
+
+	return node
+}

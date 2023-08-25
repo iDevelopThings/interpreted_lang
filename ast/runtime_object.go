@@ -2,6 +2,7 @@ package ast
 
 import (
 	"errors"
+	"maps"
 	"sync/atomic"
 
 	"github.com/charmbracelet/log"
@@ -34,6 +35,8 @@ type RuntimeValue struct {
 	// and compare values(in a simple manner)
 	Uid int64
 
+	OriginalNode Node
+
 	TypeName string
 	Decl     Declaration
 
@@ -48,16 +51,33 @@ type RuntimeValue struct {
 	Methods map[string]*FunctionDeclaration
 }
 
-func newRuntimeValue(decl Declaration) *RuntimeValue {
+func newRuntimeValue(node Node) *RuntimeValue {
 	rv := &RuntimeValue{
-		Uid:     runtimeObjectUid.Add(1),
-		Methods: map[string]*FunctionDeclaration{},
+		Uid:          runtimeObjectUid.Add(1),
+		OriginalNode: node,
+		Methods:      map[string]*FunctionDeclaration{},
 	}
 
-	if decl != nil {
-		rv.TypeName = decl.TypeName()
-		rv.Decl = decl
+	if node != nil {
+		if decl, ok := node.(Declaration); ok {
+			rv.TypeName = decl.TypeName()
+			rv.Decl = decl
+		}
 	}
+
+	return rv
+}
+
+func NewRuntimeValueClone(original *RuntimeValue) *RuntimeValue {
+	rv := newRuntimeValue(original.OriginalNode)
+
+	if rv.Decl != original.Decl {
+		rv.Decl = original.Decl
+	}
+	rv.TypeName = original.TypeName
+	rv.Value = original.Value
+	rv.Kind = original.Kind
+	rv.Methods = maps.Clone(original.Methods)
 
 	return rv
 }
@@ -154,6 +174,14 @@ func NewRuntimeDictionary() *RuntimeValue {
 	return rv
 }
 
+func NewRuntimeValueFromLiteral(lit *Literal) *RuntimeValue {
+	rv := newRuntimeValue(lit)
+	rv.TypeName = string(lit.Kind)
+	rv.Value = lit.Value
+	rv.Kind = RuntimeValueKind(lit.Kind)
+	return rv
+}
+
 func NewRuntimeLiteral(value any) *RuntimeValue {
 	rv := newRuntimeValue(nil)
 
@@ -161,6 +189,7 @@ func NewRuntimeLiteral(value any) *RuntimeValue {
 	switch value.(type) {
 	case *Literal:
 		lit = value.(*Literal)
+		rv.OriginalNode = lit
 	default:
 		lit = NewLiteral(nil, value)
 	}
@@ -187,6 +216,14 @@ func NewRuntimeEnumValue(enum *EnumDeclaration) *RuntimeValue {
 	rv.Kind = RuntimeValueKindEnumValue
 
 	return rv
+}
+
+func RuntimeValueAs[T any](rv *RuntimeValue) T {
+	value, ok := rv.Value.(T)
+	if !ok {
+		log.Fatalf("Cannot cast runtime value to type %T", value)
+	}
+	return value
 }
 
 func (self *RuntimeValue) GetField(fieldName string) *RuntimeValue {
@@ -337,12 +374,16 @@ func (self *RuntimeValue) GetMethod(name string) *FunctionDeclaration {
 	return nil
 }
 
-func NewRuntimeValueFromLiteral(lit *Literal) *RuntimeValue {
-	return &RuntimeValue{
-		TypeName: string(lit.Kind),
-		Value:    lit.Value,
-		Kind:     RuntimeValueKind(lit.Kind),
+func (self *RuntimeValue) IsNumeric() bool {
+	return self.Kind == RuntimeValueKindInteger || self.Kind == RuntimeValueKindFloat
+}
+
+func (self *RuntimeValue) Apply(value *RuntimeValue) {
+	if value.Kind != self.Kind {
+		log.Fatalf("Cannot apply runtime value of type %s to type %s", value.Kind, self.Kind)
 	}
+
+	self.Value = value.Value
 }
 
 type ObjectFieldGetter interface {

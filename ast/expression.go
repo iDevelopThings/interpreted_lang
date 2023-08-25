@@ -4,49 +4,13 @@ import (
 	"arc/ast/operators"
 )
 
-type RangeExpression struct {
-	*AstNode
-	Left  Expr
-	Right Expr
-}
-
-func (self *RangeExpression) GetChildren() []Node {
-	var result []Node
-	result = append(result, self.Left)
-	result = append(result, self.Right)
-	return result
-}
-func (self *RangeExpression) IsExpression() {}
-
-type AssignmentExpression struct {
-	*AstNode
-	Left  Expr
-	Op    operators.Operator
-	Value Expr
-}
-
-func (self *AssignmentExpression) GetChildren() []Node {
-	var result []Node
-	result = append(result, self.Left)
-	result = append(result, self.Value)
-	return result
-}
-func (self *AssignmentExpression) IsExpression() {}
-func (self *AssignmentExpression) IsStatement()  {}
-
 type BinaryExpressionKind string
 
 const (
-	BinaryExpressionKindUnknown        BinaryExpressionKind = "Unknown"
-	BinaryExpressionKindAssignment     BinaryExpressionKind = "Assignment"
-	BinaryExpressionKindMultiplicative BinaryExpressionKind = "Multiplicative"
-	BinaryExpressionKindAdditive       BinaryExpressionKind = "Additive"
-	BinaryExpressionKindEquality       BinaryExpressionKind = "Equality"
-	BinaryExpressionKindRelational     BinaryExpressionKind = "Relational"
-	BinaryExpressionKindShift          BinaryExpressionKind = "Shift"
-	BinaryExpressionKindLogicalAnd     BinaryExpressionKind = "LogicalAnd"
-	BinaryExpressionKindLogicalOr      BinaryExpressionKind = "LogicalOr"
-	BinaryExpressionKindPower          BinaryExpressionKind = "Power"
+	BinaryExpressionKindUnknown    BinaryExpressionKind = "Unknown"
+	BinaryExpressionKindRegular    BinaryExpressionKind = "Regular"
+	BinaryExpressionKindAssignment BinaryExpressionKind = "Assignment"
+	BinaryExpressionKindComparison BinaryExpressionKind = "Comparison"
 )
 
 type BinaryExpression struct {
@@ -66,32 +30,19 @@ func (self *BinaryExpression) GetChildren() []Node {
 func (self *BinaryExpression) IsExpression() {}
 func (self *BinaryExpression) IsStatement()  {}
 
-type PostfixExpression struct {
-	*AstNode
-	Left Expr
-	Op   operators.Operator `visitor:"-"`
-}
-
-func (self *PostfixExpression) GetChildren() []Node {
-	var result []Node
-	result = append(result, self.Left)
-	return result
-}
-func (self *PostfixExpression) IsExpression() {}
-func (self *PostfixExpression) IsStatement()  {}
-
 type UnaryExpression struct {
 	*AstNode
 	Op   operators.Operator `visitor:"-"`
-	Expr Expr
+	Left Expr
 }
 
 func (self *UnaryExpression) GetChildren() []Node {
 	var result []Node
-	result = append(result, self.Expr)
+	result = append(result, self.Left)
 	return result
 }
 func (self *UnaryExpression) IsExpression() {}
+func (self *UnaryExpression) IsStatement()  {}
 
 type FieldAccessExpression struct {
 	*AstNode
@@ -150,6 +101,8 @@ func (self *CallExpression) GetChildren() []Node {
 func (self *CallExpression) IsStatement()  {}
 func (self *CallExpression) IsExpression() {}
 
+// Is not an `||` expression
+// this is `someFunction() or { ... }`
 type OrExpression struct {
 	*AstNode
 	Left  Expr
@@ -158,3 +111,17 @@ type OrExpression struct {
 
 func (self *OrExpression) IsStatement()  {}
 func (self *OrExpression) IsExpression() {}
+
+type RangeExpression struct {
+	*AstNode
+	Left  Expr
+	Right Expr
+}
+
+func (self *RangeExpression) GetChildren() []Node {
+	var result []Node
+	result = append(result, self.Left)
+	result = append(result, self.Right)
+	return result
+}
+func (self *RangeExpression) IsExpression() {}

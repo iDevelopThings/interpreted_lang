@@ -13,6 +13,9 @@ type (
 
 func (p *Parser) bindPrefixParseFns() {
 	p.prefixParseFns = make(map[lexer.TokenType]prefixParseFn)
+	p.prefixParseFns[lexer.TokenLParen] = p.parseParenExpression
+
+	// p.prefixParseFns[lexer.TokenPlus] = p.parse
 
 	p.prefixParseFns[lexer.TokenInteger] = func() ast.Expr {
 		return p.parseIntegerLiteral()
@@ -83,6 +86,17 @@ func (p *Parser) bindInfixParseFns() {
 	p.infixParseFns[lexer.TokenPlusPlus] = p.parsePostfixExpression
 	p.infixParseFns[lexer.TokenMinusMinus] = p.parsePostfixExpression
 
+	p.infixParseFns[lexer.TokenPlusEQ] = p.parseInfixExpression
+	p.infixParseFns[lexer.TokenMinusEQ] = p.parseInfixExpression
+	p.infixParseFns[lexer.TokenDivEQ] = p.parseInfixExpression
+	p.infixParseFns[lexer.TokenMulEQ] = p.parseInfixExpression
+
+	p.infixParseFns[lexer.TokenPlus] = p.parseInfixExpression
+	p.infixParseFns[lexer.TokenMinus] = p.parseInfixExpression
+	p.infixParseFns[lexer.TokenMul] = p.parseInfixExpression
+	p.infixParseFns[lexer.TokenDiv] = p.parseInfixExpression
+	p.infixParseFns[lexer.TokenMod] = p.parseInfixExpression
+	p.infixParseFns[lexer.TokenCaret] = p.parseInfixExpression
 	p.infixParseFns[lexer.TokenEQ] = p.parseInfixExpression
 	p.infixParseFns[lexer.TokenEQEQ] = p.parseInfixExpression
 	p.infixParseFns[lexer.TokenNEQ] = p.parseInfixExpression
@@ -120,16 +134,20 @@ func (p *Parser) bindInfixParseFns() {
 
 func (p *Parser) getTokenPrecedence(token *lexer.Token) int {
 	for _, tokenType := range token.Types {
-		if pr, ok := Precedences[tokenType]; ok {
+		pr := getPrecedence(tokenType)
+		if pr != -1 {
 			return pr
 		}
+		// if pr, ok := Precedences[tokenType]; ok {
+		// 	return pr
+		// }
 	}
 
 	return 1
 }
 
 func (p *Parser) parsePrefixExpression() ast.Expr {
-	return p.parseExpression(PREFIX)
+	return p.parseExpression(12)
 }
 
 func (p *Parser) parseExpression(precedence int) ast.Expr {
@@ -258,44 +276,59 @@ func (p *Parser) parseInfixExpression(lhs ast.Expr) ast.Expr {
 		expr.SetRuleRange(lhs.GetToken(), p.prev)
 	}()
 
+	// expression := p.NewNode().InfixExpression()
+	// expression.Left = left
+	// expression.Operator = p.curToken.Literal
+	// precedence := p.curPrecedence()
+	// p.next()
+	// expression.Right = p.parseExpression(precedence)
+
 	switch {
 
 	case p.prevIs(lexer.MathOperators...):
 		op := operators.Operator(p.prev.Value)
+
+		prec := p.getTokenPrecedence(p.prev)
+		rhs := p.parseExpression(prec)
 
 		binExpr := &ast.BinaryExpression{
 			AstNode: ast.NewAstNode(p.curr),
 			Kind:    ast.BinaryExpressionKindUnknown,
 			Left:    lhs,
 			Op:      op,
-			Right:   p.parseExpression(p.getTokenPrecedence(p.curr)),
+			Right:   rhs,
 		}
 
 		switch op {
-		case operators.And:
-			binExpr.Kind = ast.BinaryExpressionKindLogicalAnd
-		case operators.BitwiseLeftShift, operators.BitwiseRightShift:
-			binExpr.Kind = ast.BinaryExpressionKindShift
-		case operators.EqualEqual, operators.NotEqual:
-			binExpr.Kind = ast.BinaryExpressionKindEquality
-		case operators.LessThan, operators.LessThanOrEqual, operators.GreaterThan, operators.GreaterThanOrEqual:
-			binExpr.Kind = ast.BinaryExpressionKindRelational
-		case operators.Plus, operators.Minus:
-			binExpr.Kind = ast.BinaryExpressionKindAdditive
-		case operators.Multiply, operators.Divide:
-			binExpr.Kind = ast.BinaryExpressionKindMultiplicative
-		case operators.Modulo, operators.BitwiseXor:
-			binExpr.Kind = ast.BinaryExpressionKindPower
+		case operators.PlusEqual, operators.MinusEqual, operators.MultiplyEqual, operators.DivideEqual:
+			binExpr.Kind = ast.BinaryExpressionKindAssignment
+
+		case operators.EqualEqual, operators.NotEqual, operators.LessThan, operators.LessThanOrEqual,
+			operators.GreaterThan, operators.GreaterThanOrEqual, operators.Or, operators.And:
+			binExpr.Kind = ast.BinaryExpressionKindComparison
+
+		case operators.Plus, operators.Minus, operators.Multiply, operators.Divide, operators.Modulo,
+			operators.Power, operators.BitwiseLeftShift, operators.BitwiseRightShift:
+			binExpr.Kind = ast.BinaryExpressionKindRegular
+
+		default:
+			p.error("Unhandled infix expression/operator: %s", p.curr.Value)
+
 		}
 		expr = binExpr
 
-	case p.prevIs(lexer.TokenEQ):
+	case p.prevIs(lexer.MathAssignmentOperators...):
 		op := operators.Operator(p.prev.Value)
-		expr = &ast.AssignmentExpression{
+
+		prec := p.getTokenPrecedence(p.prev)
+		rhs := p.parseExpression(prec)
+
+		expr = &ast.BinaryExpression{
 			AstNode: ast.NewAstNode(p.curr),
 			Left:    lhs,
 			Op:      op,
-			Value:   p.parseExpression(p.getTokenPrecedence(p.curr)),
+			Right:   rhs,
+			Kind:    ast.BinaryExpressionKindAssignment,
 		}
 
 	default:
@@ -338,7 +371,7 @@ func (p *Parser) parseIndexAccessExpression(lhs ast.Expr) ast.Expr {
 	}
 
 	if p.is(lexer.TokenString) {
-		index := p.parseExpression(LOWEST)
+		index := p.parseExpression(0)
 		node.StartIndex = index
 		node.AddChildren(node, node.StartIndex)
 
@@ -350,19 +383,19 @@ func (p *Parser) parseIndexAccessExpression(lhs ast.Expr) ast.Expr {
 		// If we have a RBracket, we're doing a single index access
 		// not using a string though which is for dictionaries
 		if p.peekIs(lexer.TokenRBracket) {
-			node.StartIndex = p.parseExpression(LOWEST)
+			node.StartIndex = p.parseExpression(0)
 			node.AddChildren(node, node.StartIndex)
 		} else
 		// if we have a colon, we're just doing 0-end slicing
 		if p.is(lexer.TokenColon) {
 			node.IsSlice = true
-			node.EndIndex = p.parseExpression(LOWEST)
+			node.EndIndex = p.parseExpression(0)
 			node.AddChildren(node, node.StartIndex)
 			p.expect(lexer.TokenColon)
 		} else {
 
 			node.IsSlice = true
-			node.StartIndex = p.parseExpression(LOWEST)
+			node.StartIndex = p.parseExpression(0)
 			node.AddChildren(node, node.StartIndex)
 
 			p.expect(lexer.TokenColon)
@@ -370,7 +403,7 @@ func (p *Parser) parseIndexAccessExpression(lhs ast.Expr) ast.Expr {
 			// If we hit the closing bracket, then we don't have an end index
 			// We're doing [n:] slicing
 			if !p.is(lexer.TokenRBracket) {
-				node.EndIndex = p.parseExpression(LOWEST)
+				node.EndIndex = p.parseExpression(0)
 				node.AddChildren(node, node.EndIndex)
 			}
 		}
@@ -383,10 +416,15 @@ func (p *Parser) parseIndexAccessExpression(lhs ast.Expr) ast.Expr {
 }
 
 func (p *Parser) parsePostfixExpression(lhs ast.Expr) ast.Expr {
-	p.assertPrev(lexer.TokenPlusPlus, lexer.TokenMinusMinus)
+	p.assertPrev(
+		lexer.TokenPlusPlus,
+		lexer.TokenPlusEQ,
+		lexer.TokenMinusMinus,
+		lexer.TokenMinusEQ,
+	)
 
 	op := operators.ToOperator(p.prev.Value)
-	node := &ast.PostfixExpression{
+	node := &ast.UnaryExpression{
 		AstNode: ast.NewAstNode(p.prev),
 		Left:    lhs,
 		Op:      op,
@@ -420,7 +458,7 @@ func (p *Parser) parseObjectInstantiation(left ast.Expr) ast.Expr {
 		node.AddChildren(node, key)
 
 		p.expect(lexer.TokenColon)
-		value := p.parseExpression(LOWEST)
+		value := p.parseExpression(0)
 		node.AddChildren(node, value)
 
 		node.Fields[key.Name] = value
@@ -449,7 +487,7 @@ func (p *Parser) parseExpressionList(open, close lexer.TokenType) []ast.Expr {
 	defer func() { p.identifiersAsVarRefs = false }()
 
 	for !p.is(close) {
-		list = append(list, p.parseExpression(LOWEST))
+		list = append(list, p.parseExpression(0))
 		if p.is(close) {
 			break
 		}
@@ -474,12 +512,12 @@ func (p *Parser) parseRange() *ast.RangeExpression {
 	p.toggleInfixFunc(lexer.TokenLCurly, false)
 	defer p.toggleInfixFunc(lexer.TokenLCurly, true)
 
-	node.Left = p.parseExpression(LOWEST)
+	node.Left = p.parseExpression(0)
 	node.AddChildren(node, node.Left)
 
 	p.expect(lexer.TokenDotDot)
 
-	node.Right = p.parseExpression(LOWEST)
+	node.Right = p.parseExpression(0)
 	node.AddChildren(node, node.Right)
 
 	return node
@@ -501,7 +539,7 @@ func (p *Parser) parseOrExpression(left ast.Expr) *ast.OrExpression {
 	if p.is(lexer.TokenLCurly) {
 		node.Right = p.parseBlock()
 	} else {
-		node.Right = p.parseExpression(LOWEST)
+		node.Right = p.parseExpression(0)
 	}
 
 	node.AddChildren(node, node.Right)

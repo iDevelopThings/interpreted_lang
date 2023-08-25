@@ -36,7 +36,11 @@ func (p *Parser) parseStatement() ast.Statement {
 
 	default:
 		s := p.curr
-		expr := p.parseExpression(LOWEST)
+
+		p.identifiersAsVarRefs = true
+		defer func() { p.identifiersAsVarRefs = false }()
+
+		expr := p.parseExpression(0)
 		p.skipSemi()
 
 		if stmt, ok := expr.(ast.Statement); ok {
@@ -78,7 +82,7 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	defer node.SetRuleRange(s, p.prev)
 
 	if !p.is(lexer.TokenSemicolon, lexer.TokenRCurly) {
-		node.Value = p.parseExpression(1)
+		node.Value = p.parseExpression(0)
 		node.AddChildren(node, node.Value)
 	}
 
@@ -106,7 +110,7 @@ func (p *Parser) parseIfStatement() ast.Statement {
 	// Otherwise it won't let us handle our if statement block -.-
 	p.toggleInfixFunc(lexer.TokenLCurly, false)
 
-	node.Condition = p.parseExpression(LOWEST)
+	node.Condition = p.parseExpression(0)
 	node.AddChildren(node, node.Condition)
 
 	p.toggleInfixFunc(lexer.TokenLCurly, true)
@@ -176,7 +180,7 @@ func (p *Parser) parseLoopStatement() ast.Statement {
 
 		if p.is(lexer.TokenKeywordStep) {
 			p.next()
-			node.Step = p.parseExpression(LOWEST)
+			node.Step = p.parseExpression(0)
 			node.AddChildren(node, node.Step)
 		}
 

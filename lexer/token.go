@@ -118,7 +118,7 @@ const (
 	TokenDotDot     = "DOT_DOT"
 	TokenQuestion   = "QUESTION"
 	TokenPlus       = "PLUS"
-	TokenPlusEq     = "PLUS_EQ"
+	TokenPlusEQ     = "PLUS_EQ"
 	TokenPlusPlus   = "PLUS_PLUS"
 	TokenMinus      = "MINUS"
 	TokenMinusEQ    = "MINUS_EQ"
@@ -192,7 +192,7 @@ var tokenMap = map[string]TokenType{
 
 	// Operators
 	"+":  TokenPlus,
-	"+=": TokenPlusEq,
+	"+=": TokenPlusEQ,
 	"++": TokenPlusPlus,
 	"-":  TokenMinus,
 	"-=": TokenMinusEQ,
@@ -275,4 +275,13 @@ var MathOperators = []TokenType{
 	TokenAnd,
 	TokenLShift,
 	TokenRShift,
+}
+var MathAssignmentOperators = []TokenType{
+	TokenEQ,
+	TokenPlusEQ,
+	TokenMinusEQ,
+	TokenMulEQ,
+	TokenDivEQ,
+	TokenPlusPlus,
+	TokenMinusMinus,
 }

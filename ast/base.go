@@ -214,7 +214,8 @@ type Identifier struct {
 func (self *Identifier) GetChildren() []Node {
 	return []Node{}
 }
-func (self *Identifier) IsExpression() {}
+func (self *Identifier) IsExpression()  {}
+func (self *Identifier) String() string { return self.Name }
 
 func NewIdentifier(token *lexer.Token) *Identifier {
 	return NewIdentifierWithValue(token, token.GetText())

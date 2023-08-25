@@ -31,23 +31,6 @@ func Walk(root Node, cb VisitFunc) {
 					}
 				}
 			}
-		case *AssignmentExpression:
-			{
-				if node.Left != nil && !visitFunc(node.Left, cb, visited) {
-					return false
-				}
-
-				// type skiped: Op
-				// Info:
-				// - Type:
-				// - IsArray:  %!s(bool=false)
-				// - IsPtr:  %!s(bool=false)
-				// - IsInterfaceType:  %!s(bool=false)
-				// - IsStructType:  %!s(bool=false)
-				if node.Value != nil && !visitFunc(node.Value, cb, visited) {
-					return false
-				}
-			}
 		case *AssignmentStatement:
 			{
 				if node.Name != nil && !visitFunc(node.Name, cb, visited) {
@@ -446,12 +429,6 @@ func Walk(root Node, cb VisitFunc) {
 					return false
 				}
 			}
-		case *PostfixExpression:
-			{
-				if node.Left != nil && !visitFunc(node.Left, cb, visited) {
-					return false
-				}
-			}
 		case *Program:
 			{
 				for _, item := range node.Statements {
@@ -547,7 +524,7 @@ func Walk(root Node, cb VisitFunc) {
 			}
 		case *UnaryExpression:
 			{
-				if node.Expr != nil && !visitFunc(node.Expr, cb, visited) {
+				if node.Left != nil && !visitFunc(node.Left, cb, visited) {
 					return false
 				}
 			}

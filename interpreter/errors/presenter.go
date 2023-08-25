@@ -59,6 +59,9 @@ func NewErrorPresenter(input string, token *ast.ParserRuleRange) *ErrorPresenter
 
 func (self *ErrorPresenter) AddAtNode(node ast.Node, format string, a ...any) *ErrorPresenter {
 	err := NewCodeErrorAtNode(node)
+	if err == nil {
+		return self
+	}
 	err.AddMessageAtToken(format, a...)
 	self.Errors = append(self.Errors, err)
 
@@ -109,6 +112,9 @@ func (self *ErrorPresenter) Print(filePath string) {
 }
 
 func (self *ErrorPresenter) process() ([]string, int, int) {
+	if self.TokenRuleRange == nil {
+		log.Fatalf("ErrorPresenter.process(): self.TokenRuleRange is nil")
+	}
 	startLine, stopLine, errorLineNumbers, hasBlockError := self.prepareErrorBounds()
 
 	var lines []string

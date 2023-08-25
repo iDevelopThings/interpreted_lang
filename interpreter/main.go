@@ -26,9 +26,10 @@ type InterpreterEngine struct {
 	Env         *Environment
 	Evaluator   *Evaluator
 
-	IsTesting      bool
-	loggingEnabled bool
-	loggingWriter  io.Writer
+	IsTesting          bool
+	DisableTypeChecker bool
+	loggingEnabled     bool
+	loggingWriter      io.Writer
 }
 
 var globalLogger *log.Logger
@@ -258,6 +259,11 @@ func (self *InterpreterEngine) linkScript(script *SourceFile) {
 }
 
 func (self *InterpreterEngine) typeCheck() {
+	if self.DisableTypeChecker {
+		log.Debugf("TypeChecker disabled, skipping type checking")
+		return
+	}
+
 	timer := utilities.NewTimer("TypeCheck All SourceFiles")
 	defer timer.StopAndLog()
 
@@ -324,6 +330,9 @@ func (self *InterpreterEngine) Run() {
 	self.evaluateAll()
 
 	// wg := &sync.WaitGroup{}
+
+	w := utilities.NewIndentWriter(os.Stdout, " ")
+	self.SourceFiles[0].Program.PrintTree(w.(*utilities.IndentWriter))
 
 	self.runMainAndServer()
 }

@@ -59,26 +59,6 @@ func (self *FunctionDeclaration) PrintTree(s *utilities.IndentWriter) {
 	self.Body.PrintTree(w)
 }
 
-func (self *AssignmentExpression) PrintTree(s *utilities.IndentWriter) {
-	s.WriteString("AssignmentExpression: \n")
-	s.WriteString("LHS: \n")
-	if self.Left != nil {
-		self.Left.PrintTree(s.ChildWriter())
-	} else {
-		s.WriteString("<nil>\n")
-	}
-
-	s.WriteString("Operator: " + string(self.Op) + "\n")
-
-	s.WriteString("RHS: \n")
-	if self.Value != nil {
-		self.Value.PrintTree(s.ChildWriter())
-	} else {
-		s.WriteString("<nil>\n")
-	}
-	s.WriteString("\n")
-}
-
 func (self *BinaryExpression) PrintTree(s *utilities.IndentWriter) {
 	s.WriteString("BinaryExpression: \n")
 
@@ -101,21 +81,6 @@ func (self *BinaryExpression) PrintTree(s *utilities.IndentWriter) {
 		w.WriteString("<nil>\n")
 	}
 
-}
-
-func (self *PostfixExpression) PrintTree(s *utilities.IndentWriter) {
-	s.WriteString("PostfixExpression: \n")
-
-	w := s.ChildWriter()
-	w.WriteString("Operator: " + string(self.Op) + " \n")
-
-	w.WriteString("LHS: ")
-	if self.Left != nil {
-		s.WriteString("\n")
-		self.Left.PrintTree(w.ChildWriter())
-	} else {
-		s.WriteString("<nil>\n")
-	}
 }
 
 func (self *CallExpression) PrintTree(s *utilities.IndentWriter) {
@@ -327,7 +292,7 @@ func (self *UnaryExpression) PrintTree(s *utilities.IndentWriter) {
 	s.WriteString("UnaryExpression: \n")
 
 	s.WriteString("Operator: " + string(self.Op) + "\n")
-	self.Expr.PrintTree(s)
+	self.Left.PrintTree(s)
 
 	s.WriteString("\n")
 }

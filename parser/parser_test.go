@@ -133,7 +133,6 @@ func (suite *TestParserTestSuite) Test_ParserInput() {
 
 	program := p.Parse()
 	w := utilities.NewIndentWriter(os.Stdout, " ")
-
 	program.PrintTree(w.(*utilities.IndentWriter))
 
 	// if diff := cmp.Diff(suite.goldenData, tokens); diff != "" {

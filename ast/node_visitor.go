@@ -72,16 +72,6 @@ func (self *RangeExpression) Accept(visitor NodeVisitor) {
 		visitor.Visit(self.Right)
 	}
 }
-func (self *AssignmentExpression) Accept(visitor NodeVisitor) {
-	// visitor.Visit(self)
-	visitor.VisitAssignmentExpression(self)
-	if self.Left != nil {
-		visitor.Visit(self.Left)
-	}
-	if self.Value != nil {
-		visitor.Visit(self.Value)
-	}
-}
 func (self *BinaryExpression) Accept(visitor NodeVisitor) {
 	// visitor.Visit(self)
 	visitor.VisitBinaryExpression(self)
@@ -92,18 +82,11 @@ func (self *BinaryExpression) Accept(visitor NodeVisitor) {
 		visitor.Visit(self.Right)
 	}
 }
-func (self *PostfixExpression) Accept(visitor NodeVisitor) {
-	// visitor.Visit(self)
-	visitor.VisitPostfixExpression(self)
-	if self.Left != nil {
-		visitor.Visit(self.Left)
-	}
-}
 func (self *UnaryExpression) Accept(visitor NodeVisitor) {
 	// visitor.Visit(self)
 	visitor.VisitUnaryExpression(self)
-	if self.Expr != nil {
-		visitor.Visit(self.Expr)
+	if self.Left != nil {
+		visitor.Visit(self.Left)
 	}
 }
 func (self *FieldAccessExpression) Accept(visitor NodeVisitor) {
@@ -295,9 +278,7 @@ type NodeVisitor interface {
 	VisitObjectDeclaration(node *ObjectDeclaration)
 	VisitFunctionDeclaration(node *FunctionDeclaration)
 	VisitRangeExpression(node *RangeExpression)
-	VisitAssignmentExpression(node *AssignmentExpression)
 	VisitBinaryExpression(node *BinaryExpression)
-	VisitPostfixExpression(node *PostfixExpression)
 	VisitUnaryExpression(node *UnaryExpression)
 	VisitFieldAccessExpression(node *FieldAccessExpression)
 	VisitIndexAccessExpression(node *IndexAccessExpression)
@@ -350,14 +331,8 @@ func (self *NodeVisitorAdapter) Visit(node Node) {
 	case *RangeExpression:
 		// self.VisitRangeExpression(node)
 		node.Accept(self)
-	case *AssignmentExpression:
-		// self.VisitAssignmentExpression(node)
-		node.Accept(self)
 	case *BinaryExpression:
 		// self.VisitBinaryExpression(node)
-		node.Accept(self)
-	case *PostfixExpression:
-		// self.VisitPostfixExpression(node)
 		node.Accept(self)
 	case *UnaryExpression:
 		// self.VisitUnaryExpression(node)
@@ -456,15 +431,7 @@ func (self *NodeVisitorAdapter) VisitRangeExpression(node *RangeExpression) {
 
 }
 
-func (self *NodeVisitorAdapter) VisitAssignmentExpression(node *AssignmentExpression) {
-
-}
-
 func (self *NodeVisitorAdapter) VisitBinaryExpression(node *BinaryExpression) {
-
-}
-
-func (self *NodeVisitorAdapter) VisitPostfixExpression(node *PostfixExpression) {
 
 }
 

@@ -249,11 +249,11 @@ func bindStaticRuntimeType(env *Environment, t any) {
 
 	env.SetObject(objDecl)
 
-	log.Debugf("Registered runtime bound type %s", objName)
+	// log.Debugf("Registered runtime bound type %s", objName)
 
 	for _, declaration := range objDecl.Methods {
 		env.SetFunction(declaration)
-		log.Debugf("Registered runtime bound method %s::%s", objName, declaration.Name)
+		// log.Debugf("Registered runtime bound method %s::%s", objName, declaration.Name)
 	}
 }
 

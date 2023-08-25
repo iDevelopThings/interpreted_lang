@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/log"
+
 	"arc/ast"
 	"arc/lexer"
 )
@@ -94,7 +96,15 @@ type CodeError struct {
 //		return pos
 //	}
 func NewCodeErrorAtNode(node ast.Node) *CodeError {
+	if node.GetAstNode() == nil {
+		log.Warnf("NewCodeErrorAtNode: node.GetAstNode() is nil")
+		return nil
+	}
 	rng := node.GetRuleRange()
+	if rng == nil {
+		log.Warnf("NewCodeErrorAtNode: node.GetRuleRange() is nil")
+		return nil
+	}
 	pos := &CodeError{
 		Kind:  SingleLineError,
 		Start: NewSourceErrorPosition(rng.Start.GetStart()),

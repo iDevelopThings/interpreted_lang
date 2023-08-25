@@ -93,16 +93,16 @@ func (self *Evaluator) Eval(n any) *Result {
 	// case *ast.ContinueStatement:
 	// 	return self.evalContinueStatement(node)
 
-	case *ast.PostfixExpression:
-		return self.evalPostfixExpression(node)
+	// case *ast.PostfixExpression:
+	// 	return self.evalPostfixExpression(node)
 	case *ast.FieldAccessExpression:
 		return self.evalFieldAccessExpression(node)
 	case *ast.CallExpression:
 		return self.evalCallExpression(node)
 	case *ast.BinaryExpression:
 		return self.evalBinaryExpression(node)
-	case *ast.AssignmentExpression:
-		return self.evalAssignmentExpression(node)
+	// case *ast.AssignmentExpression:
+	// 	return self.evalAssignmentExpression(node)
 	case *ast.UnaryExpression:
 		return self.evalUnaryExpression(node)
 	case *ast.RangeExpression:
@@ -320,7 +320,12 @@ func (self *Evaluator) evalIfStatement(node *ast.IfStatement) *Result {
 	r := NewResult()
 
 	cond := self.MustEval(node.Condition)
-	if cond.(bool) {
+	condRv, ok := cond.(*ast.RuntimeValue)
+	if !ok {
+		NewErrorAtNode(node.Condition, "If statement condition must be a boolean expression: %v", node.Condition)
+	}
+
+	if ast.RuntimeValueAs[bool](condRv) {
 		body := self.Eval(node.Body)
 		r.Merge(body)
 
@@ -452,6 +457,20 @@ func (self *Evaluator) evalAssignmentStatement(node *ast.AssignmentStatement) *R
 	var value any
 	if node.Value != nil {
 		value = self.MustEval(node.Value)
+	}
+
+	if node.Type == nil {
+		NewErrorAtNode(node, "Assignment statement does not have a type identifier associated with it: %v", node)
+	}
+
+	rv, ok := value.(*ast.RuntimeValue)
+	if !ok {
+		log.Fatalf("Error evaluating assignment statement: %v", node)
+	}
+
+	if rv.TypeName != node.Type.TypeName() {
+		bt := node.Type.GetBasicType().(*ast.BasicType)
+		value = TypeCoercion.MustCast(rv, bt)
 	}
 
 	self.Env.SetVar(node.Name.Name, value)

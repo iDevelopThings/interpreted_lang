@@ -48,7 +48,6 @@ func (suite *TestInterpreterStatementsTestSuite) Test_IfStatement() {
 		fmt::printf("i is not 1, 2, or 3\n");
     }
 `
-
 	tests := []struct {
 		input string
 		value int

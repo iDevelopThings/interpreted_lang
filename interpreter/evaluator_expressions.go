@@ -9,259 +9,133 @@ import (
 	"arc/ast/operators"
 )
 
-func getGoType(val any) ast.LiteralKind {
-	if val == nil {
-		return ast.LiteralKindNone
+func boolToInt(v bool) int {
+	if v {
+		return 1
 	}
-	switch val.(type) {
-	case int:
-		return ast.LiteralKindInteger
-	case float64:
-		return ast.LiteralKindFloat
-	case string:
-		return ast.LiteralKindString
-	case bool:
-		return ast.LiteralKindBoolean
-	case *ast.Literal:
-		return val.(*ast.Literal).Kind
-	default:
-		log.Fatalf("Unknown literal type: %T", val)
-	}
-
-	return ast.LiteralKindUnknown
+	return 0
 }
-
-func isType(val interface{}, typeOf interface{}) bool {
-	switch typeOf.(type) {
-	case int:
-		_, ok := val.(int)
-		return ok
-	case float64:
-		_, ok := val.(float64)
-		return ok
-	case *ast.Literal:
-		_, ok := val.(*ast.Literal)
-		return ok
-	case *ast.RuntimeValue:
-		_, ok := val.(*ast.RuntimeValue)
-		return ok
-	default:
-		return false
+func boolToFloat(v bool) float64 {
+	if v {
+		return 1.0
 	}
-}
-
-func evaluateIntOperation(
-	kind ast.BinaryExpressionKind,
-	op operators.Operator,
-	l, r int,
-) *Result {
-	switch kind {
-	case ast.BinaryExpressionKindEquality, ast.BinaryExpressionKindRelational:
-		return NewResult(operators.BinaryIntComparisonOperation(op, l, r))
-	default:
-		return NewResult(operators.BinaryIntOperation(op, l, r))
-	}
-}
-
-func evaluateFloatOperation(
-	kind ast.BinaryExpressionKind,
-	op operators.Operator,
-	l, r float64,
-) *Result {
-	switch kind {
-	case ast.BinaryExpressionKindEquality, ast.BinaryExpressionKindRelational:
-		return NewResult(operators.BinaryFloatComparisonOperation(op, l, r))
-	default:
-		return NewResult(operators.BinaryFloatOperation(op, l, r))
-	}
-}
-
-func (self *Evaluator) evalRangeExpression(node *ast.RangeExpression) *Result {
-	r := NewResult()
-
-	lhs := self.MustEval(node.Left)
-	rhs := self.MustEval(node.Right)
-
-	self.Env.SetVar("rangeLower", lhs)
-	self.Env.SetVar("rangeUpper", rhs)
-
-	return r
-}
-
-func getUnderlyingValue(value any) any {
-	switch v := value.(type) {
-	case *ast.RuntimeValue:
-		return v.Value
-	case *ast.Literal:
-		return v.Value
-	}
-
-	return value
+	return 0.0
 }
 
 func evalBinaryOperation(
+	mainNode ast.Node, // Only used for error reporting
 	kind ast.BinaryExpressionKind,
 	op operators.Operator,
-	originalLeft, originalRight any,
+	originalLeft, originalRight *ast.RuntimeValue,
+	leftNode, rightNode ast.Expr,
 ) *Result {
-	if originalLeft == nil || originalRight == nil {
+
+	var rawResult any
+	var opError error
+
+	switch kind {
+
+	case ast.BinaryExpressionKindRegular:
+		{
+
+			switch op {
+			case operators.PlusPlus:
+				rawResult, opError = Expression.Add(originalLeft, ast.NewRuntimeLiteral(1))
+			case operators.MinusMinus:
+				rawResult, opError = Expression.Sub(originalLeft, ast.NewRuntimeLiteral(1))
+			case operators.Plus:
+				rawResult, opError = Expression.Add(originalLeft, originalRight)
+			case operators.Minus:
+				rawResult, opError = Expression.Sub(originalLeft, originalRight)
+			case operators.Multiply:
+				rawResult, opError = Expression.Mul(originalLeft, originalRight)
+			case operators.Divide:
+				rawResult, opError = Expression.Div(originalLeft, originalRight)
+			case operators.Modulo:
+				rawResult, opError = Expression.Mod(originalLeft, originalRight)
+			case operators.Power:
+				rawResult, opError = Expression.Pow(originalLeft, originalRight)
+			}
+
+		}
+
+	case ast.BinaryExpressionKindComparison:
+		{
+
+			switch op {
+
+			case operators.EqualEqual:
+				rawResult, opError = Expression.Equal(originalLeft, originalRight)
+
+			case operators.NotEqual:
+				rawResult, opError = Expression.NotEqual(originalLeft, originalRight)
+
+			case operators.GreaterThan:
+				rawResult, opError = Expression.GreaterThan(originalLeft, originalRight)
+
+			case operators.GreaterThanOrEqual:
+				rawResult, opError = Expression.GreaterThanOrEqual(originalLeft, originalRight)
+
+			case operators.LessThan:
+				rawResult, opError = Expression.LessThan(originalLeft, originalRight)
+
+			case operators.LessThanOrEqual:
+				rawResult, opError = Expression.LessThanOrEqual(originalLeft, originalRight)
+
+			case operators.And:
+
+			}
+		}
+
+	case ast.BinaryExpressionKindAssignment:
+		{
+			// We should only only be handling the right side of the assignment here
+			// The `evalAssignmentStatement` will handle finding the correct var on the left
+			// and assigning the value to it
+
+			var er *Result
+
+			switch op {
+
+			case operators.PlusEqual:
+				er = evalBinaryOperation(mainNode, ast.BinaryExpressionKindRegular, operators.Plus, originalLeft, originalRight, leftNode, rightNode)
+			case operators.MinusEqual:
+				er = evalBinaryOperation(mainNode, ast.BinaryExpressionKindRegular, operators.Minus, originalLeft, originalRight, leftNode, rightNode)
+			case operators.MultiplyEqual:
+				er = evalBinaryOperation(mainNode, ast.BinaryExpressionKindRegular, operators.Multiply, originalLeft, originalRight, leftNode, rightNode)
+			case operators.DivideEqual:
+				er = evalBinaryOperation(mainNode, ast.BinaryExpressionKindRegular, operators.Divide, originalLeft, originalRight, leftNode, rightNode)
+			default:
+				NewErrorAtNode(mainNode, "Error evaluating binary expression, unhandled assignment operator: %v", op)
+			}
+
+			if er == nil {
+				NewErrorAtNode(mainNode, "Error evaluating binary expression, result is nil: %v", op)
+			}
+
+			rt := er.First().(*ast.RuntimeValue)
+			originalLeft.Apply(rt)
+
+			return NewResult(originalLeft)
+		}
+
+	}
+
+	if opError != nil {
+		NewErrorAtNode(mainNode, "Error evaluating binary expression: %s", opError.Error())
 		return nil
 	}
 
-	left := getUnderlyingValue(originalLeft)
-	right := getUnderlyingValue(originalRight)
-
-	switch l := left.(type) {
-	case int:
-		if r, ok := right.(int); ok {
-			return evaluateIntOperation(kind, op, l, r)
-		}
-	case float64:
-		if r, ok := right.(float64); ok {
-			return evaluateFloatOperation(kind, op, l, r)
-		}
+	if rv, ok := rawResult.(*ast.RuntimeValue); ok {
+		return NewResult(rv)
 	}
 
-	l, ok := originalLeft.(*ast.RuntimeValue)
-	r, ok := originalRight.(*ast.RuntimeValue)
-	if !ok {
-		return nil
-	}
+	rv := ast.NewRuntimeLiteral(rawResult)
 
-	if l.Kind != r.Kind {
-		log.Debugf("Error evaluating binary expression, left and right types are not the same: %v, lhs: %v, rhs: %v", kind, l, r)
-		return nil
-	}
-
-	switch op {
-	case "==":
-		return NewResult(l.Value == r.Value)
-	case "!=":
-		return NewResult(l.Value != r.Value)
-	}
-
-	log.Warnf("Unsupported operation: %#v %s %#v", left, op, right)
-
-	return nil
+	return NewResult(rv)
 }
 
-func (self *Evaluator) evalBinaryExpression(node *ast.BinaryExpression) *Result {
-	left := self.MustEval(node.Left)
-	right := self.MustEval(node.Right)
-
-	result := evalBinaryOperation(node.Kind, node.Op, left, right)
-	if result != nil {
-		return result
-	}
-
-	// If left or right have different types, we can't do anything, for ex, (int(1) + float(2.0))
-	// But we need to check for this, so we can specifically error out
-
-	// Check mixed type operations
-	if (isType(left, int(0)) && isType(right, float64(0))) || (isType(left, float64(0)) && isType(right, int(0))) {
-		log.Warnf("Unsupported operation, arithmetic operations between int and float are not supported, please cast both sides: %v - %s", node, node.GetToken())
-	}
-
-	log.Warnf("Error evaluating binary expression: %v - %s", self, node.GetToken())
-	return NewResult(false)
-}
-
-func (self *Evaluator) evalUnaryExpression(node *ast.UnaryExpression) *Result {
-	r := NewResult()
-
-	return r
-}
-
-func (self *Evaluator) evalPostfixExpression(node *ast.PostfixExpression) *Result {
-	varRef := self.MustEval(node.Left)
-	if varRef == nil {
-		log.Fatalf("Error evaluating postfix expression: %v", node)
-	}
-
-	var left any = varRef
-	var newValue any = nil
-
-	if isType(varRef, &ast.Literal{}) {
-		left = left.(*ast.Literal).Value
-	}
-
-	switch l := left.(type) {
-	case int:
-		newValue = operators.BinaryIntOperation(node.Op, l, 1)
-	case float64:
-		newValue = operators.BinaryFloatOperation(node.Op, l, 1)
-	}
-
-	if newValue != nil {
-		if !isType(varRef, &ast.Literal{}) {
-			log.Fatalf("Error evaluating postfix expression, varRef is not a literal type so updated value cannot be stored: %v", node)
-		}
-
-		varRef.(*ast.Literal).Value = newValue
-
-		return NewResult(varRef)
-	}
-
-	NewErrorAtNode(node, "Error evaluating postfix expression: %v", node)
-
-	// panic("Unsupported operation: " + string(node.Op))
-	return nil
-}
-
-func (self *Evaluator) evalFieldAccessExpression(node *ast.FieldAccessExpression) *Result {
-	r := NewResult()
-
-	if node.StructInstance == nil {
-		NewErrorAtNode(node, "Struct instance not found")
-	}
-
-	switch instance := node.StructInstance.(type) {
-
-	case *ast.Identifier, *ast.VarReference:
-		baseObjEval := self.Eval(instance)
-		if baseObjEval == nil {
-			self.Eval(instance)
-			NewErrorAtNode(instance, "Error evaluating field access expression: %v", instance)
-		}
-		baseObj := baseObjEval.First().(ast.ObjectFieldGetter)
-		if baseObj == nil {
-			NewErrorAtNode(instance, "Error evaluating field access expression: %v", instance)
-		}
-		return NewResult(baseObj.GetField(node.FieldName))
-
-	case *ast.FieldAccessExpression:
-		resolvedObj := self.Eval(instance)
-		if resolvedObj == nil {
-			NewErrorAtNode(instance, "Error evaluating field access expression: %v", instance)
-		}
-		switch ro := resolvedObj.First().(type) {
-		case ast.ObjectFieldGetter:
-			return NewResult(ro.GetField(node.FieldName))
-		case map[string]any:
-			return NewResult(ro[node.FieldName])
-		}
-
-	case *ast.IndexAccessExpression:
-		resolved := self.MustEvalValue(instance)
-		if resolved == nil {
-			NewErrorAtNode(instance, "Error evaluating field access expression: %v", instance)
-		}
-		switch ro := resolved.(type) {
-		case ast.ObjectFieldGetter:
-			return NewResult(ro.GetField(node.FieldName))
-		case map[string]any:
-			return NewResult(ro[node.FieldName])
-		}
-		return r.Add(resolved)
-
-	default:
-		NewErrorAtNode(instance, "Error evaluating field access expression: %v", instance)
-	}
-
-	return r
-}
-
-func (self *Evaluator) evalAssignmentExpression(node *ast.AssignmentExpression) *Result {
+/*func (self *Evaluator) evalAssignmentExpression(node *ast.AssignmentExpression) *Result {
 	r := NewResult()
 
 	varRef := self.MustEvalValue(node.Left)
@@ -336,6 +210,157 @@ func (self *Evaluator) evalAssignmentExpression(node *ast.AssignmentExpression) 
 	}
 
 	return r
+}*/
+
+func (self *Evaluator) evalBinaryExpression(node *ast.BinaryExpression) *Result {
+	left := self.MustEval(node.Left).(*ast.RuntimeValue)
+	right := self.MustEval(node.Right).(*ast.RuntimeValue)
+
+	result := evalBinaryOperation(
+		node, node.Kind,
+		node.Op,
+		left, right,
+		node.Left, node.Right,
+	)
+	if result != nil {
+		return result
+	}
+
+	// If left or right have different types, we can't do anything, for ex, (int(1) + float(2.0))
+	// But we need to check for this, so we can specifically error out
+
+	// Check mixed type operations
+	// if (isType(left, int(0)) && isType(right, float64(0))) || (isType(left, float64(0)) && isType(right, int(0))) {
+	// 	log.Warnf("Unsupported operation, arithmetic operations between int and float are not supported, please cast both sides: %v - %s", node, node.GetToken())
+	// }
+
+	log.Warnf("Error evaluating binary expression: %v - %s", self, node.GetToken())
+	return NewResult(false)
+}
+
+func (self *Evaluator) evalUnaryExpression(node *ast.UnaryExpression) *Result {
+	r := NewResult()
+
+	left := self.MustEval(node.Left).(*ast.RuntimeValue)
+
+	var newValue *ast.RuntimeValue
+
+	switch node.Op {
+	case operators.PlusPlus, operators.MinusMinus:
+		{
+			r := evalBinaryOperation(
+				node, ast.BinaryExpressionKindRegular,
+				node.Op,
+				left, nil,
+				node.Left, nil,
+			)
+			if r == nil || !r.HasValue() {
+				NewErrorAtNode(node, "Error evaluating unary expression: %v", node)
+			}
+
+			newValue = r.First().(*ast.RuntimeValue)
+
+			left.Apply(newValue)
+		}
+
+	default:
+		NewErrorAtNode(node, "Unhandled unary expression: %v", node)
+	}
+
+	if newValue == nil {
+		NewErrorAtNode(node, "Error evaluating unary expression: %v", node)
+	}
+
+	return r.Add(left)
+}
+
+/*func (self *Evaluator) evalPostfixExpression(node *ast.PostfixExpression) *Result {
+	varRef := self.MustEval(node.Left)
+	if varRef == nil {
+		log.Fatalf("Error evaluating postfix expression: %v", node)
+	}
+
+	var left any = varRef
+	var newValue any = nil
+
+	if isType(varRef, &ast.Literal{}) {
+		left = left.(*ast.Literal).Value
+	}
+
+	switch l := left.(type) {
+	case int:
+		newValue = operators.BinaryIntOperation(node.Op, l, 1)
+	case float64:
+		newValue = operators.BinaryFloatOperation(node.Op, l, 1)
+	}
+
+	if newValue != nil {
+		if !isType(varRef, &ast.Literal{}) {
+			log.Fatalf("Error evaluating postfix expression, varRef is not a literal type so updated value cannot be stored: %v", node)
+		}
+
+		varRef.(*ast.Literal).Value = newValue
+
+		return NewResult(varRef)
+	}
+
+	NewErrorAtNode(node, "Error evaluating postfix expression: %v", node)
+
+	// panic("Unsupported operation: " + string(node.Op))
+	return nil
+}*/
+
+func (self *Evaluator) evalFieldAccessExpression(node *ast.FieldAccessExpression) *Result {
+	r := NewResult()
+
+	if node.StructInstance == nil {
+		NewErrorAtNode(node, "Struct instance not found")
+	}
+
+	switch instance := node.StructInstance.(type) {
+
+	case *ast.Identifier, *ast.VarReference:
+		baseObjEval := self.Eval(instance)
+		if baseObjEval == nil {
+			self.Eval(instance)
+			NewErrorAtNode(instance, "Error evaluating field access expression: %v", instance)
+		}
+		baseObj := baseObjEval.First().(ast.ObjectFieldGetter)
+		if baseObj == nil {
+			NewErrorAtNode(instance, "Error evaluating field access expression: %v", instance)
+		}
+		return NewResult(baseObj.GetField(node.FieldName))
+
+	case *ast.FieldAccessExpression:
+		resolvedObj := self.Eval(instance)
+		if resolvedObj == nil {
+			NewErrorAtNode(instance, "Error evaluating field access expression: %v", instance)
+		}
+		switch ro := resolvedObj.First().(type) {
+		case ast.ObjectFieldGetter:
+			return NewResult(ro.GetField(node.FieldName))
+		case map[string]any:
+			return NewResult(ro[node.FieldName])
+		}
+
+	case *ast.IndexAccessExpression:
+		resolved := self.MustEvalValue(instance)
+		if resolved == nil {
+			NewErrorAtNode(instance, "Error evaluating field access expression: %v", instance)
+		}
+		switch ro := resolved.(type) {
+		case ast.ObjectFieldGetter:
+			return NewResult(ro.GetField(node.FieldName))
+		case map[string]any:
+			return NewResult(ro[node.FieldName])
+		}
+		return r.Add(resolved)
+
+	default:
+		NewErrorAtNode(instance, "Error evaluating field access expression: %v", instance)
+	}
+
+	return r
 }
 
 func (self *Evaluator) evalIndexAccessExpression(node *ast.IndexAccessExpression) *Result {
@@ -398,6 +423,18 @@ func (self *Evaluator) evalIndexAccessExpression(node *ast.IndexAccessExpression
 	default:
 		NewErrorAtNode(node, "Error evaluating array access expression, value is not an array or dict: %v", node)
 	}
+
+	return r
+}
+
+func (self *Evaluator) evalRangeExpression(node *ast.RangeExpression) *Result {
+	r := NewResult()
+
+	lhs := self.MustEval(node.Left)
+	rhs := self.MustEval(node.Right)
+
+	self.Env.SetVar("rangeLower", lhs)
+	self.Env.SetVar("rangeUpper", rhs)
 
 	return r
 }

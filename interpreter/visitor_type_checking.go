@@ -51,14 +51,8 @@ func (self *TypeCheckingVisitor) Visit(node ast.Node) {
 	case *ast.RangeExpression:
 		// self.VisitRangeExpression(node)
 		node.Accept(self)
-	case *ast.AssignmentExpression:
-		// self.VisitAssignmentExpression(node)
-		node.Accept(self)
 	case *ast.BinaryExpression:
 		// self.VisitBinaryExpression(node)
-		node.Accept(self)
-	case *ast.PostfixExpression:
-		// self.VisitPostfixExpression(node)
 		node.Accept(self)
 	case *ast.UnaryExpression:
 		// self.VisitUnaryExpression(node)

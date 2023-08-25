@@ -47,7 +47,7 @@ func (p *Parser) parseListLiteral() *ast.ArrayInstantiation {
 	defer node.SetRuleRange(s, p.prev)
 
 	for !p.is(lexer.TokenRCurly) {
-		expr := p.parseExpression(LOWEST)
+		expr := p.parseExpression(0)
 		node.AddChildren(node, expr)
 
 		node.Values = append(node.Values, expr)
@@ -79,7 +79,7 @@ func (p *Parser) parseDictionary() *ast.DictionaryInstantiation {
 	p.safeLoop(func() bool { return !p.is(lexer.TokenRCurly) }, func() {
 		key := p.parseStringLiteral()
 		p.expect(lexer.TokenColon)
-		value := p.parseExpression(LOWEST)
+		value := p.parseExpression(0)
 
 		node.Fields[key.Value.(string)] = value
 		node.AddChildren(node, key, value)
