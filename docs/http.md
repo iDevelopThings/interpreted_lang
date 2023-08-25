@@ -2,16 +2,16 @@
 
 ## Routes
 
-```arc
-route <method> "<path>" {
-    <handler>
-}
-```
+**All routes must be defined in a `http` block**
 
 Example:
-
 ```arc
-route POST "/data" {
+
+http {
+    route GET "/hello" {
+        return text "Hello world"
+    }
+    // GET|PUT|POST|PATCH|DELETE|HEAD|OPTIONS are valid methods
 }
 ```
 
@@ -25,26 +25,28 @@ This will convert the json body into a variable of the given type.
 object User {
    name string
 }
-route POST "/data" {
-    from body as user User;
+http {
+    route POST "/data" {
+        from body as user User;
+    }
 }
 ```
 
 ## Responses:
 
 ```arc 
-respond with <json|text|html> <value> <status <number>?>
+return <json|text|html> <value> <status <number>?>
 ```
 
 Examples:
 ```arc
-respond with { "error": "Something went wrong!" } status 500
-respond with status 404
-respond with text "Hello world"
+return { "error": "Something went wrong!" } status 500
+return status 404
+return text "Hello world"
 
 object User {
    name string
 }
 var user User = User{ name: "John" }
-respond with user;
+return user;
 ```
