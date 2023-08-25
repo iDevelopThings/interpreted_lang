@@ -6,19 +6,16 @@ type VisitFunc func(node Node) any
 func Walk(root Node, cb VisitFunc) {
 	visited := make(map[Node]bool)
 	visited[root] = true
-
 	var visitFunc func(node Node, cb VisitFunc, visited map[Node]bool) bool
 	visitFunc = func(node Node, cb VisitFunc, visited map[Node]bool) bool {
 		if visited[node] && node != root {
 			return true
 		}
 		visited[node] = true
-
 		vResult := cb(node)
 		if vResult == false {
 			return false
 		}
-
 		switch node := node.(type) {
 		case *ArrayInstantiation:
 			{
@@ -45,7 +42,6 @@ func Walk(root Node, cb VisitFunc) {
 			}
 		case *BinaryExpression:
 			{
-
 				// type skiped: Kind
 				// Info:
 				// - Type:  BinaryExpressionKind
@@ -133,7 +129,6 @@ func Walk(root Node, cb VisitFunc) {
 				if node.Name != nil && !visitFunc(node.Name, cb, visited) {
 					return false
 				}
-
 				// type skiped: Kind
 				// Info:
 				// - Type:  EnumValueKind
@@ -166,7 +161,6 @@ func Walk(root Node, cb VisitFunc) {
 				// - IsPtr:  %!s(bool=false)
 				// - IsInterfaceType:  %!s(bool=false)
 				// - IsStructType:  %!s(bool=false)
-
 				// type skiped: StaticAccess
 				// Info:
 				// - Type:  bool
@@ -177,7 +171,6 @@ func Walk(root Node, cb VisitFunc) {
 			}
 		case *FunctionDeclaration:
 			{
-
 				// type skiped: Name
 				// Info:
 				// - Type:  string
@@ -207,7 +200,6 @@ func Walk(root Node, cb VisitFunc) {
 				// - IsPtr:  %!s(bool=false)
 				// - IsInterfaceType:  %!s(bool=false)
 				// - IsStructType:  %!s(bool=false)
-
 				// type skiped: IsStatic
 				// Info:
 				// - Type:  bool
@@ -215,7 +207,6 @@ func Walk(root Node, cb VisitFunc) {
 				// - IsPtr:  %!s(bool=false)
 				// - IsInterfaceType:  %!s(bool=false)
 				// - IsStructType:  %!s(bool=false)
-
 				// type skiped: IsBuiltin
 				// Info:
 				// - Type:  bool
@@ -223,7 +214,6 @@ func Walk(root Node, cb VisitFunc) {
 				// - IsPtr:  %!s(bool=false)
 				// - IsInterfaceType:  %!s(bool=false)
 				// - IsStructType:  %!s(bool=false)
-
 				// type skiped: IsAnonymous
 				// Info:
 				// - Type:  bool
@@ -231,7 +221,6 @@ func Walk(root Node, cb VisitFunc) {
 				// - IsPtr:  %!s(bool=false)
 				// - IsInterfaceType:  %!s(bool=false)
 				// - IsStructType:  %!s(bool=false)
-
 				// type skiped: HasVariadicArgs
 				// Info:
 				// - Type:  bool
@@ -242,7 +231,6 @@ func Walk(root Node, cb VisitFunc) {
 			}
 		case *HttpResponseData:
 			{
-
 				// type skiped: Kind
 				// Info:
 				// - Type:  HttpResponseKind
@@ -259,7 +247,6 @@ func Walk(root Node, cb VisitFunc) {
 			}
 		case *HttpRouteBodyInjection:
 			{
-
 				// type skiped: From
 				// Info:
 				// - Type:  string
@@ -273,7 +260,6 @@ func Walk(root Node, cb VisitFunc) {
 			}
 		case *HttpRouteDeclaration:
 			{
-
 				// type skiped: Method
 				// Info:
 				// - Type:  HttpMethod
@@ -369,7 +355,6 @@ func Walk(root Node, cb VisitFunc) {
 				// - IsPtr:  %!s(bool=false)
 				// - IsInterfaceType:  %!s(bool=false)
 				// - IsStructType:  %!s(bool=false)
-
 				// type skiped: Value
 				// Info:
 				// - Type:  any
@@ -472,7 +457,6 @@ func Walk(root Node, cb VisitFunc) {
 				// - IsPtr:  %!s(bool=false)
 				// - IsInterfaceType:  %!s(bool=false)
 				// - IsStructType:  %!s(bool=false)
-
 				// type skiped: IsPointer
 				// Info:
 				// - Type:  bool
@@ -480,7 +464,6 @@ func Walk(root Node, cb VisitFunc) {
 				// - IsPtr:  %!s(bool=false)
 				// - IsInterfaceType:  %!s(bool=false)
 				// - IsStructType:  %!s(bool=false)
-
 				// type skiped: IsArray
 				// Info:
 				// - Type:  bool
@@ -488,7 +471,6 @@ func Walk(root Node, cb VisitFunc) {
 				// - IsPtr:  %!s(bool=false)
 				// - IsInterfaceType:  %!s(bool=false)
 				// - IsStructType:  %!s(bool=false)
-
 				// type skiped: IsVariadic
 				// Info:
 				// - Type:  bool
@@ -496,7 +478,6 @@ func Walk(root Node, cb VisitFunc) {
 				// - IsPtr:  %!s(bool=false)
 				// - IsInterfaceType:  %!s(bool=false)
 				// - IsStructType:  %!s(bool=false)
-
 				// type skiped: IsOptionType
 				// Info:
 				// - Type:  bool
@@ -504,7 +485,6 @@ func Walk(root Node, cb VisitFunc) {
 				// - IsPtr:  %!s(bool=false)
 				// - IsInterfaceType:  %!s(bool=false)
 				// - IsStructType:  %!s(bool=false)
-
 				// type skiped: IsResultType
 				// Info:
 				// - Type:  bool
@@ -540,10 +520,7 @@ func Walk(root Node, cb VisitFunc) {
 				// - IsStructType:  %!s(bool=false)
 			}
 		}
-
 		return true
-
 	}
-
 	visitFunc(root, cb, visited)
 }

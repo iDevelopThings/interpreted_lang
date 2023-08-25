@@ -35,22 +35,16 @@ func getPrecedence(_type lexer.TokenType) int {
 		return 8
 	case lexer.TokenLT, lexer.TokenGT, lexer.TokenLTE, lexer.TokenGTE:
 		return 9
-	case lexer.TokenPlus:
-	case lexer.TokenMinus:
+	case lexer.TokenPlus, lexer.TokenMinus:
 		return 10
-	case lexer.TokenMul:
-	case lexer.TokenDiv:
-	case lexer.TokenMod:
+	case lexer.TokenMul, lexer.TokenDiv, lexer.TokenMod:
 		return 11
-	case lexer.TokenNot:
-	case lexer.TokenPlusPlus:
-	case lexer.TokenMinusMinus:
+	case lexer.TokenNot, lexer.TokenPlusPlus, lexer.TokenMinusMinus:
 		return 12
-
-	case lexer.TokenLParen, lexer.TokenLCurly:
-		return 13
-	case lexer.TokenLBracket:
-		return 14
+	//case lexer.TokenLParen, lexer.TokenLCurly:
+	//	return 13
+	//case lexer.TokenLBracket:
+	//	return 14
 	case lexer.TokenDot, lexer.TokenColonColon:
 		return 15
 	}

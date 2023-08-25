@@ -19,10 +19,12 @@ type Parser struct {
 	peek *lexer.Token
 	prev *lexer.Token
 
-	prefixParseFns map[lexer.TokenType]prefixParseFn
+	/*prefixParseFns map[lexer.TokenType]prefixParseFn
 
 	infixParseFns         map[lexer.TokenType]infixParseFn
-	disabledInfixParseFns map[lexer.TokenType]infixParseFn
+	disabledInfixParseFns map[lexer.TokenType]infixParseFn*/
+
+	parseFns map[lexer.TokenType]parseFn
 
 	identifiersAsVarRefs       bool
 	canParseAnonymousFunctions bool
@@ -30,15 +32,17 @@ type Parser struct {
 
 func NewParser(l *lexer.Lexer) *Parser {
 	p := &Parser{
-		lexer:          l,
-		prefixParseFns: make(map[lexer.TokenType]prefixParseFn),
+		lexer: l,
+		/*prefixParseFns: make(map[lexer.TokenType]prefixParseFn),
 
 		infixParseFns:         make(map[lexer.TokenType]infixParseFn),
-		disabledInfixParseFns: make(map[lexer.TokenType]infixParseFn),
+		disabledInfixParseFns: make(map[lexer.TokenType]infixParseFn),*/
+		parseFns: make(map[lexer.TokenType]parseFn),
 	}
 
-	p.bindPrefixParseFns()
-	p.bindInfixParseFns()
+	//p.bindPrefixParseFns()
+	//p.bindInfixParseFns()
+	p.bindParseFns()
 
 	p.next()
 	p.next()

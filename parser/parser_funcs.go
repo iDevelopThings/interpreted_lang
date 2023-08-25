@@ -8,7 +8,7 @@ import (
 )
 
 func (p *Parser) toggleInfixFunc(t lexer.TokenType, enabled bool) {
-	if enabled {
+	/*if enabled {
 		if _, ok := p.disabledInfixParseFns[t]; !ok {
 			return
 		}
@@ -20,7 +20,7 @@ func (p *Parser) toggleInfixFunc(t lexer.TokenType, enabled bool) {
 		}
 		p.disabledInfixParseFns[t] = p.infixParseFns[t]
 		delete(p.infixParseFns, t)
-	}
+	}*/
 }
 func (p *Parser) skipSemi() {
 	if p.is(lexer.TokenSemicolon) {

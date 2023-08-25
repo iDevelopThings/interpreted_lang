@@ -7,11 +7,13 @@ import (
 )
 
 type (
-	prefixParseFn func() ast.Expr
-	infixParseFn  func(ast.Expr) ast.Expr
+	//prefixParseFn func() ast.Expr
+	//infixParseFn  func(ast.Expr) ast.Expr
+
+	parseFn func(ast.Expr) ast.Expr
 )
 
-func (p *Parser) bindPrefixParseFns() {
+/*func (p *Parser) bindPrefixParseFns() {
 	p.prefixParseFns = make(map[lexer.TokenType]prefixParseFn)
 	p.prefixParseFns[lexer.TokenLParen] = p.parseParenExpression
 
@@ -130,6 +132,62 @@ func (p *Parser) bindInfixParseFns() {
 	// Handles slices [0] [0:1] and dictionary access dict["key"]
 	p.infixParseFns[lexer.TokenLBracket] = p.parseIndexAccessExpression
 
+}*/
+
+func (p *Parser) bindParseFns() {
+	/*p.parseFns = make(map[lexer.TokenType]parseFn)
+	p.parseFns[lexer.TokenLParen] = p.parseParenExpression
+	p.prefixParseFns[lexer.TokenPlus] = p.parse
+
+	p.prefixParseFns[lexer.TokenInteger] = func() ast.Expr {
+		return p.parseIntegerLiteral()
+	}*/
+
+	// Literals
+	p.parseFns[lexer.TokenInteger] = func(ast.Expr) ast.Expr { return p.parseIntegerLiteral() }
+	p.parseFns[lexer.TokenFloat] = func(ast.Expr) ast.Expr { return p.parseFloatLiteral() }
+	p.parseFns[lexer.TokenBool] = func(ast.Expr) ast.Expr { return p.parseBoolLiteral() }
+	p.parseFns[lexer.TokenString] = func(ast.Expr) ast.Expr { return p.parseStringLiteral() }
+
+	// Expressions
+	p.parseFns[lexer.TokenIdentifier] = func(lhs ast.Expr) ast.Expr {
+		if p.curr.HasKeyword() {
+			switch {
+			case p.is(lexer.TokenKeywordNone):
+				node := ast.NewLiteral(p.curr, nil)
+				node.SetRuleRange(p.curr, p.curr)
+				p.next()
+				return node
+			}
+		}
+
+		ident := p.parseIdentifier()
+		if p.is(lexer.TokenLParen) {
+			p.next()
+			return p.parseCallExpression(ident)
+		}
+
+		return ident
+	}
+
+	p.parseFns[lexer.TokenLParen] = func(ast.Expr) ast.Expr {
+		p.next()
+		expr := p.parseExpression(0)
+		if expr == nil {
+			return nil
+		}
+
+		p.expect(lexer.TokenRParen)
+		return expr
+	}
+
+	p.parseFns[lexer.TokenKeywordOr] = func(left ast.Expr) ast.Expr { return p.parseOrExpression(left) }
+	p.parseFns[lexer.TokenDot] = func(left ast.Expr) ast.Expr { return p.parseMemberAccessExpression(left, false) }
+	p.parseFns[lexer.TokenColonColon] = func(left ast.Expr) ast.Expr {
+		p.expect(lexer.TokenColonColon)
+		return p.parseMemberAccessExpression(left, true)
+	}
+	p.parseFns[lexer.TokenLParen] = func(left ast.Expr) ast.Expr { return p.parseCallExpression(left) }
 }
 
 func (p *Parser) getTokenPrecedence(token *lexer.Token) int {
@@ -138,19 +196,94 @@ func (p *Parser) getTokenPrecedence(token *lexer.Token) int {
 		if pr != -1 {
 			return pr
 		}
-		// if pr, ok := Precedences[tokenType]; ok {
-		// 	return pr
-		// }
 	}
 
-	return 1
+	return -1
 }
 
-func (p *Parser) parsePrefixExpression() ast.Expr {
+/*func (p *Parser) parsePrefixExpression() ast.Expr {
 	return p.parseExpression(12)
+}*/
+
+func (p *Parser) parseFactor(lhs ast.Expr) ast.Expr {
+	for _, tokenType := range p.curr.Types {
+		parse := p.parseFns[tokenType]
+		if parse != nil {
+			return parse(lhs)
+		}
+	}
+
+	return nil
 }
 
-func (p *Parser) parseExpression(precedence int) ast.Expr {
+func (p *Parser) parseExpression(minPrecedence int, lastLhs ...ast.Expr) ast.Expr {
+	// Get the first lhs
+	var lastLeft ast.Expr
+	if len(lastLhs) > 0 {
+		lastLeft = lastLhs[0]
+	}
+	lhs := p.parseFactor(lastLeft)
+	if lhs == nil {
+		return nil
+	}
+
+	for {
+		op := p.curr.Value
+		precedence := p.getTokenPrecedence(p.curr)
+		if precedence < minPrecedence {
+			break
+		}
+
+		if p.is(lexer.TokenPlusPlus, lexer.TokenMinusMinus) {
+			p.next()
+			return p.parsePostfixExpression(lhs)
+		}
+
+		if p.is(lexer.TokenColonColon) {
+
+		} else {
+			p.next() // Consume the op
+		}
+
+		rhs := p.parseExpression(precedence+1, lhs)
+		if rhs == nil {
+			return nil
+		}
+
+		lhs = p.createBinaryOp(lhs, operators.Operator(op), rhs)
+	}
+
+	return lhs
+}
+
+func (p *Parser) createBinaryOp(lhs ast.Expr, op operators.Operator, rhs ast.Expr) ast.Expr {
+	kind := ast.BinaryExpressionKindUnknown
+	switch op {
+	case operators.Plus, operators.Minus, operators.Multiply, operators.Divide, operators.Modulo,
+		operators.Power, operators.BitwiseLeftShift, operators.BitwiseRightShift:
+		kind = ast.BinaryExpressionKindRegular
+
+	case operators.PlusEqual, operators.MinusEqual, operators.MultiplyEqual, operators.DivideEqual:
+		kind = ast.BinaryExpressionKindAssignment
+
+	case operators.EqualEqual, operators.NotEqual, operators.LessThan, operators.LessThanOrEqual,
+		operators.GreaterThan, operators.GreaterThanOrEqual, operators.Or, operators.And:
+		kind = ast.BinaryExpressionKindComparison
+
+	default:
+		p.error("Unhandled infix expression/operator: %s", p.curr.Value)
+	}
+
+	return &ast.BinaryExpression{
+		AstNode: ast.NewAstNode(p.curr),
+		Kind:    kind,
+		Left:    lhs,
+		Op:      op,
+		Right:   rhs,
+	}
+}
+
+/*func (p *Parser) parseExpression(precedence int) ast.Expr {
 	var prefix prefixParseFn
 
 	for _, tokenType := range p.curr.Types {
@@ -190,7 +323,7 @@ func (p *Parser) parseExpression(precedence int) ast.Expr {
 	}
 
 	return leftExp
-}
+}*/
 
 func (p *Parser) parseMemberAccessExpression(left ast.Expr, isStaticAccess bool) ast.Expr {
 	s := p.curr
