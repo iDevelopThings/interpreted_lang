@@ -76,8 +76,8 @@ func eval() ` + test.rt + ` { return ` + test.input + ` }
 			script := engine.SourceFiles[0]
 			evalFunc := script.GetFunc("eval")
 
-			w := utilities.NewIndentWriter(os.Stdout, " ")
-			evalFunc.PrintTree(w.(*utilities.IndentWriter))
+			// w := utilities.NewIndentWriter(os.Stdout, " ")
+			// evalFunc.PrintTree(w.(*utilities.IndentWriter))
 
 			assert.NotNil(suite.T(), evalFunc)
 

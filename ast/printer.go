@@ -87,6 +87,8 @@ func (self *CallExpression) PrintTree(s *utilities.IndentWriter) {
 	s.WriteString("CallExpression:\n")
 
 	w := s.ChildWriter()
+	w.WriteString("IsStaticAccess: " + strconv.FormatBool(self.IsStaticAccess) + "\n")
+
 	w.WriteString("Function: " + self.Function.Name + "\n")
 	if self.Receiver != nil {
 		w.WriteString("Receiver: ")
@@ -379,6 +381,7 @@ func (self *BasicType) PrintTree(s *utilities.IndentWriter) {
 func (self *TypeReference) PrintTree(s *utilities.IndentWriter) {
 	kv := map[string]string{
 		"IsPointer":    fmt.Sprintf("%v", self.IsPointer),
+		"IsStatic":     fmt.Sprintf("%v", self.IsStatic),
 		"IsArray":      fmt.Sprintf("%v", self.IsArray),
 		"IsVariadic":   fmt.Sprintf("%v", self.IsVariadic),
 		"IsOptionType": fmt.Sprintf("%v", self.IsOptionType),

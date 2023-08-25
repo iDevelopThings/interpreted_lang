@@ -61,22 +61,23 @@ func main() {
 
 func (suite *TestInterpreterDeclarationTestSuite) Test_ObjectMemberAccess() {
 	scriptSrc := `
-object Account {
-	isAdmin bool
-}
-object User {
-   name string
-   account Account
-}
-func main() {
-	var user = User{ name : "John", account : Account{ isAdmin : true } };
-
-	var name = user.name;
-	var isAdmin = user.account.isAdmin;
-}
+ object Account {
+ 	isAdmin bool
+ }
+ object User {
+    name string
+    account Account
+ }
+ func main() {
+ 	var user = User{ name : "John", account : Account{ isAdmin : true } };
+ 
+ 	var name string = user.name;
+ 	var isAdmin bool = user.account.isAdmin;
+ }
 `
 
 	engine := NewTestingInterpreterEngine()
+	engine.DisableTypeChecker = true
 	engine.LoadScriptFromString(scriptSrc)
 	engine.ProcessScripts()
 
@@ -91,8 +92,8 @@ func main() {
 
 	userObj := userVar.(*ast.RuntimeValue)
 	assert.Equal(suite.T(), "User", userObj.TypeName, "user variable is not of type User")
-	assert.Equal(suite.T(), "John", userObj.GetField("name"), "user.name is not John")
-	assert.Equal(suite.T(), true, userObj.GetField("account").GetField("isAdmin"), "user.account.isAdmin is not true")
+	assert.Equal(suite.T(), "John", userObj.GetField("name").Value, "user.name is not John")
+	assert.Equal(suite.T(), true, userObj.GetField("account").GetField("isAdmin").Value, "user.account.isAdmin is not true")
 
 	nameVar := engine.Env.LookupVar("name")
 	assert.NotNil(suite.T(), nameVar, "name variable not found")

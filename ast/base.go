@@ -231,8 +231,11 @@ func NewIdentifierWithValue(token *lexer.Token, value string) *Identifier {
 type TypeReference struct {
 	*AstNode
 
-	Type       string
-	IsPointer  bool
+	Type string
+
+	IsPointer bool
+	IsStatic  bool
+
 	IsArray    bool
 	IsVariadic bool
 

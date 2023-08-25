@@ -7,8 +7,8 @@ import (
 )
 
 type (
-	//prefixParseFn func() ast.Expr
-	//infixParseFn  func(ast.Expr) ast.Expr
+	// prefixParseFn func() ast.Expr
+	// infixParseFn  func(ast.Expr) ast.Expr
 
 	parseFn func(ast.Expr) ast.Expr
 )
@@ -82,7 +82,8 @@ type (
 	}
 
 }
-
+*/
+/*
 func (p *Parser) bindInfixParseFns() {
 	p.infixParseFns = make(map[lexer.TokenType]infixParseFn)
 	p.infixParseFns[lexer.TokenPlusPlus] = p.parsePostfixExpression
@@ -161,7 +162,30 @@ func (p *Parser) bindParseFns() {
 			}
 		}
 
+		// We have a problem where when we're parsing an if statement
+		// like `== none {` we're parsing the `none` as an identifier
+		// which then gets processed by the object instantiation parser
+
+		// NOTE: Any special keywords that need to
+		// be handled, should be handled above
+
+		if p.peekIs(lexer.TokenLCurly) {
+			ident := p.parseIdentifier()
+			p.next()
+			obj := p.parseObjectInstantiation(ident)
+			obj.SetRuleRange(ident.GetToken(), p.prev)
+			return obj
+		}
+
 		ident := p.parseIdentifier()
+
+		if p.identifiersAsVarRefs {
+			return &ast.VarReference{
+				AstNode: ident.AstNode,
+				Name:    ident.Name,
+			}
+		}
+
 		if p.is(lexer.TokenLParen) {
 			p.next()
 			return p.parseCallExpression(ident)
@@ -170,24 +194,27 @@ func (p *Parser) bindParseFns() {
 		return ident
 	}
 
-	p.parseFns[lexer.TokenLParen] = func(ast.Expr) ast.Expr {
-		p.next()
-		expr := p.parseExpression(0)
-		if expr == nil {
-			return nil
-		}
-
-		p.expect(lexer.TokenRParen)
-		return expr
-	}
-
 	p.parseFns[lexer.TokenKeywordOr] = func(left ast.Expr) ast.Expr { return p.parseOrExpression(left) }
 	p.parseFns[lexer.TokenDot] = func(left ast.Expr) ast.Expr { return p.parseMemberAccessExpression(left, false) }
 	p.parseFns[lexer.TokenColonColon] = func(left ast.Expr) ast.Expr {
 		p.expect(lexer.TokenColonColon)
 		return p.parseMemberAccessExpression(left, true)
 	}
-	p.parseFns[lexer.TokenLParen] = func(left ast.Expr) ast.Expr { return p.parseCallExpression(left) }
+	p.parseFns[lexer.TokenLParen] = func(left ast.Expr) ast.Expr {
+		if !p.prev.HasKeyword() && p.prev.Is(lexer.TokenIdentifier) && left != nil {
+			return p.parseCallExpression(left)
+		}
+
+		p.expect(lexer.TokenLParen)
+		expr := p.parseExpression(0)
+		if expr == nil {
+			return nil
+		}
+
+		p.expect(lexer.TokenRParen)
+
+		return expr
+	}
 }
 
 func (p *Parser) getTokenPrecedence(token *lexer.Token) int {
@@ -250,6 +277,39 @@ func (p *Parser) parseExpression(minPrecedence int, lastLhs ...ast.Expr) ast.Exp
 			return nil
 		}
 
+		p.skipSemi()
+
+		switch {
+		case op == "::":
+			{
+				if _, ok := rhs.(*ast.FieldAccessExpression); ok {
+					p.next()
+					lhs = p.parseCallExpression(rhs)
+					continue
+				} else {
+					p.error("Invalid call expression")
+				}
+			}
+
+		case op == ".":
+			{
+
+				// switch rhsT := rhs.(type) {
+				// case *ast.CallExpression:
+				//
+				// }
+
+				switch lhsT := lhs.(type) {
+				case *ast.Identifier, *ast.FieldAccessExpression, *ast.VarReference:
+					lhs = p.parseMemberAccessExpression(lhsT, false, rhs)
+					continue
+				default:
+					p.error("Invalid member access expression")
+				}
+			}
+
+		}
+
 		lhs = p.createBinaryOp(lhs, operators.Operator(op), rhs)
 	}
 
@@ -258,12 +318,13 @@ func (p *Parser) parseExpression(minPrecedence int, lastLhs ...ast.Expr) ast.Exp
 
 func (p *Parser) createBinaryOp(lhs ast.Expr, op operators.Operator, rhs ast.Expr) ast.Expr {
 	kind := ast.BinaryExpressionKindUnknown
+
 	switch op {
 	case operators.Plus, operators.Minus, operators.Multiply, operators.Divide, operators.Modulo,
 		operators.Power, operators.BitwiseLeftShift, operators.BitwiseRightShift:
 		kind = ast.BinaryExpressionKindRegular
 
-	case operators.PlusEqual, operators.MinusEqual, operators.MultiplyEqual, operators.DivideEqual:
+	case operators.Equal, operators.PlusEqual, operators.MinusEqual, operators.MultiplyEqual, operators.DivideEqual:
 		kind = ast.BinaryExpressionKindAssignment
 
 	case operators.EqualEqual, operators.NotEqual, operators.LessThan, operators.LessThanOrEqual,
@@ -325,15 +386,30 @@ func (p *Parser) createBinaryOp(lhs ast.Expr, op operators.Operator, rhs ast.Exp
 	return leftExp
 }*/
 
-func (p *Parser) parseMemberAccessExpression(left ast.Expr, isStaticAccess bool) ast.Expr {
+func (p *Parser) parseMemberAccessExpression(left ast.Expr, isStaticAccess bool, rhs ...ast.Expr) ast.Expr {
 	s := p.curr
 
 	node := &ast.FieldAccessExpression{
 		AstNode:        ast.NewAstNode(p.curr),
 		StructInstance: left,
-		FieldName:      p.parseIdentifier().Name,
 		StaticAccess:   isStaticAccess,
 	}
+	if len(rhs) > 0 {
+		switch r := rhs[0].(type) {
+		case *ast.Identifier:
+			node.FieldName = r.Name
+		case *ast.VarReference:
+			node.FieldName = r.Name
+		default:
+			p.error("Invalid member access expression rhs value")
+		}
+	} else {
+		if p.is(lexer.TokenDot) {
+			p.next()
+		}
+		node.FieldName = p.parseIdentifier().Name
+	}
+
 	defer node.SetRuleRange(s, p.prev)
 
 	if ident, ok := left.(*ast.Identifier); ok {
@@ -380,6 +456,7 @@ func (p *Parser) parseCallExpression(left ast.Expr) ast.Expr {
 					Type:      vr.Name,
 					IsPointer: false,
 					IsArray:   false,
+					IsStatic:  true,
 				}
 				access.StructInstance = accessor
 				node.Receiver = accessor
@@ -603,11 +680,13 @@ func (p *Parser) parseObjectInstantiation(left ast.Expr) ast.Expr {
 
 	p.expect(lexer.TokenRCurly)
 
+	p.skipSemi()
+
 	return node
 }
 
 func (p *Parser) parseExpressionList(open, close lexer.TokenType) []ast.Expr {
-	p.assertPrev(open)
+	// p.assertPrev(open)
 
 	list := make([]ast.Expr, 0)
 
