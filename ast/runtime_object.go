@@ -19,9 +19,12 @@ const (
 	RuntimeValueKindInteger RuntimeValueKind = "int"
 	RuntimeValueKindFloat   RuntimeValueKind = "float"
 	RuntimeValueKindBoolean RuntimeValueKind = "bool"
-	RuntimeValueKindNull    RuntimeValueKind = "null"
+	RuntimeValueKindNone    RuntimeValueKind = "none"
 	RuntimeValueKindArray   RuntimeValueKind = "array"
 	RuntimeValueKindDict    RuntimeValueKind = "dict"
+
+	// Option kind is mainly an underlying runtime value wrapped in another...
+	RuntimeValueKindOption RuntimeValueKind = "option"
 
 	// A global enum instance is bound to the runtime when the declaration is discovered
 	// This allows for calling the `value constructors` like methods on the enum
@@ -33,9 +36,11 @@ type RuntimeValue struct {
 	// Every runtime value has a unique id
 	// This will allow us to track the value across the runtime
 	// and compare values(in a simple manner)
-	Uid int64
-
+	Uid          int64
 	OriginalNode Node
+
+	// When we unwrap an option type value, we'll add it's outer here, so we can keep a ref
+	UnwrapParent *RuntimeValue
 
 	TypeName string
 	Decl     Declaration
@@ -218,6 +223,17 @@ func NewRuntimeEnumValue(enum *EnumDeclaration) *RuntimeValue {
 	return rv
 }
 
+func NewRuntimeOptionValue(value *RuntimeValue) *RuntimeValue {
+	rv := newRuntimeValue(value.OriginalNode)
+
+	rv.Value = value
+	rv.Kind = RuntimeValueKindOption
+	rv.TypeName = value.TypeName
+	rv.Decl = value.Decl
+
+	return rv
+}
+
 func RuntimeValueAs[T any](rv *RuntimeValue) T {
 	value, ok := rv.Value.(T)
 	if !ok {
@@ -385,6 +401,74 @@ func (self *RuntimeValue) Apply(value *RuntimeValue) {
 
 	self.Value = value.Value
 }
+
+// Mainly used for option types
+// Since our main underlying value is wrapped in a runtime value with an option kind...
+// We need to unwrap it to get the underlying value... but only if exists
+func (self *RuntimeValue) HasValue() bool {
+	if !self.IsOptionKind() {
+		return self.Value != nil
+	}
+
+	// An option kind can be in two states:
+	// 1. It has a `.value` with a rt value of `ast.NoneType` wrapped in a rt value
+	// 2. It has a `.value` of nil(nil represents none) in value form at-least
+
+	if self.Value == nil {
+		return false
+	}
+
+	v, ok := self.Value.(*RuntimeValue)
+	if !ok {
+		return false
+	}
+
+	return !v.IsNoneKind()
+}
+
+func (self *RuntimeValue) Unwrap() *RuntimeValue {
+	if self.Kind != RuntimeValueKindOption {
+		return self
+	}
+
+	if self.Value == nil {
+		return nil
+	}
+
+	v := self.Value.(*RuntimeValue)
+	if v.UnwrapParent == nil {
+		v.UnwrapParent = self
+	}
+
+	return v
+}
+
+func (self *RuntimeValue) IsUnknownKind() bool { return self.Kind == RuntimeValueKindUnknown }
+func (self *RuntimeValue) IsObjectKind() bool  { return self.Kind == RuntimeValueKindObject }
+func (self *RuntimeValue) IsStringKind() bool  { return self.Kind == RuntimeValueKindString }
+func (self *RuntimeValue) IsIntegerKind() bool { return self.Kind == RuntimeValueKindInteger }
+func (self *RuntimeValue) IsFloatKind() bool   { return self.Kind == RuntimeValueKindFloat }
+func (self *RuntimeValue) IsBooleanKind() bool { return self.Kind == RuntimeValueKindBoolean }
+func (self *RuntimeValue) IsNoneKind() bool    { return self.Kind == RuntimeValueKindNone }
+func (self *RuntimeValue) IsArrayKind() bool   { return self.Kind == RuntimeValueKindArray }
+func (self *RuntimeValue) IsDictKind() bool    { return self.Kind == RuntimeValueKindDict }
+func (self *RuntimeValue) IsOptionKind(checkParent ...bool) bool {
+	if len(checkParent) == 0 {
+		checkParent = []bool{false}
+	}
+
+	if self.Kind == RuntimeValueKindOption {
+		return true
+	}
+
+	if checkParent[0] && self.UnwrapParent != nil {
+		return self.UnwrapParent.IsOptionKind()
+	}
+
+	return false
+}
+func (self *RuntimeValue) IsEnumDeclKind() bool  { return self.Kind == RuntimeValueKindEnumDecl }
+func (self *RuntimeValue) IsEnumValueKind() bool { return self.Kind == RuntimeValueKindEnumValue }
 
 type ObjectFieldGetter interface {
 	GetField(fieldName string) *RuntimeValue
