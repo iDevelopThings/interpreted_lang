@@ -19,6 +19,7 @@ import (
 	"arc/http_server"
 	"arc/interpreter/config"
 	"arc/lexer"
+	log2 "arc/log"
 	"arc/parser"
 	"arc/utilities"
 )
@@ -38,6 +39,8 @@ var globalLogger *log.Logger
 
 func NewInterpreterEngine() *InterpreterEngine {
 	env := NewEnvironment()
+	RootEnvironment = env
+
 	engine := &InterpreterEngine{
 		loggingEnabled: true,
 
@@ -173,7 +176,7 @@ func (self *InterpreterEngine) parseScript(script *SourceFile) {
 	self.setScriptLogger(script)
 	defer self.setScriptLogger(nil)
 
-	timer := utilities.NewTimer("Parse Source: " + script.Path)
+	timer := utilities.NewTimer("Parse & Lex: " + script.Path)
 	defer timer.StopAndLog()
 
 	// lexer := grammar.NewSimpleLangLexer(script.InputStream)
@@ -185,6 +188,24 @@ func (self *InterpreterEngine) parseScript(script *SourceFile) {
 	l := lexer.NewLexer(script.Source)
 	l.SetSource(script.Path)
 	p := parser.NewParser(l)
+
+	defer func() {
+		if r := recover(); r != nil {
+			if err, ok := r.(*parser.ParserError); ok {
+				source := p.GetLexer().GetSource()
+				source, _ = filepath.Rel(config.CliConfig.WorkingDirectory, source)
+				err.Info.File, _ = filepath.Rel(config.CliConfig.WorkingDirectory, err.Info.File)
+
+				sourcePath := source + ":" + fmt.Sprintf("%d:%d", err.Token.GetLine(), err.Token.GetColumn())
+				params := make([]interface{}, 0)
+				params = append(params, sourcePath)
+				params = append(params, err.Args...)
+				log2.Log.UseCallerInfo(err.Info).Fatalf("Parsing error:\nPath: %s\nMessage:"+err.Fmt, params...)
+				return
+			}
+			panic(r)
+		}
+	}()
 
 	script.Program = p.Parse()
 }
@@ -323,7 +344,7 @@ func (self *InterpreterEngine) ProcessScripts() {
 	self.parseAll()
 	self.constructASTs()
 	self.link()
-	self.typeCheck()
+	// self.typeCheck()
 }
 
 func (self *InterpreterEngine) Run() {
