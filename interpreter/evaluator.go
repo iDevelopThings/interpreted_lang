@@ -9,8 +9,7 @@ import (
 type Evaluator struct {
 	Parent *Evaluator
 
-	Env      *Environment
-	Children []*Evaluator
+	Env *Environment
 }
 
 func NewEvaluator(env *Environment) *Evaluator {
@@ -32,14 +31,10 @@ func (self *Evaluator) GetRoot() *Evaluator {
 }
 
 func (self *Evaluator) CreateChild() *Evaluator {
-	rootEnv := self.GetRoot()
-
 	child := &Evaluator{
 		Parent: self,
 		Env:    self.Env.NewChild(),
 	}
-
-	rootEnv.Children = append(rootEnv.Children, child)
 
 	return child
 }
