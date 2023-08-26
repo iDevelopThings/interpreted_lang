@@ -256,11 +256,18 @@ func (p *Parser) parseCallExpression(left ast.Expr) ast.Expr {
 			}
 		}
 	} else {
-		if ident, ok := left.(*ast.Identifier); ok {
-			node.Function = ident
-		} else {
-			p.error("Invalid function call")
+		switch t := left.(type) {
+		case *ast.Identifier:
+			node.Function = t
+		case *ast.VarReference:
+			node.Function = &ast.Identifier{
+				AstNode: t.AstNode,
+				Name:    t.Name,
+			}
+		default:
+			p.error("Invalid function call, expected identifier or var reference for lhs(function name), got %s", left)
 		}
+
 	}
 
 	node.Args = p.parseExpressionList(lexer.TokenLParen, lexer.TokenRParen)

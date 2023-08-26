@@ -7,6 +7,10 @@ import (
 	"arc/log"
 )
 
+func (p *Parser) GetLexer() *lexer.Lexer {
+	return p.lexer
+}
+
 func (p *Parser) toggleInfixFunc(t lexer.TokenType, enabled bool) {
 	if enabled {
 		if _, ok := p.disabledInfixParseFns[t]; !ok {

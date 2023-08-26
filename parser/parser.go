@@ -1,11 +1,8 @@
 package parser
 
 import (
-	"fmt"
-
 	"arc/ast"
 	"arc/lexer"
-	"arc/log"
 )
 
 const (
@@ -58,21 +55,6 @@ func NewParser(l *lexer.Lexer) *Parser {
 }
 
 func (p *Parser) Parse() *ast.Program {
-	defer func() {
-		if r := recover(); r != nil {
-			if err, ok := r.(*ParserError); ok {
-				source := p.lexer.GetSource()
-				sourcePath := source + ":" + fmt.Sprintf("%d:%d", err.Token.GetLine(), err.Token.GetColumn())
-				params := make([]interface{}, 0)
-				params = append(params, sourcePath)
-				params = append(params, err.Args...)
-				log.Log.UseCallerInfo(err.Info).Fatalf("Parsing error:\nPath: %s\nMessage:"+err.Fmt, params...)
-				return
-			}
-			panic(r)
-		}
-	}()
-
 	return p.parseProgram()
 }
 
@@ -84,19 +66,22 @@ func (p *Parser) parseProgram() *ast.Program {
 		Declarations: make([]ast.Declaration, 0),
 	}
 
-	p.safeLoop(func() bool { return !p.peekIs(lexer.TokenEOF) }, func() {
-		if node := p.parseTopLevelStatement(); node != nil {
-			node.SetParent(program)
-
-			if decl, ok := node.(ast.Declaration); ok {
-				program.Declarations = append(program.Declarations, decl)
-			} else {
-				panic("Expected declaration but got " + node.GetToken().Value)
-			}
-
-			program.Statements = append(program.Statements, node)
+	for !p.peekIs(lexer.TokenEOF) {
+		node := p.parseTopLevelStatement()
+		if node == nil {
+			continue
 		}
-	})
+
+		node.SetParent(program)
+
+		if decl, ok := node.(ast.Declaration); ok {
+			program.Declarations = append(program.Declarations, decl)
+		} else {
+			panic("Expected declaration but got " + node.GetToken().Value)
+		}
+
+		program.Statements = append(program.Statements, node)
+	}
 
 	for _, decl := range program.Declarations {
 		fn, ok := decl.(*ast.FunctionDeclaration)
