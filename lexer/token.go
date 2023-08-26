@@ -2,6 +2,7 @@ package lexer
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -192,7 +193,161 @@ const (
 	TokenEOF = "EOF"
 )
 
-var tokenMap = map[string]TokenType{
+type tokenMatch struct {
+	Value string
+	Token TokenType
+}
+
+var symbolMatchTable = []tokenMatch{
+	{":", TokenColon},
+	{"::", TokenColonColon},
+	{".", TokenDot},
+	{",", TokenComma},
+	{";", TokenSemicolon},
+	{"{", TokenLCurly},
+	{"}", TokenRCurly},
+	{"[", TokenLBracket},
+	{"]", TokenRBracket},
+	{"(", TokenLParen},
+	{")", TokenRParen},
+	{"..", TokenDotDot},
+	{"?", TokenQuestion},
+	{"+", TokenPlus},
+	{"+=", TokenPlusEQ},
+	{"++", TokenPlusPlus},
+	{"-", TokenMinus},
+	{"-=", TokenMinusEQ},
+	{"--", TokenMinusMinus},
+	{"*", TokenMul},
+	{"*=", TokenMulEQ},
+	{"/", TokenDiv},
+	{"/=", TokenDivEQ},
+	{"<<", TokenLShift},
+	{">>", TokenRShift},
+	{"<", TokenLT},
+	{">", TokenGT},
+	{"<=", TokenLTE},
+	{">=", TokenGTE},
+	{"=", TokenEQ},
+	{"==", TokenEQEQ},
+	{"!=", TokenNEQ},
+	{"&&", TokenAnd},
+	{"||", TokenOr},
+	{"!", TokenNot},
+	{"^", TokenCaret},
+	{"%", TokenMod},
+}
+
+var keywordMatchTable = []tokenMatch{
+	{"func", TokenKeywordFunc},
+	{"object", TokenKeywordObject},
+	{"import", TokenKeywordImport},
+	{"enum", TokenKeywordEnum},
+	{"var", TokenKeywordVar},
+	{"return", TokenKeywordReturn},
+	{"break", TokenKeywordBreak},
+	{"continue", TokenKeywordContinue},
+	{"delete", TokenKeywordDelete},
+	{"if", TokenKeywordIf},
+	{"else", TokenKeywordElse},
+	{"for", TokenKeywordFor},
+	{"as", TokenKeywordAs},
+	{"step", TokenKeywordStep},
+	{"or", TokenKeywordOr},
+	{"defer", TokenKeywordDefer},
+
+	{"none", TokenKeywordNone},
+
+	{"true", TokenBool},
+	{"false", TokenBool},
+
+	// Http implementation keywords
+
+	{"http", TokenKeywordHttp},
+	{"route", TokenKeywordRoute},
+	{"from", TokenKeywordFrom},
+	{"with", TokenKeywordWith},
+	{"status", TokenKeywordStatus},
+
+	{"text", TokenKeywordText},
+	{"json", TokenKeywordJson},
+	{"html", TokenKeywordHtml},
+
+	{"get", TokenKeywordMethodGet},
+	{"post", TokenKeywordMethodPost},
+	{"put", TokenKeywordMethodPut},
+	{"head", TokenKeywordMethodHead},
+	{"options", TokenKeywordMethodOptions},
+}
+
+var KeywordTokens []TokenType
+
+func init() {
+	// We re-order our tables so that the longest matches are first
+
+	slices.SortFunc(symbolMatchTable, func(a, b tokenMatch) int {
+		return len(b.Value) - len(a.Value)
+	})
+
+	// For keywords... we'll also append an uppercase version of the keyword
+	// strings.ToLower/ToUpper are expensive so we'll just do it once here
+
+	for _, match := range keywordMatchTable {
+		keywordMatchTable = append(keywordMatchTable, tokenMatch{
+			Value: strings.ToUpper(match.Value),
+			Token: match.Token,
+		})
+	}
+	slices.SortFunc(keywordMatchTable, func(a, b tokenMatch) int {
+		return len(b.Value) - len(a.Value)
+	})
+
+	/*for k, v := range tokenKeywordMap {
+		if _, ok := tokenMap[k]; !ok {
+			tokenMap[k] = v
+			KeywordTokens = append(KeywordTokens, v)
+		}
+
+		kk := strings.ToUpper(k)
+		if _, ok := tokenMap[kk]; !ok {
+			tokenMap[kk] = v
+		}
+		if _, ok := tokenKeywordMap[kk]; !ok {
+			tokenKeywordMap[kk] = v
+		}
+
+	}*/
+}
+
+var MathOperators = []TokenType{
+	TokenPlus,
+	TokenMinus,
+	TokenDiv,
+	TokenMul,
+	TokenCaret,
+	TokenMod,
+
+	TokenEQEQ,
+	TokenNEQ,
+	TokenLT,
+	TokenGT,
+	TokenLTE,
+	TokenGTE,
+	TokenAnd,
+	TokenLShift,
+	TokenRShift,
+}
+var MathAssignmentOperators = []TokenType{
+	TokenEQ,
+	TokenPlusEQ,
+	TokenMinusEQ,
+	TokenMulEQ,
+	TokenDivEQ,
+	TokenPlusPlus,
+	TokenMinusMinus,
+}
+
+/*var tokenMap = map[string]TokenType{
 
 	// Characters
 	":":  TokenColon,
@@ -239,9 +394,9 @@ var tokenMap = map[string]TokenType{
 	// Other
 	//
 
-}
+}*/
 
-var tokenKeywordMap = map[string]TokenType{
+/*var tokenKeywordMap = map[string]TokenType{
 	"func":     TokenKeywordFunc,
 	"object":   TokenKeywordObject,
 	"import":   TokenKeywordImport,
@@ -279,52 +434,4 @@ var tokenKeywordMap = map[string]TokenType{
 	"put":     TokenKeywordMethodPut,
 	"head":    TokenKeywordMethodHead,
 	"options": TokenKeywordMethodOptions,
-}
-
-var KeywordTokens []TokenType
-
-func init() {
-	for k, v := range tokenKeywordMap {
-		if _, ok := tokenMap[k]; !ok {
-			tokenMap[k] = v
-			KeywordTokens = append(KeywordTokens, v)
-		}
-
-		kk := strings.ToUpper(k)
-		if _, ok := tokenMap[kk]; !ok {
-			tokenMap[kk] = v
-		}
-		if _, ok := tokenKeywordMap[kk]; !ok {
-			tokenKeywordMap[kk] = v
-		}
-
-	}
-}
-
-var MathOperators = []TokenType{
-	TokenPlus,
-	TokenMinus,
-	TokenDiv,
-	TokenMul,
-	TokenCaret,
-	TokenMod,
-
-	TokenEQEQ,
-	TokenNEQ,
-	TokenLT,
-	TokenGT,
-	TokenLTE,
-	TokenGTE,
-	TokenAnd,
-	TokenLShift,
-	TokenRShift,
-}
-var MathAssignmentOperators = []TokenType{
-	TokenEQ,
-	TokenPlusEQ,
-	TokenMinusEQ,
-	TokenMulEQ,
-	TokenDivEQ,
-	TokenPlusPlus,
-	TokenMinusMinus,
-}
+}*/

@@ -3,7 +3,6 @@ package lexer
 import (
 	"strings"
 	"unicode"
-	"unicode/utf8"
 
 	"arc/utilities"
 )
@@ -12,11 +11,13 @@ type Lexer struct {
 	input  string
 	pos    *Position
 	source string
+	len    int
 }
 
 func NewLexer(input string) *Lexer {
 	l := &Lexer{
 		input: input,
+		len:   len(input),
 		pos: &Position{
 			Line:   1,
 			Column: 0,
@@ -25,6 +26,18 @@ func NewLexer(input string) *Lexer {
 	}
 
 	return l
+}
+
+func (l *Lexer) newToken(tokenType TokenType, value string) *Token {
+	tok := NewToken(value, tokenType)
+	tok.Pos = NewTokenPosition(l.pos, len(value))
+
+	return tok
+}
+func (l *Lexer) newTokenAndAdvance(tokenType TokenType, value string) *Token {
+	tok := l.newToken(tokenType, value)
+	l.advance()
+	return tok
 }
 
 // Should only be used for testing.
@@ -44,7 +57,7 @@ func (l *Lexer) readAll() []*Token {
 	return tokens
 }
 
-func (l *Lexer) lexNext() *Token {
+func (l *Lexer) readNext() *Token {
 	if l.pos.Abs >= len(l.input) {
 		return l.newToken(TokenEOF, "")
 	}
@@ -66,9 +79,9 @@ func (l *Lexer) lexNext() *Token {
 	// Prevent from running when matching `.0f` in a float.
 	// if ch == '.' && !unicode.IsDigit(l.peek()) {
 	// Attempt to match tokens using our mapping.
-	if tok, matched := l.matchToken(); matched {
-		return tok
-	}
+	// if tok, matched := l.matchToken(); matched {
+	// 	return tok
+	// }
 	// }
 
 	// If no mapped token is found, handle special cases like numbers and whitespace.
@@ -76,9 +89,6 @@ func (l *Lexer) lexNext() *Token {
 
 	case isStringOpenChar(ch):
 		return l.readString()
-
-	case unicode.IsLetter(ch):
-		return l.readIdentifier()
 
 	case unicode.IsDigit(ch):
 		// Peek to determine if it's a float
@@ -92,41 +102,80 @@ func (l *Lexer) lexNext() *Token {
 		return l.readFloat()
 
 	default:
+
+		// First we'll try to match a symbol
+		if tok := l.matchSymbols(); tok != nil {
+			return tok
+		}
+
+		// Now we'll try and match some keywords
+		// tok, matched := l.matchToken()
+		// if matched {
+		// 	return tok
+		// }
+
+		if ident := l.readIdentifier(); ident != nil {
+
+			// We'll just do a quick check to see if this identifier is a keyword
+			// if it is, we'll add the keyword type to the token
+
+			for _, match := range keywordMatchTable {
+				if ident.Value == match.Value {
+					ident.AddType(match.Token)
+				}
+			}
+
+			return ident
+		}
+
 		return l.newToken(TokenUnknown, string(ch))
 	}
 }
 
 func (l *Lexer) Next() *Token {
-	tok := l.lexNext()
+	tok := l.readNext()
 	if tok.Is(TokenUnknown) {
 		panic("Unknown token: " + tok.Value)
 	}
 	return tok
 }
 
-func (l *Lexer) PeekNext() *Token {
-	tokens := l.PeekNextN(1)
-	if len(tokens) == 0 {
+func (l *Lexer) matchSymbols() *Token {
+	// var symbolMatchTable = []tokenMatch{
+	// 	{Value: ":", Token: TokenColon},
+	// 	{Value: "::", Token: TokenColonColon},
+	// }
+
+	// We have our symbol match table like above(with more symbols ofc)
+	// We need to try match a symbol in this table, but without consuming the input.
+	// The table is re-ordered already so the longest symbols are first.
+
+	var matchedSymbol = tokenMatch{"", TokenUnknown}
+
+	for idx, symbol := range symbolMatchTable {
+		if !strings.HasPrefix(l.remaining(), symbol.Value) {
+			continue
+		}
+
+		matchedSymbol = symbolMatchTable[idx]
+		break
+	}
+
+	if matchedSymbol.Value == "" {
 		return nil
 	}
-	return tokens[0]
-}
-func (l *Lexer) PeekNextN(n int) []*Token {
-	startPos := *l.pos
 
-	var tokens []*Token
+	tok := l.newToken(matchedSymbol.Token, matchedSymbol.Value)
 
-	for i := 0; i < n; i++ {
-		tok := l.Next()
-		tokens = append(tokens, tok)
+	// Advance the position by the length of the matched symbol
+	for i := 0; i < len(matchedSymbol.Value); i++ {
+		l.advance()
 	}
 
-	*l.pos = startPos
-
-	return tokens
+	return tok
 }
 
-func (l *Lexer) matchToken() (*Token, bool) {
+/*func (l *Lexer) matchToken() (*Token, bool) {
 	maxLength := 0
 	matchedToken := TokenType("")
 
@@ -157,50 +206,28 @@ func (l *Lexer) matchToken() (*Token, bool) {
 	}
 
 	return nil, false
-}
+}*/
 
-func (l *Lexer) peek(ni ...int) rune {
-	n := 1
-	if len(ni) > 0 {
-		n = ni[0]
+func isIdentifierLetter(ch rune, afterFirst bool) bool {
+	is := unicode.IsLetter(ch) || ch == '_'
+	// we can have numbers after the first character
+	if afterFirst {
+		is = is || unicode.IsDigit(ch)
 	}
-	if l.pos.Abs+n >= len(l.input) {
-		return 0 // Null character
-	}
-	return rune(l.input[l.pos.Abs+n])
-}
-
-func (l *Lexer) current() rune {
-	if l.pos.Abs >= len(l.input) {
-		return 0 // Null character
-	}
-	return rune(l.input[l.pos.Abs])
-}
-
-func (l *Lexer) remaining() string {
-	return l.input[l.pos.Abs:]
-}
-
-func (l *Lexer) newToken(tokenType TokenType, value string) *Token {
-	tok := NewToken(value, tokenType)
-	tok.Pos = NewTokenPosition(l.pos, len(value))
-
-	return tok
-}
-func (l *Lexer) newTokenAndAdvance(tokenType TokenType, value string) *Token {
-	tok := l.newToken(tokenType, value)
-	l.advance()
-	return tok
+	return is
 }
 
 // readIdentifier reads alphanumeric sequences starting with a letter.
 func (l *Lexer) readIdentifier() *Token {
 	start := l.pos.Abs
-	for l.pos.Abs < len(l.input) {
-		if !unicode.IsLetter(l.current()) && !unicode.IsDigit(l.current()) {
+
+	read := 0
+	for l.pos.Abs < l.len {
+		if !isIdentifierLetter(l.current(), read > 0) {
 			break
 		}
 		l.advance()
+		read++
 	}
 	tok := l.newToken(TokenIdentifier, l.input[start:l.pos.Abs])
 
@@ -210,7 +237,7 @@ func (l *Lexer) readIdentifier() *Token {
 // readInteger reads whole numbers.
 func (l *Lexer) readInteger() *Token {
 	start := l.pos.Abs
-	for l.pos.Abs < len(l.input) && unicode.IsDigit(l.current()) {
+	for l.pos.Abs < l.len && unicode.IsDigit(l.current()) {
 		l.advance()
 	}
 	return l.newToken(TokenInteger, l.input[start:l.pos.Abs])
@@ -222,7 +249,7 @@ func (l *Lexer) readFloat() *Token {
 	if l.current() == '.' {
 		l.advance()
 	}
-	for l.pos.Abs < len(l.input) {
+	for l.pos.Abs < l.len {
 		if unicode.IsDigit(l.current()) {
 			l.advance()
 			continue
@@ -242,7 +269,7 @@ func (l *Lexer) readFloat() *Token {
 
 	return l.newToken(TokenFloat, l.input[start:l.pos.Abs])
 
-	// if l.pos.Abs < len(l.input) && l.current() == 'f' {
+	// if l.pos.Abs < l.len && l.current() == 'f' {
 	// 	l.advance()
 	// 	return l.newTokenAndAdvance(TokenFloat, l.input[start:l.pos.Abs])
 	// }
@@ -263,7 +290,7 @@ func (l *Lexer) readString() *Token {
 	}
 
 	l.advance() // Consume the first quote
-	for l.pos.Abs < len(l.input) {
+	for l.pos.Abs < l.len {
 		if l.current() == strOpenKind {
 			break
 		}
@@ -295,14 +322,14 @@ func (l *Lexer) readComment() {
 
 	// Single line comment
 	if openType == "//" {
-		for l.pos.Abs < len(l.input) && l.current() != '\n' {
+		for l.pos.Abs < l.len && l.current() != '\n' {
 			l.advance()
 		}
 		return
 	}
 
 	// Multi line comment
-	for l.pos.Abs < len(l.input) {
+	for l.pos.Abs < l.len {
 		if l.current() == '*' && l.peek() == '/' {
 			l.advance()
 			l.advance()
@@ -321,19 +348,6 @@ func (l *Lexer) consumeWhitespace() {
 	for unicode.IsSpace(l.current()) {
 		l.advance()
 	}
-}
-
-func (l *Lexer) advance() {
-	_, size := utf8.DecodeRuneInString(string(l.current()))
-
-	if l.current() == '\n' {
-		l.pos.Line++
-		// -1 because advance() will increment it to 0
-		l.pos.Column = -1
-	}
-
-	l.pos.Abs += size
-	l.pos.Column += size
 }
 
 func (l *Lexer) debugDisplayTokens(w func(fmt string, args ...any), tokens []*Token) {

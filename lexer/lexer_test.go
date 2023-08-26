@@ -186,17 +186,17 @@ func (suite *TestLexerTestSuite) Test_Identifiers() {
 	var expectedTokens []*Token
 	pos := &Position{Line: 1, Column: 0, Abs: 0}
 
-	for tokenStr, tokenType := range tokenKeywordMap {
-		inputStr += tokenStr + " "
-		pos.Column += len(tokenStr)
-		pos.Abs += len(tokenStr)
+	for _, match := range keywordMatchTable {
+		inputStr += match.Value + " "
+		pos.Column += len(match.Value)
+		pos.Abs += len(match.Value)
 
-		tok := NewToken(tokenStr, tokenType, TokenIdentifier)
+		tok := NewToken(match.Value, TokenIdentifier, match.Token)
 		tok.Pos = NewTokenPosition(&Position{
 			pos.Line,
 			pos.Column,
 			pos.Abs,
-		}, len(tokenStr))
+		}, len(match.Value))
 
 		pos.Column += 1
 		pos.Abs += 1
