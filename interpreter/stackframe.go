@@ -69,6 +69,10 @@ func (self *StackFrame) addExecutionMarker(node any) {
 	}
 	if n, ok := node.(ast.Node); ok {
 		self.markers = append(self.markers, n)
+		// Cap the markers at 30
+		if len(self.markers) > 30 {
+			self.markers = self.markers[len(self.markers)-30:]
+		}
 	} else {
 		log.Debugf("Cannot add execution marker for node, it doesn't implement ast.Node: %#v", node)
 	}
