@@ -26,8 +26,10 @@ type Environment struct {
 	// currentFrame *StackFrame
 }
 
+var RootEnvironment *Environment
+
 func NewEnvironment() *Environment {
-	return &Environment{
+	e := &Environment{
 		vars:      map[string]any{},
 		objects:   map[string]*ast.ObjectDeclaration{},
 		enums:     map[string]*ast.EnumDeclaration{},
@@ -36,6 +38,8 @@ func NewEnvironment() *Environment {
 			Routes: make([]*ast.HttpRouteDeclaration, 0),
 		},
 	}
+
+	return e
 }
 
 func (self *Environment) NewFrame(function ...*ast.FunctionDeclaration) *StackFrame {
@@ -112,6 +116,16 @@ func (self *Environment) DeleteVar(name string) bool {
 }
 
 func (self *Environment) LookupFunction(name string) *ast.FunctionDeclaration {
+	// First we'll do a quick check on the root environment
+	// If it exists(since it could be a global function), we'll return it
+	// This will reduce the stack size for the recursive lookup
+
+	if RootEnvironment != nil {
+		if f, ok := RootEnvironment.functions[name]; ok {
+			return f
+		}
+	}
+
 	if f, ok := self.functions[name]; ok {
 		return f
 	}
@@ -122,6 +136,22 @@ func (self *Environment) LookupFunction(name string) *ast.FunctionDeclaration {
 }
 
 func (self *Environment) LookupObject(name string) *ast.ObjectDeclaration {
+	// First we'll do a quick check on the root environment
+	// If it exists(since it could be a global object), we'll return it
+	// This will reduce the stack size for the recursive lookup
+
+	if RootEnvironment != nil {
+		if o, ok := RootEnvironment.objects[name]; ok {
+			return o
+		}
+		if bt, ok := ast.BasicTypes[name]; ok {
+			return &ast.ObjectDeclaration{
+				AstNode: bt.GetAstNode(),
+				Name:    ast.NewIdentifierWithValue(nil, bt.TypeName()),
+			}
+		}
+	}
+
 	if o, ok := self.objects[name]; ok {
 		return o
 	}
