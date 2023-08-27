@@ -23,7 +23,7 @@
     "Types": [
       "IDENTIFIER"
     ],
-    "Value": "pls",
+    "Value": "pls_0_no_dont_do_it",
     "Pos": {
       "Start": {
         "Line": 1,
@@ -32,10 +32,10 @@
       },
       "End": {
         "Line": 1,
-        "Column": 8,
-        "Abs": 8
+        "Column": 24,
+        "Abs": 24
       },
-      "Length": 3
+      "Length": 19
     }
   },
   {
@@ -46,13 +46,13 @@
     "Pos": {
       "Start": {
         "Line": 1,
-        "Column": 7,
-        "Abs": 7
+        "Column": 23,
+        "Abs": 23
       },
       "End": {
         "Line": 1,
-        "Column": 8,
-        "Abs": 8
+        "Column": 24,
+        "Abs": 24
       },
       "Length": 1
     }
@@ -65,13 +65,13 @@
     "Pos": {
       "Start": {
         "Line": 1,
-        "Column": 8,
-        "Abs": 8
+        "Column": 24,
+        "Abs": 24
       },
       "End": {
         "Line": 1,
-        "Column": 9,
-        "Abs": 9
+        "Column": 25,
+        "Abs": 25
       },
       "Length": 1
     }
@@ -84,13 +84,128 @@
     "Pos": {
       "Start": {
         "Line": 1,
-        "Column": 10,
-        "Abs": 10
+        "Column": 26,
+        "Abs": 26
       },
       "End": {
         "Line": 1,
+        "Column": 27,
+        "Abs": 27
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "RCURLY"
+    ],
+    "Value": "}",
+    "Pos": {
+      "Start": {
+        "Line": 1,
+        "Column": 27,
+        "Abs": 27
+      },
+      "End": {
+        "Line": 1,
+        "Column": 28,
+        "Abs": 28
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "IDENTIFIER",
+      "KEYWORD_FUNC"
+    ],
+    "Value": "func",
+    "Pos": {
+      "Start": {
+        "Line": 3,
+        "Column": 0,
+        "Abs": 31
+      },
+      "End": {
+        "Line": 3,
+        "Column": 4,
+        "Abs": 35
+      },
+      "Length": 4
+    }
+  },
+  {
+    "Types": [
+      "IDENTIFIER"
+    ],
+    "Value": "pls",
+    "Pos": {
+      "Start": {
+        "Line": 3,
+        "Column": 5,
+        "Abs": 36
+      },
+      "End": {
+        "Line": 3,
+        "Column": 8,
+        "Abs": 39
+      },
+      "Length": 3
+    }
+  },
+  {
+    "Types": [
+      "LPAREN"
+    ],
+    "Value": "(",
+    "Pos": {
+      "Start": {
+        "Line": 3,
+        "Column": 7,
+        "Abs": 38
+      },
+      "End": {
+        "Line": 3,
+        "Column": 8,
+        "Abs": 39
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "RPAREN"
+    ],
+    "Value": ")",
+    "Pos": {
+      "Start": {
+        "Line": 3,
+        "Column": 8,
+        "Abs": 39
+      },
+      "End": {
+        "Line": 3,
+        "Column": 9,
+        "Abs": 40
+      },
+      "Length": 1
+    }
+  },
+  {
+    "Types": [
+      "LCURLY"
+    ],
+    "Value": "{",
+    "Pos": {
+      "Start": {
+        "Line": 3,
+        "Column": 10,
+        "Abs": 41
+      },
+      "End": {
+        "Line": 3,
         "Column": 11,
-        "Abs": 11
+        "Abs": 42
       },
       "Length": 1
     }
@@ -102,14 +217,14 @@
     "Value": "fmt",
     "Pos": {
       "Start": {
-        "Line": 2,
+        "Line": 4,
         "Column": 4,
-        "Abs": 17
+        "Abs": 48
       },
       "End": {
-        "Line": 2,
+        "Line": 4,
         "Column": 7,
-        "Abs": 20
+        "Abs": 51
       },
       "Length": 3
     }
@@ -121,14 +236,14 @@
     "Value": "::",
     "Pos": {
       "Start": {
-        "Line": 2,
+        "Line": 4,
         "Column": 5,
-        "Abs": 18
+        "Abs": 49
       },
       "End": {
-        "Line": 2,
+        "Line": 4,
         "Column": 7,
-        "Abs": 20
+        "Abs": 51
       },
       "Length": 2
     }
@@ -140,14 +255,14 @@
     "Value": "printf",
     "Pos": {
       "Start": {
-        "Line": 2,
+        "Line": 4,
         "Column": 9,
-        "Abs": 22
+        "Abs": 53
       },
       "End": {
-        "Line": 2,
+        "Line": 4,
         "Column": 15,
-        "Abs": 28
+        "Abs": 59
       },
       "Length": 6
     }
@@ -159,14 +274,14 @@
     "Value": "(",
     "Pos": {
       "Start": {
-        "Line": 2,
+        "Line": 4,
         "Column": 14,
-        "Abs": 27
+        "Abs": 58
       },
       "End": {
-        "Line": 2,
+        "Line": 4,
         "Column": 15,
-        "Abs": 28
+        "Abs": 59
       },
       "Length": 1
     }
@@ -178,14 +293,14 @@
     "Value": "...",
     "Pos": {
       "Start": {
-        "Line": 2,
+        "Line": 4,
         "Column": 16,
-        "Abs": 29
+        "Abs": 60
       },
       "End": {
-        "Line": 2,
+        "Line": 4,
         "Column": 21,
-        "Abs": 34
+        "Abs": 65
       },
       "Length": 5
     }
@@ -197,14 +312,14 @@
     "Value": ",",
     "Pos": {
       "Start": {
-        "Line": 2,
+        "Line": 4,
         "Column": 20,
-        "Abs": 33
+        "Abs": 64
       },
       "End": {
-        "Line": 2,
+        "Line": 4,
         "Column": 21,
-        "Abs": 34
+        "Abs": 65
       },
       "Length": 1
     }
@@ -216,14 +331,14 @@
     "Value": "value",
     "Pos": {
       "Start": {
-        "Line": 2,
+        "Line": 4,
         "Column": 23,
-        "Abs": 36
+        "Abs": 67
       },
       "End": {
-        "Line": 2,
+        "Line": 4,
         "Column": 28,
-        "Abs": 41
+        "Abs": 72
       },
       "Length": 5
     }
@@ -235,14 +350,14 @@
     "Value": ")",
     "Pos": {
       "Start": {
-        "Line": 2,
+        "Line": 4,
         "Column": 27,
-        "Abs": 40
+        "Abs": 71
       },
       "End": {
-        "Line": 2,
+        "Line": 4,
         "Column": 28,
-        "Abs": 41
+        "Abs": 72
       },
       "Length": 1
     }
@@ -254,14 +369,14 @@
     "Value": ";",
     "Pos": {
       "Start": {
-        "Line": 2,
+        "Line": 4,
         "Column": 28,
-        "Abs": 41
+        "Abs": 72
       },
       "End": {
-        "Line": 2,
+        "Line": 4,
         "Column": 29,
-        "Abs": 42
+        "Abs": 73
       },
       "Length": 1
     }
@@ -274,14 +389,14 @@
     "Value": "var",
     "Pos": {
       "Start": {
-        "Line": 3,
+        "Line": 5,
         "Column": 1,
-        "Abs": 45
+        "Abs": 76
       },
       "End": {
-        "Line": 3,
+        "Line": 5,
         "Column": 4,
-        "Abs": 48
+        "Abs": 79
       },
       "Length": 3
     }
@@ -293,14 +408,14 @@
     "Value": "value",
     "Pos": {
       "Start": {
-        "Line": 3,
+        "Line": 5,
         "Column": 5,
-        "Abs": 49
+        "Abs": 80
       },
       "End": {
-        "Line": 3,
+        "Line": 5,
         "Column": 10,
-        "Abs": 54
+        "Abs": 85
       },
       "Length": 5
     }
@@ -312,14 +427,14 @@
     "Value": "=",
     "Pos": {
       "Start": {
-        "Line": 3,
+        "Line": 5,
         "Column": 10,
-        "Abs": 54
+        "Abs": 85
       },
       "End": {
-        "Line": 3,
+        "Line": 5,
         "Column": 11,
-        "Abs": 55
+        "Abs": 86
       },
       "Length": 1
     }
@@ -331,14 +446,14 @@
     "Value": "{",
     "Pos": {
       "Start": {
-        "Line": 3,
+        "Line": 5,
         "Column": 12,
-        "Abs": 56
+        "Abs": 87
       },
       "End": {
-        "Line": 3,
+        "Line": 5,
         "Column": 13,
-        "Abs": 57
+        "Abs": 88
       },
       "Length": 1
     }
@@ -350,14 +465,14 @@
     "Value": "key1",
     "Pos": {
       "Start": {
-        "Line": 4,
+        "Line": 6,
         "Column": 8,
-        "Abs": 67
+        "Abs": 98
       },
       "End": {
-        "Line": 4,
+        "Line": 6,
         "Column": 14,
-        "Abs": 73
+        "Abs": 104
       },
       "Length": 6
     }
@@ -369,14 +484,14 @@
     "Value": ":",
     "Pos": {
       "Start": {
-        "Line": 4,
+        "Line": 6,
         "Column": 13,
-        "Abs": 72
+        "Abs": 103
       },
       "End": {
-        "Line": 4,
+        "Line": 6,
         "Column": 14,
-        "Abs": 73
+        "Abs": 104
       },
       "Length": 1
     }
@@ -388,14 +503,14 @@
     "Value": "value1",
     "Pos": {
       "Start": {
-        "Line": 4,
+        "Line": 6,
         "Column": 16,
-        "Abs": 75
+        "Abs": 106
       },
       "End": {
-        "Line": 4,
+        "Line": 6,
         "Column": 24,
-        "Abs": 83
+        "Abs": 114
       },
       "Length": 8
     }
@@ -407,14 +522,14 @@
     "Value": ",",
     "Pos": {
       "Start": {
-        "Line": 4,
+        "Line": 6,
         "Column": 23,
-        "Abs": 82
+        "Abs": 113
       },
       "End": {
-        "Line": 4,
+        "Line": 6,
         "Column": 24,
-        "Abs": 83
+        "Abs": 114
       },
       "Length": 1
     }
@@ -426,14 +541,14 @@
     "Value": "key2",
     "Pos": {
       "Start": {
-        "Line": 5,
+        "Line": 7,
         "Column": 8,
-        "Abs": 93
+        "Abs": 124
       },
       "End": {
-        "Line": 5,
+        "Line": 7,
         "Column": 14,
-        "Abs": 99
+        "Abs": 130
       },
       "Length": 6
     }
@@ -445,14 +560,14 @@
     "Value": ":",
     "Pos": {
       "Start": {
-        "Line": 5,
+        "Line": 7,
         "Column": 13,
-        "Abs": 98
+        "Abs": 129
       },
       "End": {
-        "Line": 5,
+        "Line": 7,
         "Column": 14,
-        "Abs": 99
+        "Abs": 130
       },
       "Length": 1
     }
@@ -464,14 +579,14 @@
     "Value": "value2",
     "Pos": {
       "Start": {
-        "Line": 5,
+        "Line": 7,
         "Column": 16,
-        "Abs": 101
+        "Abs": 132
       },
       "End": {
-        "Line": 5,
+        "Line": 7,
         "Column": 24,
-        "Abs": 109
+        "Abs": 140
       },
       "Length": 8
     }
@@ -483,14 +598,14 @@
     "Value": ",",
     "Pos": {
       "Start": {
-        "Line": 5,
+        "Line": 7,
         "Column": 23,
-        "Abs": 108
+        "Abs": 139
       },
       "End": {
-        "Line": 5,
+        "Line": 7,
         "Column": 24,
-        "Abs": 109
+        "Abs": 140
       },
       "Length": 1
     }
@@ -502,14 +617,14 @@
     "Value": "}",
     "Pos": {
       "Start": {
-        "Line": 6,
+        "Line": 8,
         "Column": 3,
-        "Abs": 114
+        "Abs": 145
       },
       "End": {
-        "Line": 6,
+        "Line": 8,
         "Column": 4,
-        "Abs": 115
+        "Abs": 146
       },
       "Length": 1
     }
@@ -521,14 +636,14 @@
     "Value": ";",
     "Pos": {
       "Start": {
-        "Line": 6,
+        "Line": 8,
         "Column": 4,
-        "Abs": 115
+        "Abs": 146
       },
       "End": {
-        "Line": 6,
+        "Line": 8,
         "Column": 5,
-        "Abs": 116
+        "Abs": 147
       },
       "Length": 1
     }
@@ -540,14 +655,14 @@
     "Value": "}",
     "Pos": {
       "Start": {
-        "Line": 7,
+        "Line": 9,
         "Column": -1,
-        "Abs": 117
+        "Abs": 148
       },
       "End": {
-        "Line": 7,
+        "Line": 9,
         "Column": 0,
-        "Abs": 118
+        "Abs": 149
       },
       "Length": 1
     }

@@ -16,7 +16,7 @@ var (
 	CannotMarshalRuntimeValueError = errors.New("cannot marshal runtime value")
 )
 
-func MarshalRuntimeObject(value *ast.RuntimeValue, env *Environment) map[string]any {
+func MarshalRuntimeObject(value *ast.RuntimeValue) map[string]any {
 	jsonData := map[string]any{}
 	if value.Kind != ast.RuntimeValueKindObject {
 		log.Fatalf("Cannot marshal runtime object: %v", value)
@@ -34,8 +34,8 @@ func MarshalRuntimeObject(value *ast.RuntimeValue, env *Environment) map[string]
 			continue
 		}
 
-		if nestedDecl := env.LookupObject(field.TypeReference.Type); nestedDecl != nil && value.Kind == ast.RuntimeValueKindObject {
-			jsonData[field.Name] = MarshalRuntimeObject(value, env)
+		if nestedDecl := Registry.LookupObject(field.TypeReference.Type); nestedDecl != nil && value.Kind == ast.RuntimeValueKindObject {
+			jsonData[field.Name] = MarshalRuntimeObject(value)
 		} else {
 			jsonData[field.Name] = value.Value
 		}
@@ -44,7 +44,7 @@ func MarshalRuntimeObject(value *ast.RuntimeValue, env *Environment) map[string]
 	return jsonData
 }
 
-func MarshalRuntimeDictionary(value *ast.RuntimeValue, env *Environment) map[string]any {
+func MarshalRuntimeDictionary(value *ast.RuntimeValue) map[string]any {
 	jsonData := map[string]any{}
 	if value.Kind != ast.RuntimeValueKindDict {
 		log.Fatalf("Cannot marshal runtime object: %v", value)
@@ -54,9 +54,9 @@ func MarshalRuntimeDictionary(value *ast.RuntimeValue, env *Environment) map[str
 
 	for key, value := range fields {
 		if value.Kind == ast.RuntimeValueKindDict {
-			jsonData[key] = MarshalRuntimeDictionary(value, env)
-		} else if nestedDecl := env.LookupObject(value.TypeName); nestedDecl != nil && value.Kind == ast.RuntimeValueKindObject {
-			jsonData[key] = MarshalRuntimeObject(value, env)
+			jsonData[key] = MarshalRuntimeDictionary(value)
+		} else if nestedDecl := Registry.LookupObject(value.TypeName); nestedDecl != nil && value.Kind == ast.RuntimeValueKindObject {
+			jsonData[key] = MarshalRuntimeObject(value)
 		} else {
 			jsonData[key] = value.Value
 		}
@@ -65,14 +65,14 @@ func MarshalRuntimeDictionary(value *ast.RuntimeValue, env *Environment) map[str
 	return jsonData
 }
 
-func MarshalRuntimeValue(env *Environment, value *ast.RuntimeValue) ([]byte, error) {
+func MarshalRuntimeValue(value *ast.RuntimeValue) ([]byte, error) {
 	if value == nil {
 		return nil, fmt.Errorf("%w: %v", CannotMarshalRuntimeValueError, value)
 	}
 	switch value.Kind {
 
 	case ast.RuntimeValueKindObject:
-		return json.Marshal(MarshalRuntimeObject(value, env))
+		return json.Marshal(MarshalRuntimeObject(value))
 	case ast.RuntimeValueKindArray:
 		values := value.Value.([]*ast.RuntimeValue)
 		jsonData := make([]any, len(values))
@@ -82,7 +82,7 @@ func MarshalRuntimeValue(env *Environment, value *ast.RuntimeValue) ([]byte, err
 		return json.Marshal(jsonData)
 
 	case ast.RuntimeValueKindDict:
-		return json.Marshal(MarshalRuntimeDictionary(value, env))
+		return json.Marshal(MarshalRuntimeDictionary(value))
 	default:
 		return json.Marshal(value.Value)
 	}
@@ -96,7 +96,7 @@ func MarshalRuntimeValue(env *Environment, value *ast.RuntimeValue) ([]byte, err
 	// return nil, fmt.Errorf("%w: %v", CannotMarshalRuntimeValueError, value)
 }
 
-func UnmarshalRuntimeValue(env *Environment, value any) (*ast.RuntimeValue, error) {
+func UnmarshalRuntimeValue(value any) (*ast.RuntimeValue, error) {
 	if value == nil {
 		return nil, fmt.Errorf("%w: %v", CannotMarshalRuntimeValueError, value)
 	}
@@ -112,11 +112,11 @@ func UnmarshalRuntimeValue(env *Environment, value any) (*ast.RuntimeValue, erro
 		), nil
 
 	case map[string]any:
-		return UnmarshalRuntimeDictionary(env, value), nil
+		return UnmarshalRuntimeDictionary(value), nil
 	case []any:
-		return UnmarshalRuntimeArray(env, value), nil
+		return UnmarshalRuntimeArray(value), nil
 	case url.Values:
-		return UnmarshalUrlValues(env, value), nil
+		return UnmarshalUrlValues(value), nil
 
 		// case map[string]any:
 		// 	return UnmarshalRuntimeObject(env, value)
@@ -129,13 +129,13 @@ func UnmarshalRuntimeValue(env *Environment, value any) (*ast.RuntimeValue, erro
 	return nil, fmt.Errorf("%w: %v", CannotMarshalRuntimeValueError, value)
 }
 
-func UnmarshalRuntimeArray(env *Environment, value []any) *ast.RuntimeValue {
+func UnmarshalRuntimeArray(value []any) *ast.RuntimeValue {
 	array := ast.NewRuntimeArray(nil)
 
 	valueType := ast.RuntimeValueKindUnknown
 
 	for _, value := range value {
-		val, err := UnmarshalRuntimeValue(env, value)
+		val, err := UnmarshalRuntimeValue(value)
 		if err != nil {
 			log.Warnf("cannot unmarshal array value - error: %s", err)
 			continue
@@ -146,7 +146,7 @@ func UnmarshalRuntimeArray(env *Environment, value []any) *ast.RuntimeValue {
 		array.Value = append(array.Value.([]*ast.RuntimeValue), val)
 	}
 
-	decl := env.LookupObject(string(valueType))
+	decl := Registry.LookupObject(string(valueType))
 	if decl != nil {
 		array.TypeName = decl.TypeName()
 		array.Decl = decl
@@ -155,11 +155,11 @@ func UnmarshalRuntimeArray(env *Environment, value []any) *ast.RuntimeValue {
 	return array
 }
 
-func UnmarshalRuntimeArrayWithDeclaration(decl *ast.ObjectDeclaration, env *Environment, value []*ast.RuntimeValue) *ast.RuntimeValue {
+func UnmarshalRuntimeArrayWithDeclaration(decl *ast.ObjectDeclaration, value []*ast.RuntimeValue) *ast.RuntimeValue {
 	array := ast.NewRuntimeArray(decl)
 
 	for _, value := range value {
-		val, err := UnmarshalRuntimeValue(env, value)
+		val, err := UnmarshalRuntimeValue(value)
 		if err != nil {
 			log.Warnf("cannot unmarshal array value - error: %s", err)
 			continue
@@ -170,7 +170,7 @@ func UnmarshalRuntimeArrayWithDeclaration(decl *ast.ObjectDeclaration, env *Envi
 	return array
 }
 
-func UnmarshalUrlValues(env *Environment, value url.Values) *ast.RuntimeValue {
+func UnmarshalUrlValues(value url.Values) *ast.RuntimeValue {
 	dict := ast.NewRuntimeDictionary()
 
 	formValues := parseFormValues(value)
@@ -178,7 +178,7 @@ func UnmarshalUrlValues(env *Environment, value url.Values) *ast.RuntimeValue {
 	fields := map[string]*ast.RuntimeValue{}
 
 	for key, value := range formValues {
-		val, err := UnmarshalRuntimeValue(env, value)
+		val, err := UnmarshalRuntimeValue(value)
 		if err != nil {
 			log.Warnf("cannot unmarshal field %s - error: %s", key, err)
 			continue
@@ -191,13 +191,13 @@ func UnmarshalUrlValues(env *Environment, value url.Values) *ast.RuntimeValue {
 	return dict
 }
 
-func UnmarshalRuntimeDictionary(env *Environment, value map[string]any) *ast.RuntimeValue {
+func UnmarshalRuntimeDictionary(value map[string]any) *ast.RuntimeValue {
 	dict := ast.NewRuntimeDictionary()
 
 	fields := map[string]*ast.RuntimeValue{}
 
 	for key, value := range value {
-		val, err := UnmarshalRuntimeValue(env, value)
+		val, err := UnmarshalRuntimeValue(value)
 		if err != nil {
 			log.Warnf("cannot unmarshal field %s - error: %s", key, err)
 			continue
@@ -210,7 +210,7 @@ func UnmarshalRuntimeDictionary(env *Environment, value map[string]any) *ast.Run
 	return dict
 }
 
-func UnmarshalRuntimeObject(decl *ast.ObjectDeclaration, env *Environment, value map[string]any) *ast.RuntimeValue {
+func UnmarshalRuntimeObject(decl *ast.ObjectDeclaration, value map[string]any) *ast.RuntimeValue {
 	obj := ast.NewRuntimeObject(decl)
 
 	fields := map[string]*ast.RuntimeValue{}
@@ -228,21 +228,21 @@ func UnmarshalRuntimeObject(decl *ast.ObjectDeclaration, env *Environment, value
 
 		// If we have a basic type, it's likely a literal value assign
 		if bt := field.TypeReference.GetBasicType(); bt != nil {
-			val, err := UnmarshalRuntimeValue(env, value)
+			val, err := UnmarshalRuntimeValue(value)
 			if err != nil {
 				log.Warnf("cannot unmarshal field %s of type %s - error: %s", field.Name, field.TypeReference.Type, err)
 				continue
 			}
 			fields[field.Name] = val
-		} else if nestedDecl := env.LookupObject(field.TypeReference.Type); nestedDecl != nil {
+		} else if nestedDecl := Registry.LookupObject(field.TypeReference.Type); nestedDecl != nil {
 			m, ok := value.(map[string]any)
 			if !ok {
 				log.Warnf("cannot unmarshal field %s of type %s - expected object", field.Name, field.TypeReference.Type)
 				continue
 			}
-			fields[field.Name] = UnmarshalRuntimeObject(nestedDecl, env, m)
+			fields[field.Name] = UnmarshalRuntimeObject(nestedDecl, m)
 		} else {
-			val, err := UnmarshalRuntimeValue(env, value)
+			val, err := UnmarshalRuntimeValue(value)
 			if err != nil {
 				log.Warnf("cannot unmarshal field %s of type %s - error: %s", field.Name, field.TypeReference.Type, err)
 				continue
@@ -256,7 +256,7 @@ func UnmarshalRuntimeObject(decl *ast.ObjectDeclaration, env *Environment, value
 	return obj
 }
 
-func UnmarshalRuntimeObjectFromDictionary(decl *ast.ObjectDeclaration, env *Environment, rtValue *ast.RuntimeValue) *ast.RuntimeValue {
+func UnmarshalRuntimeObjectFromDictionary(decl *ast.ObjectDeclaration, rtValue *ast.RuntimeValue) *ast.RuntimeValue {
 	obj := ast.NewRuntimeObject(decl)
 
 	fields := map[string]*ast.RuntimeValue{}
@@ -282,15 +282,15 @@ func UnmarshalRuntimeObjectFromDictionary(decl *ast.ObjectDeclaration, env *Envi
 			}
 		}*/
 
-		if nestedDecl := env.LookupObject(field.TypeReference.Type); nestedDecl != nil {
+		if nestedDecl := Registry.LookupObject(field.TypeReference.Type); nestedDecl != nil {
 			if _, ok := value.Value.(map[string]*ast.RuntimeValue); ok {
-				fields[field.Name] = UnmarshalRuntimeObjectFromDictionary(nestedDecl, env, value)
+				fields[field.Name] = UnmarshalRuntimeObjectFromDictionary(nestedDecl, value)
 			} else if d, ok := value.Value.([]*ast.RuntimeValue); ok {
-				fields[field.Name] = UnmarshalRuntimeArrayWithDeclaration(nestedDecl, env, d)
+				fields[field.Name] = UnmarshalRuntimeArrayWithDeclaration(nestedDecl, d)
 			} else if d, ok := value.Value.(map[string]any); ok {
-				fields[field.Name] = UnmarshalRuntimeObject(nestedDecl, env, d)
+				fields[field.Name] = UnmarshalRuntimeObject(nestedDecl, d)
 			} else {
-				val, err := UnmarshalRuntimeValue(env, value)
+				val, err := UnmarshalRuntimeValue(value)
 				if err != nil {
 					log.Warnf("cannot unmarshal field %s of type %s - error: %s", field.Name, field.TypeReference.Type, err)
 					continue
@@ -298,7 +298,7 @@ func UnmarshalRuntimeObjectFromDictionary(decl *ast.ObjectDeclaration, env *Envi
 				fields[field.Name] = val
 			}
 		} else {
-			val, err := UnmarshalRuntimeValue(env, value)
+			val, err := UnmarshalRuntimeValue(value)
 			if err != nil {
 				log.Warnf("cannot unmarshal field %s of type %s - error: %s", field.Name, field.TypeReference.Type, err)
 				continue

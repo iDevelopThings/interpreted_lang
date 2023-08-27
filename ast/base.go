@@ -14,6 +14,9 @@ type ParserRuleRange struct {
 	End   *lexer.Token
 }
 
+func (self *ParserRuleRange) GetStartPosition() *lexer.TokenPosition { return self.Start.Pos }
+func (self *ParserRuleRange) GetEndPosition() *lexer.TokenPosition   { return self.End.Pos }
+
 // This should only be used during the AST building phase(visitor_ast_mapper)
 // It's used when we're building all the nodes
 // When we visit a source file, we'll set this as the root
@@ -89,12 +92,20 @@ func (self *AstNode) GetParent() Node {
 }
 
 func NewAstNode(token *lexer.Token) *AstNode {
-	return &AstNode{
+	n := &AstNode{
 		NodeId:   GetUniqueNodeId(),
 		Root:     CurrentParsingRoot,
 		Token:    token,
 		Children: make([]Node, 0),
 	}
+
+	if token == nil {
+		n.Token = &lexer.Token{
+			Source: "Internals(Generated Node)",
+		}
+	}
+
+	return n
 }
 
 func (self *AstNode) SetRuleRange(tokens ...*lexer.Token) {
@@ -113,9 +124,7 @@ func (self *AstNode) SetRuleRange(tokens ...*lexer.Token) {
 	self.RuleRange.End = tokens[len(tokens)-1]
 }
 
-func (self *AstNode) GetRuleRange() *ParserRuleRange {
-	return self.RuleRange
-}
+func (self *AstNode) GetRuleRange() *ParserRuleRange { return self.RuleRange }
 
 func (self *AstNode) GetAstNode() *AstNode {
 	return self

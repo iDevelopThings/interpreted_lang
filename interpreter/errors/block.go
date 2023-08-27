@@ -10,6 +10,14 @@ import (
 	"arc/lexer"
 )
 
+type DiagnosticSeverityKind string
+
+const (
+	ErrorDiagnostic   DiagnosticSeverityKind = "Error"
+	WarningDiagnostic DiagnosticSeverityKind = "Warning"
+	InfoDiagnostic    DiagnosticSeverityKind = "Info"
+)
+
 type ErrorDisplayKind string
 
 const (
@@ -18,10 +26,10 @@ const (
 )
 
 type SourceErrorPosition struct {
-	Line   int
-	Column int
-	Abs    int
-	Width  int
+	Line   int `json:"line"`
+	Column int `json:"column"`
+	Abs    int `json:"abs"`
+	Width  int `json:"width"`
 }
 
 func NewSourceErrorPosition(token *lexer.Position) SourceErrorPosition {
@@ -54,19 +62,20 @@ type TokenHighlightBounds struct {
 // This will wrap the actual error, so, if we have an error in a block for
 // example, it will correctly set the start/end positions for that whole block,
 // and then display the multiple errors inside that specific block
-type CodeError struct {
+type CodeDiagnostic struct {
 	Kind            ErrorDisplayKind
 	Start           SourceErrorPosition
 	End             SourceErrorPosition
 	HighlightBounds *TokenHighlightBounds
 	// Messages  []CodeErrorMessage
+	Severity          DiagnosticSeverityKind
 	Message           string
 	Processed         bool
 	DidAddReasonBlock bool
 }
 
-//	func NewCodeError(rule *ast.ParserRuleRange) *CodeError {
-//		pos := &CodeError{
+//	func NewCodeError(rule *ast.ParserRuleRange) *CodeDiagnostic {
+//		pos := &CodeDiagnostic{
 //			Kind:  SingleLineError,
 //			Start: NewSourceErrorPosition(rule),
 //			End:   NewSourceErrorPosition(rule),
@@ -95,7 +104,7 @@ type CodeError struct {
 //
 //		return pos
 //	}
-func NewCodeErrorAtNode(node ast.Node) *CodeError {
+func NewCodeErrorAtNode(node ast.Node) *CodeDiagnostic {
 	if node.GetAstNode() == nil {
 		log.Warnf("NewCodeErrorAtNode: node.GetAstNode() is nil")
 		return nil
@@ -105,7 +114,12 @@ func NewCodeErrorAtNode(node ast.Node) *CodeError {
 		log.Warnf("NewCodeErrorAtNode: node.GetRuleRange() is nil")
 		return nil
 	}
-	pos := &CodeError{
+
+	return NewCodeError(rng)
+}
+
+func NewCodeError(rng *ast.ParserRuleRange) *CodeDiagnostic {
+	pos := &CodeDiagnostic{
 		Kind:  SingleLineError,
 		Start: NewSourceErrorPosition(rng.Start.GetStart()),
 		End:   NewSourceErrorPosition(rng.End.GetStart()),
@@ -141,6 +155,36 @@ func NewCodeErrorAtNode(node ast.Node) *CodeError {
 
 	return pos
 }
+func NewCodeErrorInRange(p *lexer.TokenPosition) *CodeDiagnostic {
+	pos := &CodeDiagnostic{
+		Kind:  SingleLineError,
+		Start: NewSourceErrorPosition(p.GetStart()),
+		End:   NewSourceErrorPosition(p.GetEnd()),
+	}
+	pos.Start.Width = p.Length
+	pos.End.Width = p.Length
+
+	calcLength := pos.Start.Width
+	if pos.End.Column-pos.Start.Column > calcLength {
+		calcLength = pos.End.Column - pos.Start.Column
+	}
+
+	pos.HighlightBounds = &TokenHighlightBounds{
+		StartColumn: pos.Start.Column,
+		EndColumn:   pos.Start.Column + pos.Start.Width,
+		Length:      calcLength,
+	}
+
+	if pos.End.Line-pos.Start.Line > 1 {
+		pos.Kind = MultiLineError
+		return pos
+	}
+
+	pos.HighlightBounds.EndColumn = max(pos.End.Column, pos.HighlightBounds.EndColumn)
+	pos.HighlightBounds.Length = pos.HighlightBounds.EndColumn - pos.HighlightBounds.StartColumn
+
+	return pos
+}
 
 func formatMessage(str string, args ...any) string {
 	msg := str
@@ -153,7 +197,7 @@ func formatMessage(str string, args ...any) string {
 	return msg
 }
 
-func (self *CodeError) AddMessage(str string, args ...any) *CodeError {
+func (self *CodeDiagnostic) AddMessage(str string, args ...any) *CodeDiagnostic {
 	// self.Messages = append(self.Messages, CodeErrorMessage{
 	// 	Message: formatMessage(str, args...),
 	// 	Line:    self.Start.Line,
@@ -165,7 +209,7 @@ func (self *CodeError) AddMessage(str string, args ...any) *CodeError {
 	return self
 }
 
-func (self *CodeError) AddMessageAtToken(str string, args ...any) *CodeError {
+func (self *CodeDiagnostic) AddMessageAtToken(str string, args ...any) *CodeDiagnostic {
 	// self.Messages = append(self.Messages, CodeErrorMessage{
 	// 	Message: formatMessage(str, args...),
 	// 	Line:    rule.GetStart().GetLine(),
@@ -177,7 +221,7 @@ func (self *CodeError) AddMessageAtToken(str string, args ...any) *CodeError {
 	return self
 }
 
-func (self *CodeError) CanDisplayAtLine(lineNumber int) bool {
+func (self *CodeDiagnostic) CanDisplayAtLine(lineNumber int) bool {
 	if self.Kind == SingleLineError {
 		return lineNumber == self.Start.Line
 	}

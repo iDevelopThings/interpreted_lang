@@ -6,6 +6,13 @@ import (
 	"strings"
 )
 
+type OutputFormat string
+
+const (
+	OutputFormatJson OutputFormat = "json"
+	OutputFormatText OutputFormat = "text"
+)
+
 type CliArgsConfig struct {
 	Verbose []bool `short:"v" long:"verbose" description:"Show verbose debug information"`
 
@@ -18,6 +25,11 @@ type CliArgsConfig struct {
 
 	RunLsp      bool   `long:"lsp" description:"run the lsp only"`
 	LspProtocol string `long:"lsp-protocol" description:"run the lsp using the protocol"`
+
+	PrintAst     bool         `long:"print-ast" description:"print the ast to stderr"`
+	StdinMode    bool         `short:"i" long:"stdin" description:"Only accept input from stdin"`
+	LintingMode  bool         `short:"l" long:"lint" description:"run the linter only"`
+	OutputFormat OutputFormat `short:"f" long:"format" description:"the output format to use for the linter" choice:"json" choice:"text" default:"text"`
 
 	File string
 }

@@ -2,15 +2,26 @@ package errors
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
 
+	"github.com/charmbracelet/log"
 	"github.com/fatih/color"
+	"github.com/goccy/go-json"
 
-	"arc/ast"
-	. "arc/log"
+	"arc/interpreter/config"
+)
+
+var (
+	PresenterLogger = log.NewWithOptions(os.Stderr, log.Options{
+		Level:        log.DebugLevel,
+		ReportCaller: true,
+		// CallerFormatter: nil,
+		// CallerOffset:    0,
+		// Fields:          nil,
+		// Formatter:       0,
+	})
 )
 
 const contextRadius = 3
@@ -24,69 +35,83 @@ var (
 	edgeColor       = color.New(color.FgHiRed).SprintFunc()
 )
 
-type ErrorPresenter struct {
-	Errors               []*CodeError
+type DiagnosticPresenter struct {
+	Path                 string
+	Diagnostics          []CodeDiagnostic
 	Lines                []string
-	TokenRuleRange       *ast.ParserRuleRange
 	firstErrorLineNumber int
 }
 
-func NewErrorPresenter(input string, token *ast.ParserRuleRange) *ErrorPresenter {
-	presenter := &ErrorPresenter{
-		Lines:          strings.Split(input, "\n"),
-		TokenRuleRange: token,
+func NewPresenter(filePath, input string) *DiagnosticPresenter {
+	presenter := &DiagnosticPresenter{
+		Lines: strings.Split(input, "\n"),
+		Path:  filePath,
 	}
 
 	return presenter
 }
 
-// func (self *ErrorPresenter) Multi() *CodeError {
+// func (self *DiagnosticPresenter) Multi() *CodeDiagnostic {
 // 	e := NewCodeError(self.TokenRuleRange)
-// 	self.Errors = append(self.Errors, e)
+// 	self.Diagnostics = append(self.Diagnostics, e)
 // 	return e
 // }
-// func (self *ErrorPresenter) Add(str string, args ...any) *ErrorPresenter {
-// 	self.Errors = append(self.Errors, NewCodeError(self.TokenRuleRange).AddMessage(str, args...))
+// func (self *DiagnosticPresenter) Add(str string, args ...any) *DiagnosticPresenter {
+// 	self.Diagnostics = append(self.Diagnostics, NewCodeError(self.TokenRuleRange).AddMessage(str, args...))
 // 	return self
 // }
-// func (self *ErrorPresenter) AddAtToken(rule *ast.ParserRuleRange, str string, args ...any) *ErrorPresenter {
+// func (self *DiagnosticPresenter) AddAtToken(rule *ast.ParserRuleRange, str string, args ...any) *DiagnosticPresenter {
 // 	err := NewCodeError(rule)
 // 	err.AddMessageAtToken(str, args...)
-// 	self.Errors = append(self.Errors, err)
+// 	self.Diagnostics = append(self.Diagnostics, err)
 //
 // 	return self
 // }
 
-func (self *ErrorPresenter) AddAtNode(node ast.Node, format string, a ...any) *ErrorPresenter {
-	err := NewCodeErrorAtNode(node)
-	if err == nil {
-		return self
-	}
-	err.AddMessageAtToken(format, a...)
-	self.Errors = append(self.Errors, err)
+// func (self *DiagnosticPresenter) AddAtNode(node ast.Node, format string, a ...any) *DiagnosticPresenter {
+// 	err := NewCodeErrorAtNode(node)
+// 	if err == nil {
+// 		return self
+// 	}
+// 	err.AddMessageAtToken(format, a...)
+// 	self.Diagnostics = append(self.Diagnostics, err)
+//
+// 	return self
+// }
 
-	return self
+func (self *DiagnosticPresenter) Print(format config.OutputFormat) {
+	PresenterLogger.Helper()
+
+	switch format {
+	case config.OutputFormatText:
+		self.prettyPrint()
+	case config.OutputFormatJson:
+		self.jsonPrint()
+		self.prettyPrint()
+	}
 }
 
-func (self *ErrorPresenter) Print(filePath string) {
-	log.SetFlags(0)
+func (self *DiagnosticPresenter) prettyPrint() {
+	PresenterLogger.Helper()
+	// log.SetFlags(0)
 
 	lines, _, _ := self.process()
 
-	// panic(fmt.Sprintf("ErrorPresenter.Print() is not implemented yet."))
+	_, _ = os.Stderr.WriteString("\n")
+	PresenterLogger.Print("")
+	PresenterLogger.Printf("  --> %s:%d", self.Path, self.firstErrorLineNumber+1)
+	PresenterLogger.Print("")
 
-	log.Printf("\n  --> %s:%d", filePath, self.firstErrorLineNumber+1)
+	// callerInfo := Log.CallerInfo(2)
+	// d, _ := os.Getwd()
 
-	callerInfo := Log.CallerInfo(3)
-	d, _ := os.Getwd()
-	log.Printf("  --> %s:%d\n\n", strings.Replace(callerInfo.File, d, "", 1), callerInfo.Line)
-	// fmt.Println(strings.Repeat("-", 80))
+	// log.Printf("  --> %s:%d\n\n", strings.Replace(callerInfo.File, d, "", 1), callerInfo.Line)
 
 	for _, line := range lines {
-		log.Println(line)
+		PresenterLogger.Print(line)
 	}
-	log.Println("")
-	log.Println(strings.Repeat("-", 80))
+	PresenterLogger.Print("")
+	PresenterLogger.Print(strings.Repeat("-", 80))
 
 	// for i, line := range self.Lines {
 	//
@@ -111,10 +136,38 @@ func (self *ErrorPresenter) Print(filePath string) {
 	// }
 }
 
-func (self *ErrorPresenter) process() ([]string, int, int) {
-	if self.TokenRuleRange == nil {
-		log.Fatalf("ErrorPresenter.process(): self.TokenRuleRange is nil")
+func (self *DiagnosticPresenter) jsonPrint() {
+	var errors []any
+	for _, err := range self.Diagnostics {
+		if err.Start.Abs == err.End.Abs {
+			err.End.Abs += err.HighlightBounds.Length
+		}
+
+		errors = append(errors, map[string]any{
+			"message":  err.Message,
+			"start":    err.Start,
+			"end":      err.End,
+			"severity": err.Severity,
+		})
 	}
+
+	data := map[string]any{
+		"path":   self.Path,
+		"errors": errors,
+	}
+
+	jsonBytes, err := json.Marshal(data)
+	// jsonBytes, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if _, err := os.Stdout.Write(jsonBytes); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (self *DiagnosticPresenter) process() ([]string, int, int) {
 	startLine, stopLine, errorLineNumbers, hasBlockError := self.prepareErrorBounds()
 
 	var lines []string
@@ -149,7 +202,7 @@ func (self *ErrorPresenter) process() ([]string, int, int) {
 			continue
 		}
 
-		for _, codeError := range self.Errors {
+		for _, codeError := range self.Diagnostics {
 			if codeError.Processed {
 				continue
 			}
@@ -237,7 +290,7 @@ func (self *ErrorPresenter) process() ([]string, int, int) {
 
 	}
 
-	for _, codeError := range self.Errors {
+	for _, codeError := range self.Diagnostics {
 		if !codeError.DidAddReasonBlock && codeError.Kind == MultiLineError {
 			errorBlockLines := createErrorBlockMessage(createLineNumber, codeError)
 			lines = append(lines, errorBlockLines...)
@@ -247,7 +300,7 @@ func (self *ErrorPresenter) process() ([]string, int, int) {
 	return lines, startLine, stopLine
 }
 
-func createErrorBlockMessage(createLineNumber func(lineNum int) string, codeError *CodeError) []string {
+func createErrorBlockMessage(createLineNumber func(lineNum int) string, codeError CodeDiagnostic) []string {
 	var errorBlockLines []string
 	errorBlockLines = append(errorBlockLines, createLineNumber(-1)+edgeColor("  |")+edgeColor(strings.Repeat("-", len(codeError.Message)+4)))
 	errorBlockLines = append(errorBlockLines, createLineNumber(-1)+edgeColor("  |  ")+errorColor(codeError.Message))
@@ -264,14 +317,24 @@ func highlightTokenBounds(line string, bounds *TokenHighlightBounds) string {
 	return splitLineStr
 }
 
-func (self *ErrorPresenter) prepareErrorBounds() (
+func (self *DiagnosticPresenter) prepareErrorBounds() (
 	startContext int,
 	stopContext int,
 	errorLineNumbers map[int]bool,
 	hasBlockError bool,
 ) {
-	startLine := self.TokenRuleRange.Start.GetLine()
-	stopLine := self.TokenRuleRange.End.GetLine()
+	startLine := 0
+	stopLine := 0
+
+	for _, codeError := range self.Diagnostics {
+		if startLine == 0 || codeError.Start.Line < startLine {
+			startLine = codeError.Start.Line
+		}
+		if stopLine == 0 || codeError.End.Line > stopLine {
+			stopLine = codeError.End.Line
+		}
+	}
+
 	radius := min(contextRadius, len(self.Lines))
 	hasBlockError = false
 
@@ -286,7 +349,7 @@ func (self *ErrorPresenter) prepareErrorBounds() (
 	firstErrorLineNumber := -1
 
 	errorLineNumbers = map[int]bool{}
-	for _, codeError := range self.Errors {
+	for _, codeError := range self.Diagnostics {
 		if codeError.Kind == MultiLineError {
 			hasBlockError = true
 		}

@@ -18,8 +18,8 @@ import (
 	"arc/ast"
 	"arc/http_server"
 	"arc/interpreter/config"
+	"arc/interpreter/errors"
 	"arc/lexer"
-	log2 "arc/log"
 	"arc/parser"
 	"arc/utilities"
 )
@@ -122,7 +122,7 @@ func (self *InterpreterEngine) LoadScript(path string) *SourceFile {
 	return self.FinishLoadingScript(script)
 }
 
-func (self *InterpreterEngine) LoadScriptFromString(scriptSrc string) {
+func (self *InterpreterEngine) LoadScriptFromString(scriptSrc string) *SourceFile {
 	script := &SourceFile{
 		Path: "stdin",
 	}
@@ -134,6 +134,28 @@ func (self *InterpreterEngine) LoadScriptFromString(scriptSrc string) {
 	defer self.setScriptLogger(nil)
 
 	self.SourceFiles = append(self.SourceFiles, script)
+
+	return script
+}
+
+func (self *InterpreterEngine) Load() {
+	if config.CliConfig.StdinMode {
+		stdin, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			panic(err)
+		}
+		script := self.LoadScriptFromString(string(stdin))
+		if config.CliConfig.File != "" {
+			script.Path = config.CliConfig.File
+		}
+		return
+	}
+
+	if config.CliConfig.File != "" {
+		self.LoadScript(config.CliConfig.File)
+		return
+	}
+
 }
 
 func (self *InterpreterEngine) setScriptLogger(script *SourceFile) {
@@ -152,10 +174,7 @@ func (self *InterpreterEngine) setScriptLogger(script *SourceFile) {
 			script.Logger.SetPrefix(fmt.Sprintf("[%s]", relScriptPath))
 		}
 
-		ErrorManager.SetSource(
-			script.Path,
-			script.Source,
-		)
+		errors.Manager.SetCurrent(script.Path, script.Source)
 
 		log.SetDefault(script.Logger)
 	} else {
@@ -185,11 +204,19 @@ func (self *InterpreterEngine) parseScript(script *SourceFile) {
 	// parser := grammar.NewSimpleLangParser(stream)
 	// script.Tree = parser.Program()
 
+	defer func() {
+		if r := recover(); r != nil {
+			if !errors.Manager.HandlePanic(r) {
+				panic(r)
+			}
+		}
+	}()
+
 	l := lexer.NewLexer(script.Source)
 	l.SetSource(script.Path)
 	p := parser.NewParser(l)
 
-	defer func() {
+	/*defer func() {
 		if r := recover(); r != nil {
 			if err, ok := r.(*parser.ParserError); ok {
 				source := p.GetLexer().GetSource()
@@ -205,7 +232,7 @@ func (self *InterpreterEngine) parseScript(script *SourceFile) {
 			}
 			panic(r)
 		}
-	}()
+	}()*/
 
 	script.Program = p.Parse()
 }
@@ -272,12 +299,13 @@ func (self *InterpreterEngine) linkScript(script *SourceFile) {
 			case *ast.HttpBlock:
 				self.Evaluator.bindHttpDeclarations(t)
 			case *ast.FunctionDeclaration:
-				self.Env.SetFunction(t)
+				Registry.SetFunction(t)
 			case *ast.ObjectDeclaration:
-				self.Env.SetObject(t)
+				Registry.SetObject(t)
 			case *ast.EnumDeclaration:
-				self.Env.SetEnum(t, self.Evaluator)
-
+				enumRtValue := Registry.SetEnum(t)
+				self.Env.SetVar(t.Name.Name, enumRtValue)
+				self.Evaluator.evalEnumDeclaration(t, enumRtValue)
 			}
 		}
 	}
@@ -344,7 +372,14 @@ func (self *InterpreterEngine) ProcessScripts() {
 	self.parseAll()
 	self.constructASTs()
 	self.link()
-	// self.typeCheck()
+	self.typeCheck()
+}
+
+func (self *InterpreterEngine) Lint() {
+	runTimer := utilities.NewTimer("Run All SourceFiles")
+	defer runTimer.StopAndLog()
+
+	self.ProcessScripts()
 }
 
 func (self *InterpreterEngine) Run() {
@@ -354,14 +389,11 @@ func (self *InterpreterEngine) Run() {
 	self.ProcessScripts()
 
 	self.evaluateAll()
-
-	// wg := &sync.WaitGroup{}
-
 	self.runMainAndServer()
 }
 
 func (self *InterpreterEngine) runMainAndServer() {
-	mainFn := self.Env.LookupFunction("main")
+	mainFn := Registry.LookupFunction("main")
 	if mainFn != nil {
 		self.Evaluator.ForceExecuteFunction(mainFn)
 	} else {
@@ -371,7 +403,7 @@ func (self *InterpreterEngine) runMainAndServer() {
 	}
 
 	if !self.IsTesting {
-		if len(self.Env.HttpEnv.Routes) > 0 {
+		if len(Registry.HttpEnv.Routes) > 0 {
 			self.runHttpServer()
 		}
 	}

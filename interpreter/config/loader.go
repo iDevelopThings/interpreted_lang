@@ -41,7 +41,7 @@ func PrepareConfiguration() *CliArgsConfig {
 		}
 	}
 
-	if len(args) == 0 {
+	if len(args) == 0 && !CliConfig.StdinMode {
 		log.Fatalf("No input file specified, usage should be: `arc ...options <relative file path>`")
 	}
 
@@ -59,7 +59,7 @@ func PrepareConfiguration() *CliArgsConfig {
 		CliConfig.File = filepath.Join(CliConfig.WorkingDirectory, args[0])
 	}
 
-	if CliConfig.File == "" {
+	if CliConfig.File == "" && !CliConfig.StdinMode {
 		log.Fatalf("No input file specified")
 	}
 

@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/log"
 
 	"arc/ast"
+	"arc/interpreter/errors"
 )
 
 func (self *Evaluator) evalDeferStatement(node *ast.DeferStatement) *Result {
@@ -34,7 +35,7 @@ func (self *Evaluator) lookupFuncDeclaration(node *ast.CallExpression) (receiver
 			if !ok {
 				NewErrorAtNode(node.Receiver, "Receiver is not a type reference: %#v", node.Receiver)
 			}
-			receiverObj := self.Env.LookupType(typeRef.Type)
+			receiverObj := Registry.LookupType(typeRef.Type)
 			if receiverObj == nil {
 				NewErrorAtNode(typeRef, "Undefined object: %#v", typeRef.Type)
 			}
@@ -71,7 +72,7 @@ func (self *Evaluator) lookupFuncDeclaration(node *ast.CallExpression) (receiver
 		return
 	}
 
-	fn = self.Env.LookupFunction(node.Function.Name)
+	fn = Registry.LookupFunction(node.Function.Name)
 	if fn == nil {
 		NewErrorAtNode(node.Function, "Undefined function: %v", node.Function.Name)
 	}
@@ -107,12 +108,12 @@ func (self *Evaluator) bindWrappedFunction(
 	self.executeWrappedFunction(fn, frame, r, node)
 
 	if frame.didError() {
-		defer ErrorManager.ShouldExit()
+		defer errors.SetStrategy(errors.ExitOnError)
 
 		log.Debugf("Error dump:")
 
-		ErrorManager.SetNode(node)
-		ErrorManager.ShouldExit(false)
+		// ErrorManager.SetNode(node)
+		errors.SetStrategy(errors.ContinueOnError)
 
 		for _, err := range frame.errs {
 			log.Errorf("Error: %s", err.Error)
@@ -272,11 +273,10 @@ func (self *Evaluator) bindForceWrappedFunction(
 
 	if frame.didError() {
 		for _, err := range frame.errs {
-			log.Debugf("Error dump:")
-			NewError("Error executing function \"%s\"\nerror:", node.Name)
-			NewError("%s", err.Error)
-			NewError("At node:%s\n", err.Node.GetToken().Value)
-
+			log.Errorf("Error dump:")
+			log.Errorf("Error executing function \"%s\"\nerror:", node.Name)
+			log.Errorf("%s", err.Error)
+			log.Errorf("At node:%s\n", err.Node.GetToken().Value)
 		}
 	}
 

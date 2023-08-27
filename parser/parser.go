@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"strings"
+
 	"arc/ast"
 	"arc/lexer"
 )
@@ -69,6 +71,7 @@ func (p *Parser) parseProgram() *ast.Program {
 	for !p.peekIs(lexer.TokenEOF) {
 		node := p.parseTopLevelStatement()
 		if node == nil {
+			p.error("Expected top level statement but got `%s`", p.curr.Value)
 			continue
 		}
 
@@ -81,6 +84,7 @@ func (p *Parser) parseProgram() *ast.Program {
 		}
 
 		program.Statements = append(program.Statements, node)
+
 	}
 
 	for _, decl := range program.Declarations {
@@ -124,6 +128,13 @@ func (p *Parser) parseTopLevelStatement() ast.TopLevelStatement {
 		return p.parseHttpBlock()
 
 	}
+
+	kws := strings.Join(
+		[]string{lexer.TokenKeywordImport, lexer.TokenKeywordEnum, lexer.TokenKeywordObject, lexer.TokenKeywordFunc, lexer.TokenKeywordHttp},
+		", ",
+	)
+
+	p.error("Expected one of top level keywords: %s, got `%s`", kws, p.curr.Value)
 
 	return nil
 }

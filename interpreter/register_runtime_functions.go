@@ -39,7 +39,7 @@ func (t *RT_fmt) Static_printf(env *Environment, fmtString string, args ...any) 
 
 		switch fmtArgType {
 		case "%v":
-			val := formatLogRuntimeValue(env, arg)
+			val := formatLogRuntimeValue(arg)
 			logArgs = append(logArgs, val)
 
 		default:
@@ -72,7 +72,7 @@ func (t *RT_error) Static_panic(env *Environment, args ...any) interface{} {
 	return nil
 }
 
-func bindStaticRuntimeType(env *Environment, t any) {
+func bindStaticRuntimeType(t any) {
 	rPtrType := reflect.TypeOf(t)
 	rType := rPtrType.Elem()
 
@@ -247,24 +247,24 @@ func bindStaticRuntimeType(env *Environment, t any) {
 		objDecl.Methods[methodDecl.Name] = methodDecl
 	}
 
-	env.SetObject(objDecl)
+	Registry.SetObject(objDecl)
 
 	// log.Debugf("Registered runtime bound type %s", objName)
 
 	for _, declaration := range objDecl.Methods {
-		env.SetFunction(declaration)
+		Registry.SetFunction(declaration)
 		// log.Debugf("Registered runtime bound method %s::%s", objName, declaration.Name)
 	}
 }
 
-func formatLogRuntimeValue(env *Environment, value any) any {
+func formatLogRuntimeValue(value any) any {
 	switch rv := value.(type) {
 
 	case *ast.RuntimeValue:
 		if rv == nil {
 			return nil
 		}
-		v, err := MarshalRuntimeValue(env, rv)
+		v, err := MarshalRuntimeValue(rv)
 		if err != nil {
 			log.Fatalf("Cannot marshal runtime value: %v", err)
 		}
@@ -273,7 +273,7 @@ func formatLogRuntimeValue(env *Environment, value any) any {
 	case []*ast.RuntimeValue:
 		vals := make([]any, len(rv))
 		for i, v := range rv {
-			vv, err := MarshalRuntimeValue(env, v)
+			vv, err := MarshalRuntimeValue(v)
 			if err != nil {
 				log.Fatalf("Cannot marshal runtime value: %v", err)
 			}
@@ -297,8 +297,8 @@ func RegisterRuntimeFunctions(env *Environment) {
 	// 	env.SetObject(&ast.ObjectDeclaration{Name: string(kind)})
 	// }
 
-	bindStaticRuntimeType(env, new(RT_fmt))
-	bindStaticRuntimeType(env, new(RT_error))
+	bindStaticRuntimeType(new(RT_fmt))
+	bindStaticRuntimeType(new(RT_error))
 
 	/*env.DefineCustomFunctionWithReceiver(
 		ast.NewTypedIdentifierCustom("fmt", "fmt"),

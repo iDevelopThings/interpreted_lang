@@ -258,7 +258,7 @@ func (self *Evaluator) evalDictionaryInstantiation(node *ast.DictionaryInstantia
 }
 
 func (self *Evaluator) evalObjectInstantiation(node *ast.ObjectInstantiation) *Result {
-	inst := ast.NewRuntimeObject(self.Env.LookupObject(node.TypeName.Name))
+	inst := ast.NewRuntimeObject(Registry.LookupObject(node.TypeName.Name))
 
 	fields := map[string]*ast.RuntimeValue{}
 	for fieldName, expr := range node.Fields {
@@ -296,7 +296,7 @@ func (self *Evaluator) evalArrayInstantiation(node *ast.ArrayInstantiation) *Res
 		log.Fatalf("Array does not have a type identifier associated with it: %v", node)
 	}
 
-	decl := self.Env.LookupObject(node.Type.TypeReference.Type)
+	decl := Registry.LookupObject(node.Type.TypeReference.Type)
 	inst := ast.NewRuntimeArray(decl)
 
 	var values []*ast.RuntimeValue

@@ -35,7 +35,7 @@ func (self *TypeCheckerInstance) FindType(node ast.Node) ast.Type {
 		self.Scope.CheckingNode(node)
 	}
 
-	var resolveType func(ast.Node) ast.Type
+	/*var resolveType func(ast.Node) ast.Type
 	resolveType = func(node ast.Node) ast.Type {
 		switch node := node.(type) {
 
@@ -61,10 +61,10 @@ func (self *TypeCheckerInstance) FindType(node ast.Node) ast.Type {
 			if !ok {
 				return nil
 			}
-			return self.Env.LookupObject(m.ReturnType.Type)
+			return Registry.LookupObject(m.ReturnType.Type)
 
 		// case *ast.Identifier:
-		// 	return self.Env.LookupObject(node.Name)
+		// 	return Registry.LookupObject(node.Name)
 
 		case *ast.TypedIdentifier:
 			bt := node.TypeReference.GetBasicType()
@@ -84,7 +84,7 @@ func (self *TypeCheckerInstance) FindType(node ast.Node) ast.Type {
 			return v
 
 		case *ast.TypeReference:
-			obj := self.Env.LookupType(node.Type)
+			obj := Registry.LookupType(node.Type)
 			if obj == nil {
 				return nil
 			}
@@ -137,7 +137,23 @@ func (self *TypeCheckerInstance) FindType(node ast.Node) ast.Type {
 		return nil
 	}
 
-	resolved := resolveType(node)
+	resolved := resolveType(node)*/
+
+	resolved := Inference.FindType(node, func(n ast.Node) ast.Type {
+		switch node := n.(type) {
+
+		case *ast.VarReference:
+			v := self.Scope.Lookup(node.Name)
+			if v == nil {
+				return nil
+			}
+			return v
+
+		default:
+			log.Warnf("TypeChecker.FindType: unhandled node type %T", node)
+			return nil
+		}
+	})
 
 	if self.isTypeChecking {
 		self.Scope.LinkNodeScope(node)
@@ -154,7 +170,7 @@ func (self *TypeCheckerInstance) FindDeclaration(node ast.Node) (ast.Type, ast.N
 		self.Scope.CheckingNode(node)
 	}
 
-	var resolveDeclaration func(ast.Node) (ast.Type, ast.Node)
+	/*var resolveDeclaration func(ast.Node) (ast.Type, ast.Node)
 	resolveDeclaration = func(node ast.Node) (ast.Type, ast.Node) {
 		switch node := node.(type) {
 
@@ -197,7 +213,7 @@ func (self *TypeCheckerInstance) FindDeclaration(node ast.Node) (ast.Type, ast.N
 			return v, nil
 
 		case *ast.TypeReference:
-			if t := self.Env.LookupType(node.Type); t != nil {
+			if t := Registry.LookupType(node.Type); t != nil {
 				if obj, ok := t.(*ast.ObjectDeclaration); ok {
 					return obj, obj.Name
 				} else if e, ok := t.(*ast.EnumDeclaration); ok {
@@ -206,7 +222,7 @@ func (self *TypeCheckerInstance) FindDeclaration(node ast.Node) (ast.Type, ast.N
 				return t, t
 			}
 			return nil, nil
-			// obj := self.Env.LookupObject(node.Type)
+			// obj := Registry.LookupObject(node.Type)
 			// if obj == nil {
 			// 	return nil, nil
 			// }
@@ -238,8 +254,21 @@ func (self *TypeCheckerInstance) FindDeclaration(node ast.Node) (ast.Type, ast.N
 
 		return nil, nil
 	}
+	resolved, resolvedNode := resolveDeclaration(node)*/
 
-	resolved, resolvedNode := resolveDeclaration(node)
+	resolved, resolvedNode := Inference.FindDeclaration(node, func(n ast.Node) (ast.Type, ast.Node) {
+		switch node := n.(type) {
+		case *ast.VarReference:
+			v := self.Scope.Lookup(node.Name)
+			if v == nil {
+				return nil, nil
+			}
+			return v, nil
+		default:
+			log.Warnf("TypeChecker.FindDeclaration: unhandled node type %T", node)
+			return nil, nil
+		}
+	})
 
 	if self.isTypeChecking {
 		self.Scope.LinkNodeScope(node)

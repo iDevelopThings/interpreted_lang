@@ -24,31 +24,31 @@ func (self *BasicType) GetEnvBindingName() string { return self.Name }
 
 var (
 	IntType = &BasicType{
-		AstNode: &AstNode{NodeId: GetUniqueNodeId()},
+		AstNode: NewAstNode(nil),
 		Name:    "int",
 	}
 	StringType = &BasicType{
-		AstNode: &AstNode{NodeId: GetUniqueNodeId()},
+		AstNode: NewAstNode(nil),
 		Name:    "string",
 	}
 	BoolType = &BasicType{
-		AstNode: &AstNode{NodeId: GetUniqueNodeId()},
+		AstNode: NewAstNode(nil),
 		Name:    "bool",
 	}
 	FloatType = &BasicType{
-		AstNode: &AstNode{NodeId: GetUniqueNodeId()},
+		AstNode: NewAstNode(nil),
 		Name:    "float",
 	}
 	NoneType = &BasicType{
-		AstNode: &AstNode{NodeId: GetUniqueNodeId()},
+		AstNode: NewAstNode(nil),
 		Name:    "none",
 	}
 	VoidType = &BasicType{
-		AstNode: &AstNode{NodeId: GetUniqueNodeId()},
+		AstNode: NewAstNode(nil),
 		Name:    "void",
 	}
 	AnyType = &BasicType{
-		AstNode: &AstNode{NodeId: GetUniqueNodeId()},
+		AstNode: NewAstNode(nil),
 		Name:    "any",
 	}
 )

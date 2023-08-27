@@ -10,10 +10,16 @@ import (
 
 	"arc/interpreter"
 	"arc/interpreter/config"
+	"arc/interpreter/errors"
 	"arc/lsp"
+	"arc/utilities"
 )
 
 func main() {
+
+	runTimer := utilities.NewTimer("Process Execution")
+	defer runTimer.StopAndLog()
+
 	cliConf := config.PrepareConfiguration()
 	config.LoadProjectConfiguration()
 
@@ -44,14 +50,23 @@ func main() {
 	// engine.LoadScript("test_data/input.arc")
 	// engine.Run()
 
-	runEngineAndScript(cliConf.File)
+	// read all contents from stdin
+
+	runEngineAndScript(cliConf)
 
 }
 
-func runEngineAndScript(filepath string) {
+func runEngineAndScript(conf *config.CliArgsConfig) {
+	errors.SetFormat(conf.OutputFormat)
+
 	engine := interpreter.Engine
-	engine.LoadScript(filepath)
-	engine.Run()
+	engine.Load()
+
+	if conf.LintingMode {
+		engine.Lint()
+	} else {
+		engine.Run()
+	}
 
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM) // subscribe to system signals

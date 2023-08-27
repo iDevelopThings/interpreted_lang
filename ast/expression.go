@@ -57,6 +57,7 @@ func (self *FieldAccessExpression) GetChildren() []Node {
 	return result
 }
 func (self *FieldAccessExpression) IsExpression() {}
+func (self *FieldAccessExpression) IsStatement()  {}
 
 type IndexAccessExpression struct {
 	*AstNode

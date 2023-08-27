@@ -63,7 +63,7 @@ func (self *Evaluator) bindHttpRoute(node *ast.HttpRouteDeclaration) {
 		node.HandlerFunc,
 	)
 
-	self.Env.RegisterRoute(node)
+	Registry.RegisterRoute(node)
 }
 
 func NewHttpRequestObject(route *ast.HttpRouteDeclaration, env *Environment, r *http.Request, res http.ResponseWriter, params http_server.Params) (*ast.RuntimeValue, *ast.RuntimeValue, *ast.RuntimeValue) {
@@ -92,7 +92,7 @@ func NewHttpRequestObject(route *ast.HttpRouteDeclaration, env *Environment, r *
 				log.Fatalf("Error decoding request body: %v", err)
 			}
 
-			bodyDict, err := UnmarshalRuntimeValue(env, body)
+			bodyDict, err := UnmarshalRuntimeValue(body)
 			if err != nil {
 				log.Fatalf("Error decoding request body: %v", err)
 			}
@@ -100,12 +100,12 @@ func NewHttpRequestObject(route *ast.HttpRouteDeclaration, env *Environment, r *
 			request.SetField("body", bodyDict)
 
 			if injection := route.GetInjection("body"); injection != nil {
-				objDecl := env.LookupObject(injection.Var.TypeReference.Type)
+				objDecl := Registry.LookupObject(injection.Var.TypeReference.Type)
 				if objDecl == nil {
 					log.Fatalf("Unknown object type: %v", injection.Var.TypeReference.Type)
 				}
 
-				if result := UnmarshalRuntimeObject(objDecl, env, body); result != nil {
+				if result := UnmarshalRuntimeObject(objDecl, body); result != nil {
 					request.SetField(injection.Var.Name, result)
 					env.SetVar(injection.Var.Name, result)
 				}
@@ -118,7 +118,7 @@ func NewHttpRequestObject(route *ast.HttpRouteDeclaration, env *Environment, r *
 				log.Fatalf("Error parsing form: %v", err)
 			}
 
-			bodyDict, err := UnmarshalRuntimeValue(env, r.Form)
+			bodyDict, err := UnmarshalRuntimeValue(r.Form)
 			if err != nil {
 				log.Fatalf("Error decoding request body: %v", err)
 			}
@@ -126,12 +126,12 @@ func NewHttpRequestObject(route *ast.HttpRouteDeclaration, env *Environment, r *
 			request.SetField("body", bodyDict)
 
 			if injection := route.GetInjection("body"); injection != nil {
-				objDecl := env.LookupObject(injection.Var.TypeReference.Type)
+				objDecl := Registry.LookupObject(injection.Var.TypeReference.Type)
 				if objDecl == nil {
 					log.Fatalf("Unknown object type: %v", injection.Var.TypeReference.Type)
 				}
 
-				if result := UnmarshalRuntimeObjectFromDictionary(objDecl, env, bodyDict); result != nil {
+				if result := UnmarshalRuntimeObjectFromDictionary(objDecl, bodyDict); result != nil {
 					request.SetField(injection.Var.Name, result)
 					env.SetVar(injection.Var.Name, result)
 				}
@@ -169,7 +169,7 @@ func (self *Evaluator) evalHttpResponseData(node *ast.HttpResponseData) *Result 
 		if expr, ok := node.Data.(ast.Expr); ok {
 			data := self.MustEvalValue(expr)
 
-			dataJson, err := MarshalRuntimeValue(self.Env, data.(*ast.RuntimeValue))
+			dataJson, err := MarshalRuntimeValue(data.(*ast.RuntimeValue))
 			if err != nil {
 				panic("Error marshalling JSON: " + err.Error())
 			}

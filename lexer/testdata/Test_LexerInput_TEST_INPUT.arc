@@ -1,3 +1,5 @@
+func pls_0_no_dont_do_it() {}
+
 func pls() {
     fmt::printf("...", value);
 	var value = {

@@ -8,35 +8,16 @@ import (
 
 type FunctionTypeCallback = func(args ...any) any
 
-type HttpEnv struct {
-	Routes []*ast.HttpRouteDeclaration
-}
-
 type Environment struct {
 	parent *Environment
-
-	HttpEnv *HttpEnv
-
-	vars      map[string]any
-	objects   map[string]*ast.ObjectDeclaration
-	functions map[string]*ast.FunctionDeclaration
-	enums     map[string]*ast.EnumDeclaration
-
-	// stack        []*StackFrame
-	// currentFrame *StackFrame
+	vars   map[string]any
 }
 
 var RootEnvironment *Environment
 
 func NewEnvironment() *Environment {
 	e := &Environment{
-		vars:      map[string]any{},
-		objects:   map[string]*ast.ObjectDeclaration{},
-		enums:     map[string]*ast.EnumDeclaration{},
-		functions: map[string]*ast.FunctionDeclaration{},
-		HttpEnv: &HttpEnv{
-			Routes: make([]*ast.HttpRouteDeclaration, 0),
-		},
+		vars: map[string]any{},
 	}
 
 	return e
@@ -115,115 +96,116 @@ func (self *Environment) DeleteVar(name string) bool {
 	return false
 }
 
-func (self *Environment) LookupFunction(name string) *ast.FunctionDeclaration {
-	// First we'll do a quick check on the root environment
-	// If it exists(since it could be a global function), we'll return it
-	// This will reduce the stack size for the recursive lookup
+// func (self *Environment) LookupFunction(name string) *ast.FunctionDeclaration {
+// 	// First we'll do a quick check on the root environment
+// 	// If it exists(since it could be a global function), we'll return it
+// 	// This will reduce the stack size for the recursive lookup
+//
+// 	if RootEnvironment != nil {
+// 		if f, ok := RootEnvironment.functions[name]; ok {
+// 			return f
+// 		}
+// 	}
+//
+// 	if f, ok := self.functions[name]; ok {
+// 		return f
+// 	}
+// 	if self.parent != nil {
+// 		return self.parent.LookupFunction(name)
+// 	}
+// 	return nil
+// }
 
-	if RootEnvironment != nil {
-		if f, ok := RootEnvironment.functions[name]; ok {
-			return f
-		}
-	}
+// func (self *Environment) LookupObject(name string) *ast.ObjectDeclaration {
+// 	// First we'll do a quick check on the root environment
+// 	// If it exists(since it could be a global object), we'll return it
+// 	// This will reduce the stack size for the recursive lookup
+//
+// 	if RootEnvironment != nil {
+// 		if o, ok := RootEnvironment.objects[name]; ok {
+// 			return o
+// 		}
+// 		if bt, ok := ast.BasicTypes[name]; ok {
+// 			return &ast.ObjectDeclaration{
+// 				AstNode: bt.GetAstNode(),
+// 				Name:    ast.NewIdentifierWithValue(nil, bt.TypeName()),
+// 			}
+// 		}
+// 	}
+//
+// 	if o, ok := self.objects[name]; ok {
+// 		return o
+// 	}
+// 	if self.parent != nil {
+// 		return self.parent.LookupObject(name)
+// 	}
+//
+// 	if bt, ok := ast.BasicTypes[name]; ok {
+// 		return &ast.ObjectDeclaration{
+// 			AstNode: bt.GetAstNode(),
+// 			Name:    ast.NewIdentifierWithValue(nil, bt.TypeName()),
+// 		}
+// 	}
+//
+// 	return nil
+// }
 
-	if f, ok := self.functions[name]; ok {
-		return f
-	}
-	if self.parent != nil {
-		return self.parent.LookupFunction(name)
-	}
-	return nil
-}
+// func (self *Environment) SetFunction(function *ast.FunctionDeclaration) {
+// 	fnName := function.GetEnvBindingName()
+//
+// 	if _, found := self.functions[fnName]; found {
+// 		log.Errorf("Function already defined: %s - function will be ignored", function.Name)
+// 		return
+// 	}
+//
+// 	self.functions[fnName] = function
+//
+// 	// log.Debugf("SetFunction: %s(%s)", function.Name, fnName)
+// }
 
-func (self *Environment) LookupObject(name string) *ast.ObjectDeclaration {
-	// First we'll do a quick check on the root environment
-	// If it exists(since it could be a global object), we'll return it
-	// This will reduce the stack size for the recursive lookup
+// func (self *Environment) SetObject(object *ast.ObjectDeclaration) {
+// 	if _, found := self.objects[object.Name.Name]; found {
+// 		log.Errorf("Object already defined: %s - object will be ignored", object.Name.Name)
+// 		return
+// 	}
+//
+// 	self.objects[object.Name.Name] = object
+//
+// 	// log.Debugf("SetObject: %s", object.Name)
+// }
 
-	if RootEnvironment != nil {
-		if o, ok := RootEnvironment.objects[name]; ok {
-			return o
-		}
-		if bt, ok := ast.BasicTypes[name]; ok {
-			return &ast.ObjectDeclaration{
-				AstNode: bt.GetAstNode(),
-				Name:    ast.NewIdentifierWithValue(nil, bt.TypeName()),
-			}
-		}
-	}
+// func (self *Environment) DefineCustomFunctionWithReceiver(receiver *ast.TypedIdentifier, name string, cb FunctionTypeCallback) *ast.FunctionDeclaration {
+// 	fn := self.DefineCustomFunction(name, cb)
+// 	fn.Receiver = receiver
+// 	return fn
+// }
 
-	if o, ok := self.objects[name]; ok {
-		return o
-	}
-	if self.parent != nil {
-		return self.parent.LookupObject(name)
-	}
+// func (self *Environment) DefineCustomFunction(name string, cb FunctionTypeCallback) *ast.FunctionDeclaration {
+// 	fn := &ast.FunctionDeclaration{
+// 		Name:         name,
+// 		Receiver:     nil,
+// 		CustomFuncCb: cb,
+// 	}
+//
+// 	self.SetFunction(fn)
+//
+// 	return fn
+// }
 
-	if bt, ok := ast.BasicTypes[name]; ok {
-		return &ast.ObjectDeclaration{
-			AstNode: bt.GetAstNode(),
-			Name:    ast.NewIdentifierWithValue(nil, bt.TypeName()),
-		}
-	}
-
-	return nil
-}
-
-func (self *Environment) SetFunction(function *ast.FunctionDeclaration) {
-	fnName := function.GetEnvBindingName()
-
-	if _, found := self.functions[fnName]; found {
-		log.Errorf("Function already defined: %s - function will be ignored", function.Name)
-		return
-	}
-
-	self.functions[fnName] = function
-
-	// log.Debugf("SetFunction: %s(%s)", function.Name, fnName)
-}
-
-func (self *Environment) SetObject(object *ast.ObjectDeclaration) {
-	if _, found := self.objects[object.Name.Name]; found {
-		log.Errorf("Object already defined: %s - object will be ignored", object.Name.Name)
-		return
-	}
-
-	self.objects[object.Name.Name] = object
-
-	// log.Debugf("SetObject: %s", object.Name)
-}
-
-func (self *Environment) DefineCustomFunctionWithReceiver(receiver *ast.TypedIdentifier, name string, cb FunctionTypeCallback) *ast.FunctionDeclaration {
-	fn := self.DefineCustomFunction(name, cb)
-	fn.Receiver = receiver
-	return fn
-}
-func (self *Environment) DefineCustomFunction(name string, cb FunctionTypeCallback) *ast.FunctionDeclaration {
-	fn := &ast.FunctionDeclaration{
-		Name:         name,
-		Receiver:     nil,
-		CustomFuncCb: cb,
-	}
-
-	self.SetFunction(fn)
-
-	return fn
-}
-
-func (self *Environment) LookupObjectFunction(objectName, functionName string) *ast.FunctionDeclaration {
-	object := self.LookupObject(objectName)
-	if object == nil {
-		panic("Object not found: " + objectName)
-	}
-
-	fn, ok := object.Methods[functionName]
-	if !ok {
-		panic("Method not found(" + objectName + "): " + functionName)
-	}
-
-	return fn
-
-}
+// func (self *Environment) LookupObjectFunction(objectName, functionName string) *ast.FunctionDeclaration {
+// 	object := self.LookupObject(objectName)
+// 	if object == nil {
+// 		panic("Object not found: " + objectName)
+// 	}
+//
+// 	fn, ok := object.Methods[functionName]
+// 	if !ok {
+// 		panic("Method not found(" + objectName + "): " + functionName)
+// 	}
+//
+// 	return fn
+//
+// }
 
 func (self *Environment) GetRoot() *Environment {
 	if self.parent == nil {
@@ -232,50 +214,41 @@ func (self *Environment) GetRoot() *Environment {
 	return self.parent.GetRoot()
 }
 
-func (self *Environment) RegisterRoute(route *ast.HttpRouteDeclaration) {
-	root := self.GetRoot()
-	root.HttpEnv.Routes = append(root.HttpEnv.Routes, route)
-
-	log.Debugf("Registered route: %s %s", route.Method, route.Path.Value)
-}
-
-func (self *Environment) SetEnum(t *ast.EnumDeclaration, evaluator *Evaluator) {
-	if _, found := self.enums[t.Name.Name]; found {
-		log.Errorf("Enum already defined: %s - enum will be ignored", t.Name.Name)
-		return
-	}
-
-	self.enums[t.Name.Name] = t
-
-	rtEnum := ast.NewRuntimeEnumDecl(t)
-	self.SetVar(t.Name.Name, rtEnum)
-	evaluator.evalEnumDeclaration(t, rtEnum)
-}
-
-func (self *Environment) LookupEnum(name string) *ast.EnumDeclaration {
-	if t, ok := self.enums[name]; ok {
-		return t
-	}
-	if self.parent != nil {
-		return self.parent.LookupEnum(name)
-	}
-	return nil
-}
-
-func (self *Environment) LookupType(t string) ast.Type {
-	if obj := self.LookupObject(t); obj != nil {
-		return obj
-	}
-	if enum := self.LookupEnum(t); enum != nil {
-		return enum
-	}
-	if bt, ok := ast.BasicTypes[t]; ok {
-		return bt
-	}
-
-	if self.parent != nil {
-		return self.parent.LookupType(t)
-	}
-
-	return nil
-}
+// func (self *Environment) SetEnum(t *ast.EnumDeclaration, evaluator *Evaluator) {
+// 	if _, found := self.enums[t.Name.Name]; found {
+// 		log.Errorf("Enum already defined: %s - enum will be ignored", t.Name.Name)
+// 		return
+// 	}
+//
+// 	self.enums[t.Name.Name] = t
+//
+// 	rtEnum := ast.NewRuntimeEnumDecl(t)
+// 	self.SetVar(t.Name.Name, rtEnum)
+// 	evaluator.evalEnumDeclaration(t, rtEnum)
+// }
+// func (self *Environment) LookupEnum(name string) *ast.EnumDeclaration {
+// 	if t, ok := self.enums[name]; ok {
+// 		return t
+// 	}
+// 	if self.parent != nil {
+// 		return self.parent.LookupEnum(name)
+// 	}
+// 	return nil
+// }
+// func (self *Environment) LookupType(t string) ast.Type {
+// 	if obj := self.LookupObject(t); obj != nil {
+// 		return obj
+// 	}
+// 	if enum := self.LookupEnum(t); enum != nil {
+// 		return enum
+// 	}
+// 	if bt, ok := ast.BasicTypes[t]; ok {
+// 		return bt
+// 	}
+//
+// 	if self.parent != nil {
+// 		return self.parent.LookupType(t)
+// 	}
+//
+// 	return nil
+// }

@@ -39,8 +39,9 @@ func (s *TokenTypeState) String() string {
 
 type Token struct {
 	*TokenTypeState
-	Value string
-	Pos   *TokenPosition
+	Value  string
+	Pos    *TokenPosition
+	Source string
 }
 
 func NewToken(val string, tokenTypes ...TokenType) *Token {

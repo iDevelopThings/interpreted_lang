@@ -54,31 +54,34 @@ func (p *Parser) parseVariableDeclaration() *ast.AssignmentStatement {
 
 		node.Value = p.parseExpression(1)
 		node.AddChildren(node, node.Value)
+
+		if node.Value != nil {
+			switch val := node.Value.(type) {
+			case *ast.ArrayInstantiation:
+				node.Value = val
+				val.Type = typedIdent
+				node.Type.Type = val.Type.TypeReference.Type
+				node.Type.IsArray = true
+			case *ast.ObjectInstantiation:
+				node.Value = val
+				if node.Type.AstNode == nil {
+					node.Type.AstNode = val.TypeName.AstNode
+				}
+				node.Type.Type = val.TypeName.Name
+
+			case ast.Expr:
+				node.Value = val
+				if lit, ok := node.Value.(*ast.Literal); ok && node.Type.Type == "" {
+					node.Type.Type = string(lit.Kind)
+				}
+			default:
+				p.error("Unexpected value in variable declaration")
+			}
+		}
+
 	}
 
 	p.skipSemi()
-
-	switch val := node.Value.(type) {
-	case *ast.ArrayInstantiation:
-		node.Value = val
-		val.Type = typedIdent
-		node.Type.Type = val.Type.TypeReference.Type
-		node.Type.IsArray = true
-	case *ast.ObjectInstantiation:
-		node.Value = val
-		if node.Type.AstNode == nil {
-			node.Type.AstNode = val.TypeName.AstNode
-		}
-		node.Type.Type = val.TypeName.Name
-
-	case ast.Expr:
-		node.Value = val
-		if lit, ok := node.Value.(*ast.Literal); ok && node.Type.Type == "" {
-			node.Type.Type = string(lit.Kind)
-		}
-	default:
-		p.error("Unexpected value in variable declaration")
-	}
 
 	return node
 }

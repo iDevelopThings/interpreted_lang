@@ -2,6 +2,7 @@ package interpreter
 
 import (
 	"arc/ast"
+	"arc/interpreter/errors"
 )
 
 type TypeCheckingVisitor struct {
@@ -128,7 +129,7 @@ func (self *TypeCheckingVisitor) VisitFunctionDeclaration(node *ast.FunctionDecl
 
 	if node.Args != nil && len(node.Args) > 0 {
 		for _, arg := range node.Args {
-			if self.env.LookupObject(arg.TypeReference.Type) == nil {
+			if Registry.LookupObject(arg.TypeReference.Type) == nil {
 				NewErrorAtNode(arg.TypeReference, "Type '%s' is not defined", arg.TypeReference.Type)
 			}
 
@@ -140,7 +141,7 @@ func (self *TypeCheckingVisitor) VisitFunctionDeclaration(node *ast.FunctionDecl
 
 	if node.Receiver != nil {
 		if node.Receiver.TypeReference != nil {
-			if self.env.LookupObject(node.Receiver.TypeReference.Type) == nil {
+			if Registry.LookupObject(node.Receiver.TypeReference.Type) == nil {
 				NewErrorAtNode(node.Receiver.TypeReference, "Type '%s' is not defined", node.Receiver.TypeReference.Type)
 			}
 			if !node.IsStatic {
@@ -155,7 +156,7 @@ func (self *TypeCheckingVisitor) VisitFunctionDeclaration(node *ast.FunctionDecl
 		NewErrorAtNode(node.ReturnType, "Return type: type '%s' is not defined", node.ReturnType.Type)
 	} else {
 		if node.ReturnType.Type != "void" {
-			if self.env.LookupObject(node.ReturnType.Type) == nil {
+			if Registry.LookupObject(node.ReturnType.Type) == nil {
 				NewErrorAtNode(node.ReturnType, "Return type: type '%s' is not defined", node.ReturnType.Type)
 			}
 		}
@@ -189,6 +190,8 @@ func (self *TypeCheckingVisitor) VisitCallExpression(node *ast.CallExpression) {
 		}
 	}
 
+	fnDecl := Inference.GetCallExpressionFunctionDeclaration(node)
+
 	var receiverType ast.Type
 	if node.Receiver != nil {
 		receiverType, _ = TypeChecker.FindDeclaration(node.Receiver)
@@ -209,19 +212,17 @@ func (self *TypeCheckingVisitor) VisitCallExpression(node *ast.CallExpression) {
 		}
 	}
 
-	lookupName := node.Function.Name
-	if receiverType != nil {
-		// lookupName = receiverType.(*ast.ObjectDeclaration).Name.Name + "_" + node.Function.Name
-		lookupName = receiverType.TypeName() + "_" + node.Function.Name
-	}
-
-	fnDecl := self.env.LookupFunction(lookupName)
-	if fnDecl == nil {
-		NewErrorAtNode(node.Function, "Function '%s' is not defined", node.Function.Name)
-	}
+	// lookupName := node.Function.Name
+	// if receiverType != nil {
+	// 	lookupName = receiverType.TypeName() + "_" + node.Function.Name
+	// }
+	//
+	// fnDecl := Registry.LookupFunction(lookupName)
+	// if fnDecl == nil {
+	// 	NewErrorAtNode(node.Function, "Function '%s' is not defined", node.Function.Name)
+	// }
 
 	if fnDecl.Args != nil && len(fnDecl.Args) > 0 {
-
 		if !fnDecl.HasVariadicArgs {
 			if node.Args == nil || len(node.Args) != len(fnDecl.Args) {
 				NewErrorAtNode(
@@ -287,7 +288,7 @@ func (self *TypeCheckingVisitor) VisitAssignmentStatement(node *ast.AssignmentSt
 	if node.Type != nil {
 		node.Type.Accept(self)
 
-		varType = self.env.LookupType(node.Type.Type)
+		varType = Registry.LookupType(node.Type.Type)
 		if varType == nil {
 			NewErrorAtNode(node.Type, "Type '%s' is not defined", node.Type.Type)
 		}
@@ -307,7 +308,7 @@ func (self *TypeCheckingVisitor) VisitAssignmentStatement(node *ast.AssignmentSt
 		v.Accept(self)
 
 	case *ast.ObjectInstantiation:
-		objDecl := self.env.LookupObject(v.TypeName.Name)
+		objDecl := Registry.LookupObject(v.TypeName.Name)
 		if objDecl == nil {
 			NewErrorAtNode(v, "[VisitAssignmentStatement-ObjectInstantiation]: Type '%s' is not defined", v.TypeName.Name)
 		}
@@ -365,11 +366,13 @@ func (self *TypeCheckingVisitor) VisitAssignmentStatement(node *ast.AssignmentSt
 		}
 
 	default:
-		if node.Type.AstNode != nil {
-			NewErrorAtNode(node.Type, "[VisitAssignmentStatement-default]:Type '%s' is not defined: %#v", node.Type.Type, v)
-			return
+		if node.Value != nil && varType == nil {
+			if node.Type.AstNode != nil {
+				NewErrorAtNode(node.Type, "[VisitAssignmentStatement-default]:Type '%s' is not defined: %#v", node.Type.Type, v)
+				return
+			}
+			NewErrorAtNode(node, "[VisitAssignmentStatement-default]:Type '%s' is not defined: %#v", node.Type.Type, v)
 		}
-		NewErrorAtNode(node, "[VisitAssignmentStatement-default]:Type '%s' is not defined: %#v", node.Type.Type, v)
 	}
 
 }
@@ -418,7 +421,7 @@ func (self *TypeCheckingVisitor) VisitReturnStatement(node *ast.ReturnStatement)
 		}
 
 	case *ast.ObjectInstantiation:
-		objDecl := self.env.LookupObject(v.TypeName.Name)
+		objDecl := Registry.LookupObject(v.TypeName.Name)
 		if objDecl == nil {
 			NewErrorAtNode(v, "[VisitReturnStatement-ObjectInstantiation]: Type '%s' is not defined", v.TypeName.Name)
 		}
@@ -428,6 +431,7 @@ func (self *TypeCheckingVisitor) VisitReturnStatement(node *ast.ReturnStatement)
 		if result == nil {
 			NewErrorAtNode(v, "[VisitReturnStatement-FieldAccessExpression]: Failed to infer type of '%s'", v.GetToken())
 		}
+
 	case *ast.Literal:
 		valType := v.GetBasicType()
 		switch {
@@ -435,11 +439,11 @@ func (self *TypeCheckingVisitor) VisitReturnStatement(node *ast.ReturnStatement)
 		case valType == ast.NoneType:
 			if !funcDecl.ReturnType.IsOptionType {
 				newRt := "?" + funcDecl.ReturnType.Type
-				ErrorManager.ShouldExit(false)
+				errors.SetStrategy(errors.ContinueOnError)
 
 				NewErrorAtNode(node.Value, "You cannot return 'none', without your value being an option type.")
 				// NewErrorAtNode(funcDecl.ReturnType, "You cannot compare a non-option type to 'none', you should change your function return type to: %s", newRt)
-				ErrorManager.ShouldExit(true)
+				errors.SetStrategy(errors.ExitOnError)
 				NewErrorAtNode(funcDecl.ReturnType, "You should change your return type to: %s", newRt)
 			}
 
@@ -448,6 +452,15 @@ func (self *TypeCheckingVisitor) VisitReturnStatement(node *ast.ReturnStatement)
 				NewErrorAtNode(node, "[VisitReturnStatement-Literal]: Type '%s' does not match defined type of '%s'", v.TypeName(), funcDecl.ReturnType.Type)
 			}
 
+		}
+
+	case *ast.CallExpression:
+		if t := Inference.InferExpressionType(v); t != nil {
+			if funcDecl.ReturnType.Type != t.TypeName() {
+				NewErrorAtNode(node, "[VisitReturnStatement-CallExpression]: Type '%s' does not match defined type of '%s'", t.TypeName(), funcDecl.ReturnType.Type)
+			}
+		} else {
+			NewErrorAtNode(node, "[VisitReturnStatement-CallExpression]: Failed to infer type of '%s'", v.GetToken())
 		}
 
 	default:

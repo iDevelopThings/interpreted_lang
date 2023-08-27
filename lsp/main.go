@@ -30,7 +30,7 @@ type LanguageServer struct {
 	OpenDocuments map[string]*interpreter.SourceFile
 
 	workspace    string
-	parserErrors []errors2.ErrorPresenter
+	parserErrors []errors2.DiagnosticPresenter
 }
 
 func Run(protocolMode string) {
@@ -91,11 +91,11 @@ func (self *LanguageServer) onInitialize(context *glsp.Context, params *protocol
 		log.Infof("onInitialize - data: %s", string(jsonData))
 	}
 
-	interpreter.ErrorManager.AddProcessor(func(presenter *errors2.ErrorPresenter) error {
-		self.Log.Errorf("Parser hook triggered: %s", presenter.Errors[0].Message)
-		self.onParserError(presenter)
-		return nil
-	})
+	// interpreter.ErrorManager.AddProcessor(func(presenter *errors2.DiagnosticPresenter) error {
+	// 	self.Log.Errorf("Parser hook triggered: %s", presenter.Diagnostics[0].Message)
+	// 	self.onParserError(presenter)
+	// 	return nil
+	// })
 
 	if params != nil {
 		if len(params.WorkspaceFolders) > 0 {
@@ -275,7 +275,7 @@ func (self *LanguageServer) onTextDocumentDidClose(context *glsp.Context, params
 	return nil
 }
 
-func (self *LanguageServer) onParserError(presenter *errors2.ErrorPresenter) {
+func (self *LanguageServer) onParserError(presenter *errors2.DiagnosticPresenter) {
 	self.parserErrors = append(self.parserErrors, *presenter)
 }
 
@@ -289,8 +289,8 @@ func (self *LanguageServer) sendDiagnostics(c *glsp.Context, documentUri string)
 		Diagnostics: make([]protocol.Diagnostic, 0),
 	}
 
-	for _, parserError := range self.parserErrors {
-		for _, codeError := range parserError.Errors {
+	/*for _, parserError := range self.parserErrors {
+		for _, codeError := range parserError.Diagnostics {
 
 			diagnostic := protocol.Diagnostic{
 				Range: protocol.Range{
@@ -314,11 +314,11 @@ func (self *LanguageServer) sendDiagnostics(c *glsp.Context, documentUri string)
 			diagnosticParams.Diagnostics = append(diagnosticParams.Diagnostics, diagnostic)
 
 		}
-	}
+	}*/
 
 	c.Notify("textDocument/publishDiagnostics", diagnosticParams)
 
-	self.parserErrors = make([]errors2.ErrorPresenter, 0)
+	self.parserErrors = make([]errors2.DiagnosticPresenter, 0)
 }
 
 func ptrVal[T any](v T) *T {

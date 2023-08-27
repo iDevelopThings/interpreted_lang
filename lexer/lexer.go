@@ -9,8 +9,8 @@ import (
 
 type Lexer struct {
 	input  string
+	source string // The path of the file being lexed
 	pos    *Position
-	source string
 	len    int
 }
 
@@ -30,6 +30,7 @@ func NewLexer(input string) *Lexer {
 
 func (l *Lexer) newToken(tokenType TokenType, value string) *Token {
 	tok := NewToken(value, tokenType)
+	tok.Source = l.source
 	tok.Pos = NewTokenPosition(l.pos, len(value))
 
 	return tok
@@ -134,8 +135,13 @@ func (l *Lexer) readNext() *Token {
 
 func (l *Lexer) Next() *Token {
 	tok := l.readNext()
+
 	if tok.Is(TokenUnknown) {
-		panic("Unknown token: " + tok.Value)
+		err := &LexingError{
+			Message: "Unknown token: " + tok.Value,
+			Pos:     tok.Pos,
+		}
+		panic(err)
 	}
 	return tok
 }
@@ -212,7 +218,9 @@ func isIdentifierLetter(ch rune, afterFirst bool) bool {
 	is := unicode.IsLetter(ch) || ch == '_'
 	// we can have numbers after the first character
 	if afterFirst {
-		is = is || unicode.IsDigit(ch)
+		if unicode.IsDigit(ch) {
+			return true
+		}
 	}
 	return is
 }
