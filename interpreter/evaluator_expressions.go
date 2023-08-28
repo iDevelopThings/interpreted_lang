@@ -13,12 +13,6 @@ func boolToInt(v bool) int {
 	}
 	return 0
 }
-func boolToFloat(v bool) float64 {
-	if v {
-		return 1.0
-	}
-	return 0.0
-}
 
 func evalBinaryOperation(
 	mainNode ast.Node, // Only used for error reporting

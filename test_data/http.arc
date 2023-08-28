@@ -20,29 +20,29 @@ http {
 
     route GET "/injections/body" {
         from body as data SomeData
-        data.message += "pls sir"
-        return {"msg": data.message}
+//        data.message += "pls sir"
+        return {"msg": data}
     }
 
     route GET "/injections/param/:name" {
         from body as data SomeData
         from route as name string
-        data.message += " - name is " + name
-        return {"msg": data.message}
+//        data.message += " - name is " + name
+        return {"data" : data}
     }
 
     route GET "/injections/query" {
         from body as data SomeData
         from query as name string
-        data.message += " - name is " + name
-        return {"msg": data.message}
+//        data.message += " - name is " + name
+        return {"data" : data}
     }
 
     route POST "/data/json" {
         from body as data SomeData
 
         return text "Hello world"
-        return user;
+        return user
 
 
         return text "Not found" status 404

@@ -2,7 +2,7 @@
   <configuration default="false" name="arc" type="GoApplicationRunConfiguration" factoryName="Go Application">
     <module name="ArcInterpreter" />
     <working_directory value="$PROJECT_DIR$" />
-    <parameters value="test_data/testing.arc" />
+    <parameters value="test_data/http.arc" />
     <envs>
       <env name="PORT" value="4242" />
     </envs>

@@ -147,11 +147,11 @@ const (
 	// Keywords
 	//
 
-	TokenKeywordFunc     = "KEYWORD_FUNC"
+	TokenKeywordFunc     = "KEYWORD_FUNC" //nolint:gosec
 	TokenKeywordObject   = "KEYWORD_OBJECT"
 	TokenKeywordImport   = "KEYWORD_IMPORT"
-	TokenKeywordEnum     = "KEYWORD_ENUM"
-	TokenKeywordVar      = "KEYWORD_VAR"
+	TokenKeywordEnum     = "KEYWORD_ENUM" //nolint:gosec
+	TokenKeywordVar      = "KEYWORD_VAR"  //nolint:gosec
 	TokenKeywordReturn   = "KEYWORD_RETURN"
 	TokenKeywordBreak    = "KEYWORD_BREAK"
 	TokenKeywordContinue = "KEYWORD_CONTINUE"
@@ -161,33 +161,33 @@ const (
 	TokenKeywordFor      = "KEYWORD_FOR"
 	TokenKeywordAs       = "KEYWORD_AS"
 	TokenKeywordStep     = "KEYWORD_STEP"
-	TokenKeywordDefer    = "KEYWORD_DEFER"
+	TokenKeywordDefer    = "KEYWORD_DEFER" //nolint:gosec
 	TokenKeywordOr       = "KEYWORD_OR"
 	TokenKeywordNone     = "KEYWORD_NONE"
 
 	//
 	// Http implementation keywords
 	//
-	TokenKeywordHttp          = "KEYWORD_HTTP"
+	TokenKeywordHttp          = "KEYWORD_HTTP" //nolint:gosec
 	TokenKeywordRoute         = "KEYWORD_ROUTE"
 	TokenKeywordFrom          = "KEYWORD_FROM"
 	TokenKeywordWith          = "KEYWORD_WITH"
 	TokenKeywordText          = "KEYWORD_TEXT"
-	TokenKeywordJson          = "KEYWORD_JSON"
-	TokenKeywordHtml          = "KEYWORD_HTML"
+	TokenKeywordJson          = "KEYWORD_JSON" //nolint:gosec
+	TokenKeywordHtml          = "KEYWORD_HTML" //nolint:gosec
 	TokenKeywordStatus        = "KEYWORD_STATUS"
-	TokenKeywordMethodGet     = "KEYWORD_METHOD_GET"
-	TokenKeywordMethodPost    = "KEYWORD_METHOD_POST"
-	TokenKeywordMethodPut     = "KEYWORD_METHOD_PUT"
-	TokenKeywordMethodHead    = "KEYWORD_METHOD_HEAD"
-	TokenKeywordMethodOptions = "KEYWORD_METHOD_OPTIONS"
+	TokenKeywordMethodGet     = "KEYWORD_METHOD_GET"     //nolint:gosec
+	TokenKeywordMethodPost    = "KEYWORD_METHOD_POST"    //nolint:gosec
+	TokenKeywordMethodPut     = "KEYWORD_METHOD_PUT"     //nolint:gosec
+	TokenKeywordMethodHead    = "KEYWORD_METHOD_HEAD"    //nolint:gosec
+	TokenKeywordMethodOptions = "KEYWORD_METHOD_OPTIONS" //nolint:gosec
 
 	//
 	// Other
 	//
-	TokenLineCommentStart = "LINE_COMMENT_START"
-	TokenBlockCommentOpen = "BLOCK_COMMENT_START"
-	TokenBlockCommentEnd  = "BLOCK_COMMENT_END"
+	TokenLineCommentStart = "LINE_COMMENT_START"  //nolint:gosec
+	TokenBlockCommentOpen = "BLOCK_COMMENT_START" //nolint:gosec
+	TokenBlockCommentEnd  = "BLOCK_COMMENT_END"   //nolint:gosec
 
 	TokenEOF = "EOF"
 )

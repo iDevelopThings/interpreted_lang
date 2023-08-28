@@ -318,9 +318,7 @@ func parseFormValues(values url.Values) map[string]any {
 	for key, values := range values {
 		parts := strings.Split(key, "[")
 		if len(parts) < 2 || parts[1] == "]" {
-			if strings.HasSuffix(key, "[]") {
-				key = strings.TrimSuffix(key, "[]")
-			}
+			key = strings.TrimSuffix(key, "[]")
 			nested[key] = []any{}
 			for _, value := range values {
 				nested[key] = append(nested[key].([]any), value)

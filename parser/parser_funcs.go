@@ -100,6 +100,7 @@ func (p *Parser) expect(t ...lexer.TokenType) *lexer.Token {
 	return p.prev
 }
 
+//nolint:unused
 func (p *Parser) expectPeek(t ...lexer.TokenType) {
 	// log.Log.MarkAsHelperFunc(1)
 	if !p.peekIs(t...) {
@@ -115,12 +116,15 @@ func (p *Parser) assertPrev(t ...lexer.TokenType) {
 		return
 	}
 }
+
+//nolint:unused
 func (p *Parser) assert(t ...lexer.TokenType) {
 	if !p.is(t...) {
 		p.error("expected token to be one of %s, got %s instead", t, p.curr)
 		return
 	}
 }
+
 func (p *Parser) assertPeek(t ...lexer.TokenType) {
 	if !p.peekIs(t...) {
 		p.error("expected peek token to be one of %s, got %s instead", t, p.peek)

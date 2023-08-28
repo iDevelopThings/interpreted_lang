@@ -151,8 +151,6 @@ func NewHttpRequestObject(route *ast.HttpRouteDeclaration, env *Environment, r *
 }
 
 func (self *Evaluator) evalHttpResponseData(node *ast.HttpResponseData) *Result {
-	r := NewResult()
-
 	// request := self.Env.LookupVar("request").(*http.Request)
 	responseRv := self.Env.LookupVar("response").(*ast.RuntimeValue)
 	response := responseRv.Value.(http.ResponseWriter)
@@ -166,19 +164,15 @@ func (self *Evaluator) evalHttpResponseData(node *ast.HttpResponseData) *Result 
 		response.Header().Set("Content-Type", "application/json")
 		response.WriteHeader(node.ResponseCode.Value.(int))
 
-		if expr, ok := node.Data.(ast.Expr); ok {
-			data := self.MustEvalValue(expr)
+		data := self.MustEvalValue(node.Data)
 
-			dataJson, err := MarshalRuntimeValue(data.(*ast.RuntimeValue))
-			if err != nil {
-				panic("Error marshalling JSON: " + err.Error())
-			}
+		dataJson, err := MarshalRuntimeValue(data.(*ast.RuntimeValue))
+		if err != nil {
+			panic("Error marshalling JSON: " + err.Error())
+		}
 
-			if _, err := response.Write(dataJson); err != nil {
-				panic("Error writing response: " + err.Error())
-			}
-		} else {
-			panic("Unknown type in response body")
+		if _, err := response.Write(dataJson); err != nil {
+			panic("Error writing response: " + err.Error())
 		}
 
 		return nil
@@ -200,8 +194,6 @@ func (self *Evaluator) evalHttpResponseData(node *ast.HttpResponseData) *Result 
 	}
 
 	panic("Unknown response type")
-
-	return r
 }
 
 func (self *Evaluator) evalHttpRouteBodyInjection(node *ast.HttpRouteBodyInjectionStatement) *Result {

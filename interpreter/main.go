@@ -443,15 +443,22 @@ func (self *InterpreterEngine) runMainAndServer() {
 }
 
 func (self *InterpreterEngine) runHttpServer() {
+	conf := config.ProjectConfig.HttpServer
+
 	router := http_server.GetRouter()
 
-	addr := config.ProjectConfig.HttpServer.Address.Value
-	port := config.ProjectConfig.HttpServer.Port.Value
+	addr := conf.Address.Value
+	port := conf.Port.Value
 	host := addr + ":" + strconv.Itoa(port)
 
 	log.Printf("Http Server running http://%s\n", host)
 
-	server := &http.Server{Addr: host, Handler: router}
+	server := &http.Server{
+		Addr:              host,
+		Handler:           router,
+		ReadHeaderTimeout: time.Duration(conf.ReadHeaderTimeout.Value) * time.Millisecond,
+		WriteTimeout:      time.Duration(conf.WriteTimeout.Value) * time.Millisecond,
+	}
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil {

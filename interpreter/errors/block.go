@@ -244,11 +244,13 @@ func NewCodeErrorInRange(p *lexer.TokenPosition) *CodeDiagnostic {
 
 func formatMessage(str string, args ...any) string {
 	msg := str
-	if args != nil && len(args) > 0 {
-		msg = strings.ReplaceAll(str, "%", "%%")
-		msg = strings.ReplaceAll(str, "\\", "\\\\")
-		msg = fmt.Sprintf(str, args...)
+	if len(args) == 0 {
+		return msg
 	}
+
+	msg = strings.ReplaceAll(str, "%", "%%")
+	msg = strings.ReplaceAll(str, "\\", "\\\\")
+	msg = fmt.Sprintf(str, args...)
 
 	return msg
 }

@@ -60,19 +60,19 @@ func (self *Literal) GetEnvBindingName() string { return self.TypeName() }
 
 func (self *Literal) SetValue(value any) {
 
-	switch value.(type) {
+	switch v := value.(type) {
 	case string:
 		self.Kind = LiteralKindString
-		self.Value = value.(string)
+		self.Value = v
 	case int:
 		self.Kind = LiteralKindInteger
-		self.Value = value.(int)
+		self.Value = v
 	case float64:
 		self.Kind = LiteralKindFloat
-		self.Value = value.(float64)
+		self.Value = v
 	case bool:
 		self.Kind = LiteralKindBoolean
-		self.Value = value.(bool)
+		self.Value = v
 	case nil:
 		self.Kind = LiteralKindNone
 		self.Value = nil

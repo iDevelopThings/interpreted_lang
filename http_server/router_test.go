@@ -11,6 +11,8 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
+
+	"github.com/charmbracelet/log"
 )
 
 type mockResponseWriter struct{}
@@ -76,7 +78,7 @@ func (h handlerStruct) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func TestRouterAPI(t *testing.T) {
-	var get, head, options, post, put, patch, delete, handler, handlerFunc bool
+	var get, head, options, post, put, patch, del, handler, handlerFunc bool
 
 	httpHandler := handlerStruct{&handler}
 
@@ -100,7 +102,7 @@ func TestRouterAPI(t *testing.T) {
 		patch = true
 	})
 	router.DELETE("/DELETE", func(w http.ResponseWriter, r *http.Request, _ Params) {
-		delete = true
+		del = true
 	})
 	router.Handler(http.MethodGet, "/Handler", httpHandler)
 	router.HandlerFunc(http.MethodGet, "/HandlerFunc", func(w http.ResponseWriter, r *http.Request) {
@@ -147,7 +149,7 @@ func TestRouterAPI(t *testing.T) {
 
 	r, _ = http.NewRequest(http.MethodDelete, "/DELETE", nil)
 	router.ServeHTTP(w, r)
-	if !delete {
+	if !del {
 		t.Error("routing DELETE failed")
 	}
 
@@ -392,7 +394,11 @@ func TestRouterNotAllowed(t *testing.T) {
 	responseText := "custom method"
 	router.MethodNotAllowed = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusTeapot)
-		w.Write([]byte(responseText))
+		_, err := w.Write([]byte(responseText))
+		if err != nil {
+			log.Errorf("error writing response: %v", err)
+			return
+		}
 	})
 	router.ServeHTTP(w, r)
 	if got := w.Body.String(); !(got == responseText) {

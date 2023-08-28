@@ -69,7 +69,6 @@ type RT_error struct{}
 //goland:noinspection GoSnakeCaseUsage
 func (t *RT_error) Static_panic(env *Environment, args ...any) interface{} {
 	panic(args[0])
-	return nil
 }
 
 func bindStaticRuntimeType(t any) {

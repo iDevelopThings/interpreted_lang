@@ -1,8 +1,6 @@
 package parser
 
 import (
-	"encoding/json"
-	"flag"
 	"os"
 	"testing"
 
@@ -15,7 +13,7 @@ import (
 	"arc/utilities"
 )
 
-var update = flag.Bool("update", false, "update the .golden files")
+// var update = flag.Bool("update", false, "update the .golden files")
 
 func loadFileContent(t *testing.T, name string) (string, bool) {
 	t.Helper()
@@ -31,7 +29,8 @@ func loadFileContent(t *testing.T, name string) (string, bool) {
 
 	return string(content), true
 }
-func loadGolden[T any](t *testing.T, name string, data T) T {
+
+/*func loadGolden[T any](t *testing.T, name string, data T) T {
 	t.Helper()
 
 	goldenFileName := "testdata/" + name + "_TEST.golden"
@@ -59,42 +58,42 @@ func loadGolden[T any](t *testing.T, name string, data T) T {
 	}
 
 	return v
-}
-func loadGoldenWithoutTestData(t *testing.T, name string) (string, bool) {
-	t.Helper()
-
-	goldenFileName := "testdata/" + name + "_TEST.golden"
-	content, err := os.ReadFile(goldenFileName)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return "", false
-		}
-		t.Fatalf("failed to load golden file %q: %v", goldenFileName, err)
-	}
-
-	return string(content), true
-}
-func writeGolden(t *testing.T, name string, testData any) {
-	t.Helper()
-
-	goldenFileName := "testdata/" + name + "_TEST.golden"
-
-	jsonData, err := json.MarshalIndent(testData, "", "  ")
-	if err != nil {
-		t.Fatalf("failed to marshal test data: %v", err)
-	}
-
-	err = os.WriteFile(goldenFileName, jsonData, 0644)
-	if err != nil {
-		t.Fatalf("failed to write golden file %q: %v", goldenFileName, err)
-	}
-}
+}*/
+// func loadGoldenWithoutTestData(t *testing.T, name string) (string, bool) {
+// 	t.Helper()
+//
+// 	goldenFileName := "testdata/" + name + "_TEST.golden"
+// 	content, err := os.ReadFile(goldenFileName)
+// 	if err != nil {
+// 		if os.IsNotExist(err) {
+// 			return "", false
+// 		}
+// 		t.Fatalf("failed to load golden file %q: %v", goldenFileName, err)
+// 	}
+//
+// 	return string(content), true
+// }
+// func writeGolden(t *testing.T, name string, testData any) {
+// 	t.Helper()
+//
+// 	goldenFileName := "testdata/" + name + "_TEST.golden"
+//
+// 	jsonData, err := json.MarshalIndent(testData, "", "  ")
+// 	if err != nil {
+// 		t.Fatalf("failed to marshal test data: %v", err)
+// 	}
+//
+// 	err = os.WriteFile(goldenFileName, jsonData, 0644)
+// 	if err != nil {
+// 		t.Fatalf("failed to write golden file %q: %v", goldenFileName, err)
+// 	}
+// }
 
 type TestParserTestSuite struct {
 	suite.Suite
-	rawGoldenData string
-	goldenData    *ast.Program
-	inputData     string
+	// rawGoldenData string
+	goldenData *ast.Program
+	inputData  string
 }
 
 func TestLexerSuite(t *testing.T) {

@@ -26,20 +26,20 @@ type TokenPosition struct {
 
 // TODO: We should remove the pointers here, we could get some gains
 // Once the objects are assigned to the token, they never ever change
-func NewTokenPosition(end *Position, len int) *TokenPosition {
+func NewTokenPosition(end *Position, l int) *TokenPosition {
 
 	tp := &TokenPosition{
 		Start: &Position{
 			Line:   end.Line,
-			Column: end.Column - len,
-			Abs:    end.Abs - len,
+			Column: end.Column - l,
+			Abs:    end.Abs - l,
 		},
 		End: &Position{
 			Line:   end.Line,
 			Column: end.Column,
 			Abs:    end.Abs,
 		},
-		Length: len,
+		Length: l,
 	}
 
 	return tp

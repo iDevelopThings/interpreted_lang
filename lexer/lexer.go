@@ -35,11 +35,12 @@ func (l *Lexer) newToken(tokenType TokenType, value string) *Token {
 
 	return tok
 }
-func (l *Lexer) newTokenAndAdvance(tokenType TokenType, value string) *Token {
-	tok := l.newToken(tokenType, value)
-	l.advance()
-	return tok
-}
+
+// func (l *Lexer) newTokenAndAdvance(tokenType TokenType, value string) *Token {
+// 	tok := l.newToken(tokenType, value)
+// 	l.advance()
+// 	return tok
+// }
 
 // Should only be used for testing.
 func (l *Lexer) readAll() []*Token {

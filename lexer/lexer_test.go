@@ -27,35 +27,36 @@ func loadFileContent(t *testing.T, name string) (string, bool) {
 
 	return string(content), true
 }
-func loadGolden[T any](t *testing.T, name string, data T) T {
-	t.Helper()
 
-	goldenFileName := "testdata/" + name + "_TEST.golden"
-	content, err := os.ReadFile(goldenFileName)
-	if err != nil {
-		if os.IsNotExist(err) {
-			if *update {
-				writeGolden(t, name, data)
-				return data
-			}
-			t.Fatalf("golden file %q does not exist, run with -update to create it", goldenFileName)
-		}
-
-		t.Fatalf("failed to load golden file %q: %v", goldenFileName, err)
-	}
-
-	var v T
-	err = json.Unmarshal(content, &v)
-	if err != nil {
-		t.Fatalf("failed to unmarshal golden file %q: %v", goldenFileName, err)
-	}
-
-	if *update {
-		writeGolden(t, name, data)
-	}
-
-	return v
-}
+//	func loadGolden[T any](t *testing.T, name string, data T) T {
+//		t.Helper()
+//
+//		goldenFileName := "testdata/" + name + "_TEST.golden"
+//		content, err := os.ReadFile(goldenFileName)
+//		if err != nil {
+//			if os.IsNotExist(err) {
+//				if *update {
+//					writeGolden(t, name, data)
+//					return data
+//				}
+//				t.Fatalf("golden file %q does not exist, run with -update to create it", goldenFileName)
+//			}
+//
+//			t.Fatalf("failed to load golden file %q: %v", goldenFileName, err)
+//		}
+//
+//		var v T
+//		err = json.Unmarshal(content, &v)
+//		if err != nil {
+//			t.Fatalf("failed to unmarshal golden file %q: %v", goldenFileName, err)
+//		}
+//
+//		if *update {
+//			writeGolden(t, name, data)
+//		}
+//
+//		return v
+//	}
 func loadGoldenWithoutTestData(t *testing.T, name string) (string, bool) {
 	t.Helper()
 
@@ -80,7 +81,7 @@ func writeGolden(t *testing.T, name string, testData any) {
 		t.Fatalf("failed to marshal test data: %v", err)
 	}
 
-	err = os.WriteFile(goldenFileName, jsonData, 0644)
+	err = os.WriteFile(goldenFileName, jsonData, 0600)
 	if err != nil {
 		t.Fatalf("failed to write golden file %q: %v", goldenFileName, err)
 	}

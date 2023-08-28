@@ -20,6 +20,9 @@ func createDefaultProjectConfig() *ProjectConfiguration {
 			Port:          &EnvProxiedValue[int]{Value: 8080},
 			Address:       &EnvProxiedValue[string]{Value: "localhost"},
 			FormMaxMemory: 10 << 20, // 10 MB
+
+			ReadHeaderTimeout: &EnvProxiedValue[int64]{Value: 5000},
+			WriteTimeout:      &EnvProxiedValue[int64]{Value: 5000},
 		},
 	}
 }
@@ -95,6 +98,12 @@ func LoadProjectConfiguration() *ProjectConfiguration {
 		}
 		if tmpConfig.HttpServer.Address == nil {
 			tmpConfig.HttpServer.Address = ProjectConfig.HttpServer.Address
+		}
+		if tmpConfig.HttpServer.ReadHeaderTimeout == nil {
+			tmpConfig.HttpServer.ReadHeaderTimeout = ProjectConfig.HttpServer.ReadHeaderTimeout
+		}
+		if tmpConfig.HttpServer.WriteTimeout == nil {
+			tmpConfig.HttpServer.WriteTimeout = ProjectConfig.HttpServer.WriteTimeout
 		}
 	}
 

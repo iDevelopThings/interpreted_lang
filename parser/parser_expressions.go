@@ -149,9 +149,9 @@ func (p *Parser) getTokenPrecedence(token *lexer.Token) int {
 	return 1
 }
 
-func (p *Parser) parsePrefixExpression() ast.Expr {
-	return p.parseExpression(12)
-}
+// func (p *Parser) parsePrefixExpression() ast.Expr {
+// 	return p.parseExpression(12)
+// }
 
 func (p *Parser) parseExpression(precedence int) ast.Expr {
 	var prefix prefixParseFn
@@ -486,8 +486,8 @@ func (p *Parser) parseObjectInstantiation(left ast.Expr) ast.Expr {
 	return node
 }
 
-func (p *Parser) parseExpressionList(open, close lexer.TokenType) *ast.ExpressionList {
-	p.assertPrev(open)
+func (p *Parser) parseExpressionList(openToken, closeToken lexer.TokenType) *ast.ExpressionList {
+	p.assertPrev(openToken)
 	s := p.curr
 
 	node := &ast.ExpressionList{
@@ -498,7 +498,7 @@ func (p *Parser) parseExpressionList(open, close lexer.TokenType) *ast.Expressio
 		node.SetRuleRange(s, p.prev)
 	}()
 
-	if p.is(close) {
+	if p.is(closeToken) {
 		p.next()
 		return node
 	}
@@ -506,18 +506,18 @@ func (p *Parser) parseExpressionList(open, close lexer.TokenType) *ast.Expressio
 	p.identifiersAsVarRefs = true
 	defer func() { p.identifiersAsVarRefs = false }()
 
-	for !p.is(close) {
+	for !p.is(closeToken) {
 		entry := p.parseExpression(0)
 		node.Entries = append(node.Entries, entry)
 		node.AddChildren(node, entry)
 
-		if p.is(close) {
+		if p.is(closeToken) {
 			break
 		}
 		p.expect(lexer.TokenComma)
 	}
 
-	p.expect(close)
+	p.expect(closeToken)
 
 	return node
 }

@@ -84,4 +84,9 @@ type HttpServerConfiguration struct {
 	// The max memory size in bytes for the uploaded form files/data
 	// Default: 10<<20 (10 MB)
 	FormMaxMemory int64 `json:"form_max_memory"`
+
+	// Values to use with `http.Server` options
+	// Timeouts are in ms
+	ReadHeaderTimeout *EnvProxiedValue[int64] `json:"read_header_timeout_ms"`
+	WriteTimeout      *EnvProxiedValue[int64] `json:"write_timeout_ms"`
 }
