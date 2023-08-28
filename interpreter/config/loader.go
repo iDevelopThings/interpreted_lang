@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -14,38 +15,25 @@ import (
 var CliConfig *CliArgsConfig = &CliArgsConfig{}
 var ProjectConfig *ProjectConfiguration = createDefaultProjectConfig()
 
-func createDefaultProjectConfig() *ProjectConfiguration {
-	return &ProjectConfiguration{
-		ProjectName: "",
-		HttpServer: &HttpServerConfiguration{
-			Port:          &EnvProxiedValue[int]{Value: 8080},
-			Address:       &EnvProxiedValue[string]{Value: "localhost"},
-			FormMaxMemory: 10 << 20, // 10 MB
-
-			ReadHeaderTimeout: &EnvProxiedValue[int64]{Value: 5000},
-			WriteTimeout:      &EnvProxiedValue[int64]{Value: 5000},
-		},
-	}
-}
-
 func PrepareConfiguration() *CliArgsConfig {
-	args, err := flags.Parse(CliConfig)
+	flagParser := flags.NewParser(CliConfig, flags.Default)
+	_, err := flagParser.Parse()
 	if err != nil {
-		switch flagsErr := err.(type) {
-		case flags.ErrorType:
-			if flagsErr == flags.ErrHelp {
-				os.Exit(0)
-			} else {
-				log.Fatalf("Error parsing flags: %v", err)
+
+		var flagError *flags.Error
+		if errors.As(err, &flagError) {
+			// If we didn't print the help message, let's just print it
+			if flagError.Type != flags.ErrHelp {
+				flagParser.WriteHelp(os.Stdout)
 				os.Exit(1)
 			}
-		default:
-			log.Error(err)
-			os.Exit(1)
+			os.Exit(0)
 		}
+
+		log.Fatalf("Error parsing command line arguments: %v", err)
 	}
 
-	if len(args) == 0 && !CliConfig.StdinMode {
+	if CliConfig.Extra.File == "" && !CliConfig.StdinMode {
 		log.Fatalf("No input file specified, usage should be: `arc ...options <relative file path>`")
 	}
 
@@ -57,13 +45,14 @@ func PrepareConfiguration() *CliArgsConfig {
 		CliConfig.WorkingDirectory = wd
 	}
 
-	if filepath.IsAbs(args[0]) {
-		CliConfig.File = args[0]
-	} else {
-		CliConfig.File = filepath.Join(CliConfig.WorkingDirectory, args[0])
+	if CliConfig.Extra.File != "" {
+		// CliConfig.WorkingDirectory
+		if !filepath.IsAbs(CliConfig.Extra.File) {
+			CliConfig.Extra.File = filepath.Join(CliConfig.WorkingDirectory, CliConfig.Extra.File)
+		}
 	}
 
-	if CliConfig.File == "" && !CliConfig.StdinMode {
+	if CliConfig.Extra.File == "" && !CliConfig.StdinMode {
 		log.Fatalf("No input file specified")
 	}
 

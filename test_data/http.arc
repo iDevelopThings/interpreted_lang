@@ -3,6 +3,7 @@ object SomeData {
     number int
 }
 
+
 http {
     route GET "/hello" {
         return text "Hello world"

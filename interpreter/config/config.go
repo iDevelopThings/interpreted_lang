@@ -14,6 +14,13 @@ const (
 	OutputFormatText       OutputFormat = "text"
 )
 
+type LogOutputMode string
+
+const (
+	LogOutputModeStdErr LogOutputMode = "stderr"
+	LogOutputModeStdOut LogOutputMode = "stdout"
+)
+
 type CliArgsConfig struct {
 	Verbose []bool `short:"v" long:"verbose" description:"Show verbose debug information"`
 
@@ -26,11 +33,55 @@ type CliArgsConfig struct {
 
 	PrintAst bool `long:"print-ast" description:"print the ast to stderr"`
 
-	StdinMode    bool         `short:"i" long:"stdin" description:"Only accept input from stdin"`
-	LintingMode  bool         `short:"l" long:"lint" description:"run the linter only"`
+	StdinMode bool `short:"i" long:"stdin" description:"Only accept input from stdin"`
+
+	LintingMode bool `short:"l" long:"lint" description:"run the linter only"`
+
 	OutputFormat OutputFormat `short:"f" long:"format" description:"the output format to use for the linter" choice:"json" choice:"text" choice:"json-indent" default:"text"`
 
-	File string
+	// This is mainly for use when we're linting
+	// If we're linting, we only want to receive typecheck/parse errors as json via stdout
+	// Everything else should be via stderr
+	LogOutputMode LogOutputMode `long:"log-output" description:"the output mode to use for the logger" choice:"stderr" choice:"stdout" default:"stderr"`
+
+	Extra struct {
+		File string `positional-arg-name:"file" description:"The arc source to run"`
+	} `positional-args:"yes"`
+}
+
+type ProjectConfiguration struct {
+	// Not required, but nice to have
+	ProjectName string `json:"project_name"`
+
+	HttpServer *HttpServerConfiguration `json:"http_server"`
+}
+
+func createDefaultProjectConfig() *ProjectConfiguration {
+	return &ProjectConfiguration{
+		ProjectName: "",
+		HttpServer: &HttpServerConfiguration{
+			Port:          &EnvProxiedValue[int]{Value: 8080},
+			Address:       &EnvProxiedValue[string]{Value: "localhost"},
+			FormMaxMemory: 10 << 20, // 10 MB
+
+			ReadHeaderTimeout: &EnvProxiedValue[int64]{Value: 5000},
+			WriteTimeout:      &EnvProxiedValue[int64]{Value: 5000},
+		},
+	}
+}
+
+type HttpServerConfiguration struct {
+	Port    *EnvProxiedValue[int]    `json:"port"`
+	Address *EnvProxiedValue[string] `json:"address"`
+
+	// The max memory size in bytes for the uploaded form files/data
+	// Default: 10<<20 (10 MB)
+	FormMaxMemory int64 `json:"form_max_memory"`
+
+	// Values to use with `http.Server` options
+	// Timeouts are in ms
+	ReadHeaderTimeout *EnvProxiedValue[int64] `json:"read_header_timeout_ms"`
+	WriteTimeout      *EnvProxiedValue[int64] `json:"write_timeout_ms"`
 }
 
 type EnvProxiedValue[T any] struct {
@@ -68,25 +119,4 @@ func (self *EnvProxiedValue[T]) UnmarshalJSON(data []byte) error {
 	self.Value = *val
 
 	return nil
-}
-
-type ProjectConfiguration struct {
-	// Not required, but nice to have
-	ProjectName string `json:"project_name"`
-
-	HttpServer *HttpServerConfiguration `json:"http_server"`
-}
-
-type HttpServerConfiguration struct {
-	Port    *EnvProxiedValue[int]    `json:"port"`
-	Address *EnvProxiedValue[string] `json:"address"`
-
-	// The max memory size in bytes for the uploaded form files/data
-	// Default: 10<<20 (10 MB)
-	FormMaxMemory int64 `json:"form_max_memory"`
-
-	// Values to use with `http.Server` options
-	// Timeouts are in ms
-	ReadHeaderTimeout *EnvProxiedValue[int64] `json:"read_header_timeout_ms"`
-	WriteTimeout      *EnvProxiedValue[int64] `json:"write_timeout_ms"`
 }

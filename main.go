@@ -31,17 +31,17 @@ func main() {
 	}
 
 	// engine := interpreter.Engine
-	// engine.LoadScript(cliConf.File)
-	// engine.LoadScript("test_data/http.arc")
-	// engine.LoadScript("test_data/http_basic_test.arc")
-	// engine.LoadScript("test_data/type_checking.arc")
-	// engine.LoadScript("test_data/testing.arc")
-	// engine.LoadScript("test_data/errors_pls.arc")
-	// engine.LoadScript("test_data/enums.arc")
-	// engine.LoadScript("test_data/imports.arc")
-	// engine.LoadScript("test_data/loops.arc")
-	// engine.LoadScript("test_data/dictionaries.arc")
-	// engine.LoadScript("test_data/input.arc")
+	// engine.LoadSource(cliConf.File)
+	// engine.LoadSource("test_data/http.arc")
+	// engine.LoadSource("test_data/http_basic_test.arc")
+	// engine.LoadSource("test_data/type_checking.arc")
+	// engine.LoadSource("test_data/testing.arc")
+	// engine.LoadSource("test_data/errors_pls.arc")
+	// engine.LoadSource("test_data/enums.arc")
+	// engine.LoadSource("test_data/imports.arc")
+	// engine.LoadSource("test_data/loops.arc")
+	// engine.LoadSource("test_data/dictionaries.arc")
+	// engine.LoadSource("test_data/input.arc")
 	// engine.Run()
 
 	// read all contents from stdin
@@ -51,13 +51,10 @@ func main() {
 }
 
 func runEngineAndScript(conf *config.CliArgsConfig) {
-
 	errors.SetFormat(conf.OutputFormat)
 
 	engine := interpreter.Engine
 	engine.Load()
-
-	log.Info("testing")
 
 	if conf.LintingMode {
 		engine.Lint()

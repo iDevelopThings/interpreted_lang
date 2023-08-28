@@ -67,7 +67,7 @@ func (suite *TestInterpreterExpressionsTestSuite) Test_BasicExpressions() {
 
 			engine := NewTestingInterpreterEngine()
 			engine.DisableTypeChecker = true
-			engine.LoadScriptFromString(`
+			engine.LoadSourceFromString(`
 func value(x ` + test.rt + `) ` + test.rt + ` { return x } 
 func eval() ` + test.rt + ` { return ` + test.input + ` }
 `)
@@ -125,7 +125,7 @@ func (suite *TestInterpreterExpressionsTestSuite) Test_Assignment() {
 
 			engine := NewTestingInterpreterEngine()
 			engine.DisableTypeChecker = true
-			engine.LoadScriptFromString(`
+			engine.LoadSourceFromString(`
 func eval() ` + test.rt + ` {
 	` + test.input + `
 	return x 
@@ -187,7 +187,7 @@ if testOption(i) == "hi" && testOption(i) == none {
 
 			engine := NewTestingInterpreterEngine()
 			engine.DisableTypeChecker = true
-			engine.LoadScriptFromString(`
+			engine.LoadSourceFromString(`
 func testOption(i int) ?string {
   if i == 0 {
 	return "hi"

@@ -50,6 +50,15 @@ func NewDiagnosticManager() *DiagnosticManagerInstance {
 	return inst
 }
 
+func (self *DiagnosticManagerInstance) ConfigureLogger(mode config.LogOutputMode) {
+	switch mode {
+	case config.LogOutputModeStdErr:
+		PresenterLogger.SetOutput(os.Stderr)
+	case config.LogOutputModeStdOut:
+		PresenterLogger.SetOutput(os.Stdout)
+	}
+}
+
 func (self *DiagnosticManagerInstance) SetCurrent(path string, source string) {
 	_, ok := self.fileDiagnostics[path]
 	if !ok {
@@ -57,7 +66,6 @@ func (self *DiagnosticManagerInstance) SetCurrent(path string, source string) {
 			Path:      path,
 			Source:    source,
 			Presenter: NewPresenter(path, source),
-			// Diagnostics: []CodeDiagnostic{},
 		}
 	}
 
@@ -87,7 +95,7 @@ func (self *DiagnosticManagerInstance) onNew(e CodeDiagnostic) {
 	self.printDiagnostics(fileData)
 }
 
-func (self *DiagnosticManagerInstance) printDiagnostics(fileData *FileDiagnosticData, shouldIgnoreStrategy ...bool) {
+func (self *DiagnosticManagerInstance) printDiagnostics(fileData *FileDiagnosticData, shouldIgnoreStrategy ...bool) bool {
 	PresenterLogger.Helper()
 
 	ignoreStrategy := false
@@ -96,22 +104,24 @@ func (self *DiagnosticManagerInstance) printDiagnostics(fileData *FileDiagnostic
 	}
 
 	if self.strategy == AccumulateAll && !ignoreStrategy {
-		return
+		return false
 	}
 
 	if len(fileData.Presenter.Diagnostics) == 0 {
-		return
+		return false
 	}
 
 	fileData.Presenter.Print(self.outputFormat)
 
 	if ignoreStrategy {
-		return
+		return false
 	}
 
 	if self.strategy == ExitOnError {
 		os.Exit(1)
 	}
+
+	return true
 }
 
 func (self *DiagnosticManagerInstance) AddPresentableError(err PresentableError) {
@@ -167,11 +177,16 @@ func SetFormat(format config.OutputFormat) {
 	Manager.outputFormat = format
 }
 
-func TryDumpDiagnostics() {
+func TryDumpDiagnostics() bool {
 	PresenterLogger.Helper()
+
+	numPrinted := 0
 	if Manager.strategy == AccumulateAll {
 		for _, fileData := range Manager.fileDiagnostics {
 			Manager.printDiagnostics(fileData, true)
+			numPrinted++
 		}
 	}
+
+	return numPrinted > 0
 }

@@ -15,7 +15,11 @@ var (
 	registry = sync.Map{}
 
 	// defaultLogger is the default global logger instance.
-	defaultLogger = NewWithOptions(os.Stderr, Options{ReportTimestamp: true})
+	defaultLogger = NewWithOptions(os.Stderr, Options{
+		ReportTimestamp: false,
+		ReportCaller:    true,
+		Level:           DebugLevel,
+	})
 )
 
 // Default returns the default logger. The default logger comes with timestamp enabled.

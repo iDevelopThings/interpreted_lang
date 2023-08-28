@@ -31,18 +31,19 @@ var (
 	// DebugLevel is the style for debug level.
 	DebugLevelStyle = lipgloss.NewStyle().
 			SetString(strings.ToUpper(DebugLevel.String())).
+			Padding(0, 1, 0, 1).
 			Bold(true).
-			MaxWidth(4).
-			Foreground(lipgloss.AdaptiveColor{
-			Light: "63",
-			Dark:  "63",
-		})
+			MaxWidth(7).
+			Foreground(lipgloss.Color("#fafafa")).
+			Background(lipgloss.Color("#6366f1"))
 
 	// InfoLevel is the style for info level.
 	InfoLevelStyle = lipgloss.NewStyle().
 			SetString(strings.ToUpper(InfoLevel.String())).
+			Padding(0, 1, 0, 1).
 			Bold(true).
-			MaxWidth(4).
+			MaxWidth(7).
+			Foreground(lipgloss.Color("#fafafa")).
 			Foreground(lipgloss.AdaptiveColor{
 			Light: "39",
 			Dark:  "86",
@@ -51,32 +52,28 @@ var (
 	// WarnLevel is the style for warn level.
 	WarnLevelStyle = lipgloss.NewStyle().
 			SetString(strings.ToUpper(WarnLevel.String())).
+			Padding(0, 1, 0, 1).
 			Bold(true).
-			MaxWidth(4).
-			Foreground(lipgloss.AdaptiveColor{
-			Light: "208",
-			Dark:  "192",
-		})
+			MaxWidth(7).
+			Padding(0, 1, 0, 2).
+			Background(lipgloss.Color("#facc15")).
+			Foreground(lipgloss.Color("#000000"))
 
 	// ErrorLevel is the style for error level.
 	ErrorLevelStyle = lipgloss.NewStyle().
 			SetString(strings.ToUpper(ErrorLevel.String())).
 			Bold(true).
-			MaxWidth(4).
-			Foreground(lipgloss.AdaptiveColor{
-			Light: "203",
-			Dark:  "204",
-		})
+			MaxWidth(7).
+			Foreground(lipgloss.Color("#fafafa")).
+			Background(lipgloss.Color("#f87171"))
 
 	// FatalLevel is the style for error level.
 	FatalLevelStyle = lipgloss.NewStyle().
 			SetString(strings.ToUpper(FatalLevel.String())).
 			Bold(true).
-			MaxWidth(4).
-			Foreground(lipgloss.AdaptiveColor{
-			Light: "133",
-			Dark:  "134",
-		})
+			MaxWidth(7).
+			Foreground(lipgloss.Color("#fafafa")).
+			Background(lipgloss.Color("#dc2626"))
 
 	// KeyStyles overrides styles for specific keys.
 	KeyStyles = map[string]lipgloss.Style{}

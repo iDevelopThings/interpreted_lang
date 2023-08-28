@@ -18,10 +18,6 @@ var (
 	PresenterLogger = log.NewWithOptions(os.Stdout, log.Options{
 		Level:        log.DebugLevel,
 		ReportCaller: true,
-		// CallerFormatter: nil,
-		// CallerOffset:    0,
-		// Fields:          nil,
-		// Formatter:       0,
 	})
 )
 

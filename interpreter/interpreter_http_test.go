@@ -58,7 +58,7 @@ route POST "/data" {
 }`
 
 	engine := NewTestingInterpreterEngine()
-	engine.LoadScriptFromString(script)
+	engine.LoadSourceFromString(script)
 	engine.Run()
 
 	w := httptest.NewRecorder()
@@ -96,7 +96,7 @@ route POST "/data" {
 }`
 
 	engine := NewTestingInterpreterEngine()
-	engine.LoadScriptFromString(script)
+	engine.LoadSourceFromString(script)
 	engine.Run()
 
 	w := httptest.NewRecorder()
@@ -143,7 +143,7 @@ route POST "/data" {
 }`
 
 	engine := NewTestingInterpreterEngine()
-	engine.LoadScriptFromString(script)
+	engine.LoadSourceFromString(script)
 	engine.Run()
 
 	w := httptest.NewRecorder()

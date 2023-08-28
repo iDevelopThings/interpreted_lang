@@ -40,7 +40,7 @@ func main() {
 `
 
 	engine := NewTestingInterpreterEngine()
-	engine.LoadScriptFromString(scriptSrc)
+	engine.LoadSourceFromString(scriptSrc)
 	engine.ProcessScripts()
 
 	script := engine.SourceFiles[0]
@@ -77,7 +77,7 @@ func main() {
 `
 
 	engine := NewTestingInterpreterEngine()
-	engine.LoadScriptFromString(scriptSrc)
+	engine.LoadSourceFromString(scriptSrc)
 	engine.ProcessScripts()
 
 	script := engine.SourceFiles[0]
@@ -127,7 +127,7 @@ func main() {
 `
 
 	engine := NewTestingInterpreterEngine()
-	engine.LoadScriptFromString(scriptSrc)
+	engine.LoadSourceFromString(scriptSrc)
 	engine.ProcessScripts()
 
 	script := engine.SourceFiles[0]

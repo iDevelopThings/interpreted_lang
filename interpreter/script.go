@@ -10,16 +10,13 @@ import (
 
 type SourceFile struct {
 	Source string
-	Path   string
 
-	// InputStream *antlr.InputStream
-	// Stream      *antlr.CommonTokenStream
-	// Tree grammar.IProgramContext
+	Path    string
+	RelPath string
 
 	Program *ast.Program
 
-	Env    *Environment
-	Logger *log.Logger
+	Env *Environment
 }
 
 func (self *SourceFile) GetFunc(name string) *ast.FunctionDeclaration {
