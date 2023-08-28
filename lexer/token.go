@@ -68,10 +68,8 @@ func (t *Token) HasKeyword(keywords ...TokenType) bool {
 		// If we don't pass keywords, we're just checking
 		// if we have any at all
 		if len(keywords) == 0 {
-			for _, kw := range KeywordTokens {
-				if kw == tokenType {
-					return true
-				}
+			if KeywordTokens[tokenType] {
+				return true
 			}
 			continue
 		}
@@ -281,11 +279,12 @@ var keywordMatchTable = []tokenMatch{
 	{"options", TokenKeywordMethodOptions},
 }
 
-var KeywordTokens []TokenType
+var KeywordTokens map[TokenType]bool
 
 func init() {
-	// We re-order our tables so that the longest matches are first
+	KeywordTokens = map[TokenType]bool{}
 
+	// We re-order our tables so that the longest matches are first
 	slices.SortFunc(symbolMatchTable, func(a, b tokenMatch) int {
 		return len(b.Value) - len(a.Value)
 	})
@@ -298,6 +297,7 @@ func init() {
 			Value: strings.ToUpper(match.Value),
 			Token: match.Token,
 		})
+		KeywordTokens[match.Token] = true
 	}
 	slices.SortFunc(keywordMatchTable, func(a, b tokenMatch) int {
 		return len(b.Value) - len(a.Value)

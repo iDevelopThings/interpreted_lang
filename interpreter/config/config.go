@@ -9,8 +9,9 @@ import (
 type OutputFormat string
 
 const (
-	OutputFormatJson OutputFormat = "json"
-	OutputFormatText OutputFormat = "text"
+	OutputFormatJson       OutputFormat = "json"
+	OutputFormatJsonIndent OutputFormat = "json-indent"
+	OutputFormatText       OutputFormat = "text"
 )
 
 type CliArgsConfig struct {
@@ -23,13 +24,11 @@ type CliArgsConfig struct {
 	CpuProfile bool `long:"cpuprofile" description:"write cpu profile to file"`
 	MemProfile bool `long:"memprofile" description:"write memory profile to this file"`
 
-	RunLsp      bool   `long:"lsp" description:"run the lsp only"`
-	LspProtocol string `long:"lsp-protocol" description:"run the lsp using the protocol"`
+	PrintAst bool `long:"print-ast" description:"print the ast to stderr"`
 
-	PrintAst     bool         `long:"print-ast" description:"print the ast to stderr"`
 	StdinMode    bool         `short:"i" long:"stdin" description:"Only accept input from stdin"`
 	LintingMode  bool         `short:"l" long:"lint" description:"run the linter only"`
-	OutputFormat OutputFormat `short:"f" long:"format" description:"the output format to use for the linter" choice:"json" choice:"text" default:"text"`
+	OutputFormat OutputFormat `short:"f" long:"format" description:"the output format to use for the linter" choice:"json" choice:"text" choice:"json-indent" default:"text"`
 
 	File string
 }

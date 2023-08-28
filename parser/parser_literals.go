@@ -12,9 +12,11 @@ func (p *Parser) parseStringLiteral() *ast.Literal {
 	str := p.expect(lexer.TokenString)
 
 	node := &ast.Literal{
-		AstNode: ast.NewAstNode(p.curr),
+		AstNode: ast.NewAstNode(str),
 	}
-	defer node.SetRuleRange(str, p.curr)
+	defer func() {
+		node.SetRuleRange(str, p.prev)
+	}()
 	node.SetValue(str.Value)
 
 	return node

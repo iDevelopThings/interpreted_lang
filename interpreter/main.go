@@ -10,10 +10,12 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"github.com/muesli/termenv"
 
 	"arc/ast"
 	"arc/http_server"
@@ -38,6 +40,20 @@ type InterpreterEngine struct {
 var globalLogger *log.Logger
 
 func NewInterpreterEngine() *InterpreterEngine {
+
+	// lipgloss.SetColorProfile(termenv.TrueColor)
+	lipgloss.SetColorProfile(termenv.ANSI)
+
+	fmt.Printf("profile: %d\n", lipgloss.ColorProfile())
+	// lipgloss.SetColorProfile(termenv.ANSI256)
+
+	// const (
+	// 	PrintColor = "\033[38;5;%dm%s\033[39;49m\n"
+	// )
+	// for j := 0; j < 256; j++ {
+	// 	fmt.Printf(PrintColor, j, "Hello!")
+	// }
+
 	env := NewEnvironment()
 	RootEnvironment = env
 
@@ -53,6 +69,7 @@ func NewInterpreterEngine() *InterpreterEngine {
 	logger.SetReportTimestamp(false)
 	logger.SetReportCaller(true)
 	logger.SetLevel(log.DebugLevel)
+	logger.SetOutput(os.Stdout)
 
 	baseStyle := lipgloss.NewStyle().
 		Padding(0, 1, 0, 1).
@@ -161,7 +178,8 @@ func (self *InterpreterEngine) Load() {
 func (self *InterpreterEngine) setScriptLogger(script *SourceFile) {
 	if script != nil {
 		if script.Logger == nil {
-			script.Logger = log.New(os.Stderr)
+			script.Logger = log.New(os.Stdout)
+			// script.Logger = log.New(os.Stderr)
 			script.Logger.SetReportTimestamp(false)
 			if self.loggingEnabled {
 				script.Logger.SetLevel(log.DebugLevel)
@@ -235,6 +253,14 @@ func (self *InterpreterEngine) parseScript(script *SourceFile) {
 	}()*/
 
 	script.Program = p.Parse()
+
+	if config.CliConfig.PrintAst {
+		println(strings.Repeat("-", 80))
+		log.Debugf("Printing AST for %s", script.Path)
+		script.Print()
+		println(strings.Repeat("-", 80))
+	}
+
 }
 
 func (self *InterpreterEngine) constructASTs() {
@@ -335,10 +361,12 @@ func (self *InterpreterEngine) typeCheckScript(script *SourceFile) {
 	self.setScriptLogger(script)
 	defer self.setScriptLogger(nil)
 
-	checker := NewTypeCheckingVisitor(script.Program, self.Env)
-	if checker != nil {
+	TypeChecker.TypeCheckTree(script.Program, self.Env)
 
-	}
+	// checker := NewTypeCheckingVisitor(script.Program, self.Env)
+	// if checker != nil {
+	//
+	// }
 }
 
 func (self *InterpreterEngine) evaluateAll() {
@@ -376,8 +404,12 @@ func (self *InterpreterEngine) ProcessScripts() {
 }
 
 func (self *InterpreterEngine) Lint() {
+	errors.SetStrategy(errors.AccumulateAll)
+
 	runTimer := utilities.NewTimer("Run All SourceFiles")
 	defer runTimer.StopAndLog()
+
+	defer errors.TryDumpDiagnostics()
 
 	self.ProcessScripts()
 }

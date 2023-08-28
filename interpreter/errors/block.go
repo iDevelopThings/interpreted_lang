@@ -2,13 +2,65 @@ package errors
 
 import (
 	"fmt"
+	"maps"
 	"strings"
 
 	"github.com/charmbracelet/log"
 
 	"arc/ast"
+	"arc/interpreter/diagnostics"
 	"arc/lexer"
 )
+
+type TempDiagnosticBuilder struct {
+	Diagnostics []CodeDiagnostic
+}
+
+func (self *TempDiagnosticBuilder) AddError(node ast.Node, format string, args ...any) *TempDiagnosticBuilder {
+	e := NewCodeErrorAtNode(node)
+	e.Severity = ErrorDiagnostic
+	e.AddMessage(format, args...)
+
+	self.Diagnostics = append(self.Diagnostics, *e)
+
+	return self
+}
+func (self *TempDiagnosticBuilder) AddDiagnostic(
+	node ast.Node,
+	diagnostic diagnostics.DiagnosticInfo,
+	a ...any,
+) *TempDiagnosticBuilder {
+
+	err := &DiagnosticBasedError{
+		Diagnostic: diagnostic,
+		Args:       a,
+		Node:       node,
+	}
+
+	e := NewCodeErrorAtNode(node)
+	e.Severity = err.GetSeverity()
+	e.Code = err.GetCode()
+	e.AddMessage(err.GetMessage())
+
+	self.Diagnostics = append(self.Diagnostics, *e)
+
+	return self
+}
+func (self *TempDiagnosticBuilder) AttachMeta(meta map[string]any) *TempDiagnosticBuilder {
+	if len(self.Diagnostics) == 0 {
+		return self
+	}
+	lastDiag := &self.Diagnostics[len(self.Diagnostics)-1]
+	if lastDiag.Meta == nil {
+		lastDiag.Meta = map[string]any{}
+	}
+	maps.Copy(lastDiag.Meta, meta)
+	return self
+}
+func (self *TempDiagnosticBuilder) Push() {
+	PresenterLogger.Helper()
+	Manager.pushTempBuilder(self)
+}
 
 type DiagnosticSeverityKind string
 
@@ -63,15 +115,19 @@ type TokenHighlightBounds struct {
 // example, it will correctly set the start/end positions for that whole block,
 // and then display the multiple errors inside that specific block
 type CodeDiagnostic struct {
-	Kind            ErrorDisplayKind
+	Kind ErrorDisplayKind
+
 	Start           SourceErrorPosition
 	End             SourceErrorPosition
 	HighlightBounds *TokenHighlightBounds
-	// Messages  []CodeErrorMessage
-	Severity          DiagnosticSeverityKind
-	Message           string
+
+	Severity DiagnosticSeverityKind
+	Message  string
+	Code     string
+
 	Processed         bool
 	DidAddReasonBlock bool
+	Meta              map[string]any
 }
 
 //	func NewCodeError(rule *ast.ParserRuleRange) *CodeDiagnostic {
@@ -122,7 +178,7 @@ func NewCodeError(rng *ast.ParserRuleRange) *CodeDiagnostic {
 	pos := &CodeDiagnostic{
 		Kind:  SingleLineError,
 		Start: NewSourceErrorPosition(rng.Start.GetStart()),
-		End:   NewSourceErrorPosition(rng.End.GetStart()),
+		End:   NewSourceErrorPosition(rng.End.GetEnd()),
 	}
 	pos.Start.Width = rng.Start.Pos.Length
 	pos.End.Width = rng.End.Pos.Length

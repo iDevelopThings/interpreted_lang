@@ -95,9 +95,7 @@ func (self *CallExpression) PrintTree(s *utilities.IndentWriter) {
 	}
 
 	w.WriteString("Args:\n")
-	for _, arg := range self.Args {
-		arg.PrintTree(w.ChildWriter())
-	}
+	self.ArgumentList.PrintTree(w.ChildWriter())
 }
 
 func (self *HttpBlock) PrintTree(s *utilities.IndentWriter) {
@@ -526,4 +524,13 @@ func (self *OrExpression) PrintTree(s *utilities.IndentWriter) {
 	} else {
 		w.WriteString("<nil>\n")
 	}
+}
+
+func (self *ExpressionList) PrintTree(s *utilities.IndentWriter) {
+	s.WriteString("ExpressionList: \n")
+
+	// w := s.ChildWriter()
+	// for _, expr := range self.Expressions {
+	// 	expr.PrintTree(w)
+	// }
 }

@@ -11,7 +11,6 @@ import (
 	"arc/interpreter"
 	"arc/interpreter/config"
 	"arc/interpreter/errors"
-	"arc/lsp"
 	"arc/utilities"
 )
 
@@ -22,11 +21,6 @@ func main() {
 
 	cliConf := config.PrepareConfiguration()
 	config.LoadProjectConfiguration()
-
-	if cliConf.RunLsp {
-		lsp.Run(cliConf.LspProtocol)
-		return
-	}
 
 	if cliConf.CpuProfile {
 		runCpuProfiling()
@@ -57,10 +51,13 @@ func main() {
 }
 
 func runEngineAndScript(conf *config.CliArgsConfig) {
+
 	errors.SetFormat(conf.OutputFormat)
 
 	engine := interpreter.Engine
 	engine.Load()
+
+	log.Info("testing")
 
 	if conf.LintingMode {
 		engine.Lint()

@@ -223,11 +223,13 @@ func (in *IndentWriter) Write(buf []byte) (int, error) {
 }
 
 func (in *IndentWriter) WriteString(s string) {
-	in.Write([]byte(s))
+	if _, err := in.Write([]byte(s)); err != nil {
+		panic("Failed to write string: " + err.Error())
+	}
 }
 
 func (in *IndentWriter) ChildWriter() *IndentWriter {
-	return NewIndentWriter(in, "\t").(*IndentWriter)
+	return NewIndentWriter(in, "  ").(*IndentWriter)
 }
 
 // indent returns buf with each line prefixed by prefix.  The sol flag indicates

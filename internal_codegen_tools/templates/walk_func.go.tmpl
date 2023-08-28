@@ -2,7 +2,16 @@
 
 package ast
 
+type VisitType string
+const (
+    VisitTypeEnter VisitType = "enter"
+    VisitTypeVisit VisitType = "visit"
+    VisitTypeLeave VisitType = "leave"
+)
+
+
 type VisitFunc func(node Node) any
+
 
 func Walk(root Node, cb VisitFunc) {
     visited := make(map[Node]bool)
@@ -16,6 +25,87 @@ func Walk(root Node, cb VisitFunc) {
         visited[node] = true
 
         vResult := cb(node)
+        if vResult == false {
+            return false
+        }
+
+        switch node := node.(type) {
+        {{- range $s := .VisitorStructs }}
+        case *{{ $s.AstStruct.Name }}:
+            {
+
+                {{/*if !visitFunc(node, cb, visited) {*/}}
+                {{/*    return false*/}}
+                {{/*}*/}}
+
+                {{- range $f := $s.VisitArgs }}
+
+                {{- if $f.IsArray }}
+                    for _, item := range node.{{ $f.StructKey }} {
+                        if !visitFunc(item, cb, visited) {
+                            return false
+                        }
+                    }
+                {{- else if $f.IsMap }}
+                for _, item := range node.{{ $f.StructKey }} {
+                    if !visitFunc(item, cb, visited) {
+                        return false
+                    }
+                }
+                {{- else if $f.IsStructType }}
+                    if node.{{$f.StructKey}} != nil && !visitFunc(node.{{$f.StructKey}}, cb, visited) {
+                        return false
+                    }
+                {{- else if $f.IsInterfaceType }}
+                    if node.{{$f.StructKey}} != nil && !visitFunc(node.{{$f.StructKey}}, cb, visited) {
+                        return false
+                    }
+                {{- else}}
+
+                    {{ printf "// type skiped: %s" $f.StructKey }}
+                    {{ printf "// Info: " }}
+                    {{ printf "// - Type:  %s" $f.Type }}
+                    {{ printf "// - IsArray:  %s" $f.IsArray }}
+                    {{ printf "// - IsPtr:  %s" $f.IsPtr }}
+                    {{ printf "// - IsInterfaceType:  %s" $f.IsInterfaceType }}
+                    {{ printf "// - IsStructType:  %s" $f.IsStructType }}
+
+
+                {{- end}}
+
+                {{- end}}
+            }
+        {{- end}}
+        }
+
+        return true
+
+    }
+
+    visitFunc(root, cb, visited)
+}
+
+
+type VisitFuncLeaveCallback func(node Node)
+type VisitFuncWithEvent func(node Node) (bool, VisitFuncLeaveCallback)
+
+func WalkWithVisitEvent(root Node, cb VisitFuncWithEvent) {
+    visited := make(map[Node]bool)
+    visited[root] = true
+
+    var visitFunc func(node Node, cb VisitFuncWithEvent, visited map[Node]bool) bool
+    visitFunc = func(node Node, cb VisitFuncWithEvent, visited map[Node]bool) bool {
+        if visited[node]  && node != root {
+            return true
+        }
+        visited[node] = true
+
+        vResult, leaveCb := cb(node)
+		defer func() {
+			if leaveCb != nil {
+				leaveCb(node)
+            }
+        }()
         if vResult == false {
             return false
         }

@@ -226,12 +226,7 @@ func (self *InferenceInstance) GetCallExpressionFunctionDeclaration(node *ast.Ca
 		lookupName = receiverType.TypeName() + "_" + node.Function.Name
 	}
 
-	fnDecl := Registry.LookupFunction(lookupName)
-	if fnDecl == nil {
-		NewErrorAtNode(node.Function, "Function '%s' is not defined", node.Function.Name)
-	}
-
-	return fnDecl
+	return Registry.LookupFunction(lookupName)
 }
 
 func (self *InferenceInstance) InferExpressionType(n ast.Node) ast.Type {
@@ -247,6 +242,13 @@ func (self *InferenceInstance) InferExpressionType(n ast.Node) ast.Type {
 
 			return fnDecl.ReturnType
 		}
+
+	case *ast.Literal:
+		return node.GetBasicType()
+
+	case *ast.VarReference:
+		t, _ := self.FindDeclaration(node)
+		return t
 
 	default:
 		log.Warnf("[inference] Unhandled node type: %T", node)

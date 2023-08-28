@@ -15,10 +15,6 @@ func (self *BasicType) GetChildren() []Node {
 	return []Node{}
 }
 
-func (self *BasicType) Accept(visitor NodeVisitor) {
-	visitor.Visit(self)
-}
-
 func (self *BasicType) TypeName() string          { return self.Name }
 func (self *BasicType) GetEnvBindingName() string { return self.Name }
 

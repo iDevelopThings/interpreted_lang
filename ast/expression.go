@@ -80,12 +80,20 @@ func (self *IndexAccessExpression) GetChildren() []Node {
 }
 func (self *IndexAccessExpression) IsExpression() {}
 
+type ExpressionList struct {
+	*AstNode
+	Entries []Expr
+}
+
+func (self *ExpressionList) IsExpression() {}
+
 type CallExpression struct {
 	*AstNode
 	Function *Identifier
 	Receiver Expr
 
-	Args           []Expr
+	ArgumentList *ExpressionList
+
 	IsStaticAccess bool
 }
 
@@ -94,9 +102,8 @@ func (self *CallExpression) GetChildren() []Node {
 	if self.Receiver != nil {
 		result = append(result, self.Receiver)
 	}
-	for _, arg := range self.Args {
-		result = append(result, arg)
-	}
+	result = append(result, self.ArgumentList)
+
 	return result
 }
 func (self *CallExpression) IsStatement()  {}

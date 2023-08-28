@@ -5,10 +5,6 @@ type ImportStatement struct {
 	Path *Literal
 }
 
-func (self *ImportStatement) Accept(visitor NodeVisitor) {
-	visitor.Visit(self)
-}
-
 func (self *ImportStatement) GetChildren() []Node {
 	return []Node{self.Path}
 }

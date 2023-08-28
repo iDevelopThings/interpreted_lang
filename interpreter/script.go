@@ -44,6 +44,6 @@ func (self *SourceFile) GetMainFunc() *ast.FunctionDeclaration {
 }
 
 func (self *SourceFile) Print() {
-	w := utilities.NewIndentWriter(os.Stdout, " ")
+	w := utilities.NewIndentWriter(os.Stdout, "  ")
 	self.Program.PrintTree(w.(*utilities.IndentWriter))
 }

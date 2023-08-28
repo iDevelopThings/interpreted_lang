@@ -47,7 +47,6 @@ type Node interface {
 	GetParent() Node
 	AddChildren(parent Node, nodes ...Node)
 	RemoveChild(node Node)
-	Accept(visitor NodeVisitor)
 }
 
 type Statement interface {
@@ -166,10 +165,6 @@ func (self *AstNode) RemoveChild(node Node) {
 
 func (self *AstNode) SetParent(node Node) {
 	self.Parent = node
-}
-
-func (self *AstNode) Accept(visitor NodeVisitor) {
-	visitor.Visit(self)
 }
 
 func (self *AstNode) IsNodeValid() bool {

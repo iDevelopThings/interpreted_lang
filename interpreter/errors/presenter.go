@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	PresenterLogger = log.NewWithOptions(os.Stderr, log.Options{
+	PresenterLogger = log.NewWithOptions(os.Stdout, log.Options{
 		Level:        log.DebugLevel,
 		ReportCaller: true,
 		// CallerFormatter: nil,
@@ -27,13 +27,29 @@ var (
 const contextRadius = 3
 
 var (
-	lineNumberColor = color.New(color.FgCyan).SprintFunc()
-	splitterColor   = color.New(color.FgHiBlack).SprintFunc()
-	contentColor    = color.New(color.FgWhite).SprintFunc()
-	tokenColor      = color.New(color.FgHiWhite).SprintFunc()
-	errorColor      = color.New(color.FgHiRed).SprintfFunc()
-	edgeColor       = color.New(color.FgHiRed).SprintFunc()
+	lineNumberColor     = color.New(color.FgCyan).SprintFunc()
+	splitterColor       = color.New(color.FgHiBlack).SprintFunc()
+	contentColor        = color.New(color.FgWhite).SprintFunc()
+	tokenColor          = color.New(color.FgHiWhite).SprintFunc()
+	errorColor          = color.New(color.FgHiRed).SprintfFunc()
+	warningColor        = color.New(color.FgHiYellow).SprintfFunc()
+	infoColor           = color.New(color.FgHiCyan).SprintfFunc()
+	edgeColor           = color.New(color.FgHiRed).SprintFunc()
+	diagnosticCodeColor = color.New(color.FgHiWhite).SprintFunc()
 )
+
+func diagnosticColor(kind DiagnosticSeverityKind) func(format string, a ...interface{}) string {
+	switch kind {
+	case ErrorDiagnostic:
+		return errorColor
+	case WarningDiagnostic:
+		return warningColor
+	case InfoDiagnostic:
+		return infoColor
+	default:
+		return errorColor
+	}
+}
 
 type DiagnosticPresenter struct {
 	Path                 string
@@ -51,41 +67,13 @@ func NewPresenter(filePath, input string) *DiagnosticPresenter {
 	return presenter
 }
 
-// func (self *DiagnosticPresenter) Multi() *CodeDiagnostic {
-// 	e := NewCodeError(self.TokenRuleRange)
-// 	self.Diagnostics = append(self.Diagnostics, e)
-// 	return e
-// }
-// func (self *DiagnosticPresenter) Add(str string, args ...any) *DiagnosticPresenter {
-// 	self.Diagnostics = append(self.Diagnostics, NewCodeError(self.TokenRuleRange).AddMessage(str, args...))
-// 	return self
-// }
-// func (self *DiagnosticPresenter) AddAtToken(rule *ast.ParserRuleRange, str string, args ...any) *DiagnosticPresenter {
-// 	err := NewCodeError(rule)
-// 	err.AddMessageAtToken(str, args...)
-// 	self.Diagnostics = append(self.Diagnostics, err)
-//
-// 	return self
-// }
-
-// func (self *DiagnosticPresenter) AddAtNode(node ast.Node, format string, a ...any) *DiagnosticPresenter {
-// 	err := NewCodeErrorAtNode(node)
-// 	if err == nil {
-// 		return self
-// 	}
-// 	err.AddMessageAtToken(format, a...)
-// 	self.Diagnostics = append(self.Diagnostics, err)
-//
-// 	return self
-// }
-
 func (self *DiagnosticPresenter) Print(format config.OutputFormat) {
 	PresenterLogger.Helper()
 
 	switch format {
 	case config.OutputFormatText:
 		self.prettyPrint()
-	case config.OutputFormatJson:
+	case config.OutputFormatJson, config.OutputFormatJsonIndent:
 		self.jsonPrint()
 		self.prettyPrint()
 	}
@@ -137,18 +125,32 @@ func (self *DiagnosticPresenter) prettyPrint() {
 }
 
 func (self *DiagnosticPresenter) jsonPrint() {
+	if self.Diagnostics == nil || len(self.Diagnostics) == 0 {
+		return
+	}
+
 	var errors []any
 	for _, err := range self.Diagnostics {
 		if err.Start.Abs == err.End.Abs {
 			err.End.Abs += err.HighlightBounds.Length
 		}
 
-		errors = append(errors, map[string]any{
-			"message":  err.Message,
+		errObj := map[string]any{
 			"start":    err.Start,
 			"end":      err.End,
+			"message":  err.Message,
 			"severity": err.Severity,
-		})
+		}
+
+		if err.Meta != nil {
+			errObj["meta"] = err.Meta
+		}
+
+		if err.Code != "" {
+			errObj["code"] = err.Code
+		}
+
+		errors = append(errors, errObj)
 	}
 
 	data := map[string]any{
@@ -156,8 +158,14 @@ func (self *DiagnosticPresenter) jsonPrint() {
 		"errors": errors,
 	}
 
-	jsonBytes, err := json.Marshal(data)
-	// jsonBytes, err := json.MarshalIndent(data, "", "  ")
+	var jsonBytes []byte
+	var err error
+	if config.CliConfig.OutputFormat == config.OutputFormatJsonIndent {
+		jsonBytes, err = json.MarshalIndent(data, "", "  ")
+	} else {
+		jsonBytes, err = json.Marshal(data)
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -165,6 +173,8 @@ func (self *DiagnosticPresenter) jsonPrint() {
 	if _, err := os.Stdout.Write(jsonBytes); err != nil {
 		log.Fatal(err)
 	}
+
+	_, _ = os.Stdout.WriteString("\n")
 }
 
 func (self *DiagnosticPresenter) process() ([]string, int, int) {
@@ -202,6 +212,41 @@ func (self *DiagnosticPresenter) process() ([]string, int, int) {
 			continue
 		}
 
+		lineHasMultipleDiagnostics := false
+		lineDiagnosticCount := 0
+		lineDiagnosticsPushed := 0
+		var firstDiagnostic CodeDiagnostic
+		for _, diagnostic := range self.Diagnostics {
+			if diagnostic.Processed || !diagnostic.CanDisplayAtLine(i) {
+				continue
+			}
+			lineDiagnosticCount++
+			if lineDiagnosticCount == 1 {
+				firstDiagnostic = diagnostic
+			}
+			if lineDiagnosticCount > 1 {
+				lineHasMultipleDiagnostics = true
+			}
+		}
+
+		if lineHasMultipleDiagnostics {
+			lineContent += highlightTokenBounds(line, firstDiagnostic.HighlightBounds)
+			lines = append(lines, lineContent)
+
+			// Now we'll draw a line under the token to indicate the error
+			// Ex:
+			// var someErrorVar;
+			//     ^-----------
+			errorLine := createLineNumber(-1) +
+				strings.Repeat(" ", firstDiagnostic.Start.Column) +
+				errorColor("^"+strings.Repeat("-", firstDiagnostic.HighlightBounds.Length-1))
+
+			// And we'll add the error message to the right of the line
+			errorLine += " " + errorColor("Multiple errors:")
+
+			lines = append(lines, errorLine)
+		}
+
 		for _, codeError := range self.Diagnostics {
 			if codeError.Processed {
 				continue
@@ -212,18 +257,45 @@ func (self *DiagnosticPresenter) process() ([]string, int, int) {
 
 			if codeError.Kind == SingleLineError {
 				// Highlight the token with the error
-				lineContent += highlightTokenBounds(line, codeError.HighlightBounds)
-				lines = append(lines, lineContent)
+				if !lineHasMultipleDiagnostics {
+					lineContent += highlightTokenBounds(line, codeError.HighlightBounds)
+					lines = append(lines, lineContent)
 
-				// Now we'll draw a line under the token to indicate the error
-				errorLine := createLineNumber(-1) +
-					strings.Repeat(" ", codeError.Start.Column) +
-					errorColor("^"+strings.Repeat("-", codeError.HighlightBounds.Length-1))
+					// Now we'll draw a line under the token to indicate the error
+					// Ex:
+					// var someErrorVar;
+					//     ^-----------
+					// errorLine := createLineNumber(-1)
+					// errorLine += strings.Repeat(" ", codeError.Start.Column)
+					// errorLine += diagnosticColor(codeError.Severity)("^" + strings.Repeat("-", codeError.HighlightBounds.Length-1))
+					// And we'll add the error message to the right of the line
+					// errorLine += " " + diagnosticColor(codeError.Severity)(codeError.Message)
 
-				// And we'll add the error message to the right of the line
-				errorLine += " " + errorColor(codeError.Message)
+					errorLine := writeDiagnosticLine(createLineNumber, codeError, false, "")
 
-				lines = append(lines, errorLine)
+					lines = append(lines, errorLine)
+				} else {
+
+					// When we have multiple errors, we'll draw them like:
+					// 16 |     ob.pls = ""
+					// .. |        ^-- Multiple errors:
+
+					//     		^^^^^This line was already drawn outside the loop
+
+					// .. |        |--  Failed to resolve left operand of assignment expression
+					// .. |        \--  [VisitFieldAccessExpression]: Field 'pls' does not exist on type 'MyTestingObject'
+
+					startChar := "|"
+					if lineDiagnosticsPushed == lineDiagnosticCount-1 {
+						startChar = "\\"
+					}
+
+					errorLine := writeDiagnosticLine(createLineNumber, codeError, true, startChar)
+
+					lines = append(lines, errorLine)
+
+					lineDiagnosticsPushed++
+				}
 
 				codeError.Processed = true
 
@@ -300,6 +372,38 @@ func (self *DiagnosticPresenter) process() ([]string, int, int) {
 	return lines, startLine, stopLine
 }
 
+func writeDiagnosticLine(
+	createLineNumber func(lineNum int) string,
+	diagnostic CodeDiagnostic,
+	isMultiErrorPrint bool,
+	startChar string,
+) string {
+
+	// draw a line under the token to indicate the error
+	// Ex:
+	// var someErrorVar;
+	//     ^-----------
+
+	line := createLineNumber(-1)
+	line += strings.Repeat(" ", diagnostic.Start.Column)
+	if isMultiErrorPrint {
+		line += diagnosticColor(diagnostic.Severity)(startChar + strings.Repeat("-", diagnostic.HighlightBounds.Length) + ">")
+	} else {
+		line += diagnosticColor(diagnostic.Severity)("^" + strings.Repeat("-", diagnostic.HighlightBounds.Length-1))
+	}
+	line += " "
+
+	// if we have a diagnostics code, we'll add that before the message
+	if diagnostic.Code != "" {
+		line += diagnosticCodeColor(fmt.Sprintf("[code: %s] ", diagnostic.Code))
+	}
+
+	// And we'll add the error message to the right of the line
+	line += diagnosticColor(diagnostic.Severity)(diagnostic.Message)
+
+	return line
+}
+
 func createErrorBlockMessage(createLineNumber func(lineNum int) string, codeError CodeDiagnostic) []string {
 	var errorBlockLines []string
 	errorBlockLines = append(errorBlockLines, createLineNumber(-1)+edgeColor("  |")+edgeColor(strings.Repeat("-", len(codeError.Message)+4)))
@@ -370,3 +474,31 @@ func (self *DiagnosticPresenter) prepareErrorBounds() (
 
 	return
 }
+
+// func (self *DiagnosticPresenter) Multi() *CodeDiagnostic {
+// 	e := NewCodeError(self.TokenRuleRange)
+// 	self.Diagnostics = append(self.Diagnostics, e)
+// 	return e
+// }
+// func (self *DiagnosticPresenter) Add(str string, args ...any) *DiagnosticPresenter {
+// 	self.Diagnostics = append(self.Diagnostics, NewCodeError(self.TokenRuleRange).AddMessage(str, args...))
+// 	return self
+// }
+// func (self *DiagnosticPresenter) AddAtToken(rule *ast.ParserRuleRange, str string, args ...any) *DiagnosticPresenter {
+// 	err := NewCodeError(rule)
+// 	err.AddMessageAtToken(str, args...)
+// 	self.Diagnostics = append(self.Diagnostics, err)
+//
+// 	return self
+// }
+
+// func (self *DiagnosticPresenter) AddAtNode(node ast.Node, format string, a ...any) *DiagnosticPresenter {
+// 	err := NewCodeErrorAtNode(node)
+// 	if err == nil {
+// 		return self
+// 	}
+// 	err.AddMessageAtToken(format, a...)
+// 	self.Diagnostics = append(self.Diagnostics, err)
+//
+// 	return self
+// }

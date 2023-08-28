@@ -47,10 +47,6 @@ type RegistryInstance struct {
 	enums     map[string]RegistryItem[*ast.EnumDeclaration]
 }
 
-func (self *RegistryInstance) hi() {
-
-}
-
 func (self *RegistryInstance) LookupFunction(name string) *ast.FunctionDeclaration {
 	if f, ok := self.functions[name]; ok {
 		return f.Declaration

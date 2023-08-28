@@ -13,13 +13,14 @@ type ErrorHandlingStrategy string
 const (
 	ExitOnError     ErrorHandlingStrategy = "exit"
 	ContinueOnError ErrorHandlingStrategy = "continue"
+	AccumulateAll   ErrorHandlingStrategy = "accumulate"
 )
 
 type FileDiagnosticData struct {
-	Diagnostics []CodeDiagnostic
-	Path        string
-	Source      string
-	Presenter   *DiagnosticPresenter
+	// Diagnostics []CodeDiagnostic
+	Path      string
+	Source    string
+	Presenter *DiagnosticPresenter
 }
 
 type DiagnosticManagerInstance struct {
@@ -53,10 +54,10 @@ func (self *DiagnosticManagerInstance) SetCurrent(path string, source string) {
 	_, ok := self.fileDiagnostics[path]
 	if !ok {
 		self.fileDiagnostics[path] = &FileDiagnosticData{
-			Path:        path,
-			Source:      source,
-			Presenter:   NewPresenter(path, source),
-			Diagnostics: []CodeDiagnostic{},
+			Path:      path,
+			Source:    source,
+			Presenter: NewPresenter(path, source),
+			// Diagnostics: []CodeDiagnostic{},
 		}
 	}
 
@@ -64,26 +65,52 @@ func (self *DiagnosticManagerInstance) SetCurrent(path string, source string) {
 	self.currentSource = source
 }
 
-func (self *DiagnosticManagerInstance) onNew(e *CodeDiagnostic) {
+func (self *DiagnosticManagerInstance) pushDiagnostic(e CodeDiagnostic) *FileDiagnosticData {
 	PresenterLogger.Helper()
 
 	fileData, ok := self.fileDiagnostics[self.currentPath]
 	if !ok {
 		log.Warnf("DiagnosticManagerInstance.onNew: fileData is nil")
+		return nil
+	}
+
+	// fileData.Diagnostics = append(fileData.Diagnostics, e)
+	fileData.Presenter.Diagnostics = append(fileData.Presenter.Diagnostics, e)
+
+	return fileData
+}
+
+func (self *DiagnosticManagerInstance) onNew(e CodeDiagnostic) {
+	PresenterLogger.Helper()
+
+	fileData := self.pushDiagnostic(e)
+	self.printDiagnostics(fileData)
+}
+
+func (self *DiagnosticManagerInstance) printDiagnostics(fileData *FileDiagnosticData, shouldIgnoreStrategy ...bool) {
+	PresenterLogger.Helper()
+
+	ignoreStrategy := false
+	if len(shouldIgnoreStrategy) > 0 && shouldIgnoreStrategy[0] {
+		ignoreStrategy = true
+	}
+
+	if self.strategy == AccumulateAll && !ignoreStrategy {
 		return
 	}
 
-	fileData.Diagnostics = append(fileData.Diagnostics, *e)
+	if len(fileData.Presenter.Diagnostics) == 0 {
+		return
+	}
 
-	switch self.strategy {
-	case ExitOnError:
-		fileData.Presenter.Diagnostics = append(fileData.Presenter.Diagnostics, *e)
-		fileData.Presenter.Print(self.outputFormat)
+	fileData.Presenter.Print(self.outputFormat)
+
+	if ignoreStrategy {
+		return
+	}
+
+	if self.strategy == ExitOnError {
 		os.Exit(1)
-
-	case ContinueOnError:
-		fileData.Presenter.Diagnostics = append(fileData.Presenter.Diagnostics, *e)
-		fileData.Presenter.Print(self.outputFormat)
 	}
 }
 
@@ -94,16 +121,28 @@ func (self *DiagnosticManagerInstance) AddPresentableError(err PresentableError)
 	e.Severity = err.GetSeverity()
 	e.AddMessage(err.GetMessage())
 
-	self.onNew(e)
+	self.onNew(*e)
 }
 func (self *DiagnosticManagerInstance) AddNodeDiagnostic(err PresentableNodeError) {
 	PresenterLogger.Helper()
 
 	e := NewCodeErrorAtNode(err.GetNode())
 	e.Severity = err.GetSeverity()
+	e.Code = err.GetCode()
 	e.AddMessage(err.GetMessage())
 
-	self.onNew(e)
+	self.onNew(*e)
+}
+
+func (self *DiagnosticManagerInstance) pushTempBuilder(builder *TempDiagnosticBuilder) {
+	PresenterLogger.Helper()
+
+	var fileData *FileDiagnosticData
+	for _, diagnostic := range builder.Diagnostics {
+		fileData = self.pushDiagnostic(diagnostic)
+	}
+
+	self.printDiagnostics(fileData, false)
 }
 
 func (self *DiagnosticManagerInstance) HandlePanic(err any) bool {
@@ -126,4 +165,13 @@ func SetStrategy(strategy ErrorHandlingStrategy) {
 
 func SetFormat(format config.OutputFormat) {
 	Manager.outputFormat = format
+}
+
+func TryDumpDiagnostics() {
+	PresenterLogger.Helper()
+	if Manager.strategy == AccumulateAll {
+		for _, fileData := range Manager.fileDiagnostics {
+			Manager.printDiagnostics(fileData, true)
+		}
+	}
 }

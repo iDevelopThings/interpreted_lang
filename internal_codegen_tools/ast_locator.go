@@ -18,7 +18,7 @@ import (
 	"github.com/dave/dst/decorator"
 )
 
-var log *l.Logger = l.NewWithOptions(os.Stderr, l.Options{
+var log *l.Logger = l.NewWithOptions(os.Stdout, l.Options{
 	ReportCaller:    true,
 	ReportTimestamp: true,
 	TimeFormat:      time.Kitchen,

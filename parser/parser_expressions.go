@@ -37,6 +37,9 @@ func (p *Parser) bindPrefixParseFns() {
 
 			switch {
 
+			case p.is(lexer.TokenBool):
+				return p.parseBoolLiteral()
+
 			case p.is(lexer.TokenKeywordNone):
 				{
 					node := ast.NewLiteral(p.curr, nil)
@@ -217,7 +220,6 @@ func (p *Parser) parseCallExpression(left ast.Expr) ast.Expr {
 	s := p.curr
 	node := &ast.CallExpression{
 		AstNode:        ast.NewAstNode(p.curr),
-		Args:           make([]ast.Expr, 0),
 		IsStaticAccess: false,
 	}
 
@@ -270,7 +272,8 @@ func (p *Parser) parseCallExpression(left ast.Expr) ast.Expr {
 
 	}
 
-	node.Args = p.parseExpressionList(lexer.TokenLParen, lexer.TokenRParen)
+	node.ArgumentList = p.parseExpressionList(lexer.TokenLParen, lexer.TokenRParen)
+	node.AddChildren(node, node.ArgumentList)
 
 	p.skipSemi()
 
@@ -280,6 +283,9 @@ func (p *Parser) parseCallExpression(left ast.Expr) ast.Expr {
 func (p *Parser) parseInfixExpression(lhs ast.Expr) ast.Expr {
 	var expr ast.Node
 	defer func() {
+		if expr == nil {
+			return
+		}
 		expr.SetRuleRange(lhs.GetToken(), p.prev)
 	}()
 
@@ -480,21 +486,31 @@ func (p *Parser) parseObjectInstantiation(left ast.Expr) ast.Expr {
 	return node
 }
 
-func (p *Parser) parseExpressionList(open, close lexer.TokenType) []ast.Expr {
+func (p *Parser) parseExpressionList(open, close lexer.TokenType) *ast.ExpressionList {
 	p.assertPrev(open)
+	s := p.curr
 
-	list := make([]ast.Expr, 0)
+	node := &ast.ExpressionList{
+		AstNode: ast.NewAstNode(p.prev),
+		Entries: make([]ast.Expr, 0),
+	}
+	defer func() {
+		node.SetRuleRange(s, p.prev)
+	}()
 
 	if p.is(close) {
 		p.next()
-		return list
+		return node
 	}
 
 	p.identifiersAsVarRefs = true
 	defer func() { p.identifiersAsVarRefs = false }()
 
 	for !p.is(close) {
-		list = append(list, p.parseExpression(0))
+		entry := p.parseExpression(0)
+		node.Entries = append(node.Entries, entry)
+		node.AddChildren(node, entry)
+
 		if p.is(close) {
 			break
 		}
@@ -503,7 +519,7 @@ func (p *Parser) parseExpressionList(open, close lexer.TokenType) []ast.Expr {
 
 	p.expect(close)
 
-	return list
+	return node
 }
 
 func (p *Parser) parseRange() *ast.RangeExpression {

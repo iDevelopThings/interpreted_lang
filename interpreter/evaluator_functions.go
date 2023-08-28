@@ -206,7 +206,7 @@ func (self *Evaluator) executeWrappedFunction(
 	if len(fn.Args) > 0 {
 		var declArg *ast.TypedIdentifier
 		var varArgList []any
-		for i, arg := range node.Args {
+		for i, arg := range node.ArgumentList.Entries {
 			if declArg == nil || !declArg.TypeReference.IsVariadic {
 				declArg = fn.Args[i]
 			}
@@ -226,9 +226,9 @@ func (self *Evaluator) executeWrappedFunction(
 	}
 
 	if fn.CustomFuncCb != nil {
-		if fn.Args == nil && node.Args != nil {
-			fnArgs = make([]any, len(node.Args))
-			for i, arg := range node.Args {
+		if fn.Args == nil && node.ArgumentList != nil {
+			fnArgs = make([]any, len(node.ArgumentList.Entries))
+			for i, arg := range node.ArgumentList.Entries {
 				fnArgs[i] = self.MustEvalValue(arg)
 			}
 		}

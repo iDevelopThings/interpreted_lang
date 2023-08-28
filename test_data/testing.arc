@@ -1,25 +1,31 @@
 object MyTestingObject {
   name string
   age  int
+  pls  string
 }
 
+func testOption() ?string {
+  return none
+}
 
 func (ob MyTestingObject) String() string {
-  //  var x MyTestingObject;
-  //  x.name;
+  return "hi..."
+}
+func (ob MyTestingObject) TestSettingData(testing string) {
   ob.name = ".."
-  ob.age = ".."
+  //    ob.age = ".."
   ob.pls = ""
-
-  ob.fakyeahh();
-
-  return ob.String();
-
 }
-
-func (ob MyTestingObject) fakyeahh() {
-
+func (ob MyTestingObject) Yayeeet(pls string, string bool) {
 }
 
 
-func main() {}
+func main() {
+
+  var obj MyTestingObject = MyTestingObject{
+	name : "Bruce"
+  }
+
+  obj.Yayeeet("yayay", false);
+
+}

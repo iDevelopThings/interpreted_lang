@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"arc/ast"
+	"arc/interpreter/diagnostics"
 	"arc/interpreter/errors"
 )
 
@@ -136,6 +137,17 @@ func NewErrorAtNode(node ast.Node, format string, a ...any) {
 	}
 	errors.Manager.AddNodeDiagnostic(err)
 }
+
+func NewDiagnosticAtNode(node ast.Node, diagnostic diagnostics.DiagnosticInfo, a ...any) {
+	errors.PresenterLogger.Helper()
+	err := &errors.DiagnosticBasedError{
+		Diagnostic: diagnostic,
+		Args:       a,
+		Node:       node,
+	}
+	errors.Manager.AddNodeDiagnostic(err)
+}
+
 func NewWarningAtNode(node ast.Node, format string, a ...any) {
 	err := &errors.GenericNodeError{
 		Message:  format,
@@ -144,6 +156,12 @@ func NewWarningAtNode(node ast.Node, format string, a ...any) {
 		Severity: errors.WarningDiagnostic,
 	}
 	errors.Manager.AddNodeDiagnostic(err)
+}
+
+func NewMultiDiagnostic() *errors.TempDiagnosticBuilder {
+	return &errors.TempDiagnosticBuilder{
+		Diagnostics: []errors.CodeDiagnostic{},
+	}
 }
 
 type CastError struct {
