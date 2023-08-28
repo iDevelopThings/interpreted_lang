@@ -21,12 +21,6 @@ type BinaryExpression struct {
 	Right Expr
 }
 
-func (self *BinaryExpression) GetChildren() []Node {
-	var result []Node
-	result = append(result, self.Left)
-	result = append(result, self.Right)
-	return result
-}
 func (self *BinaryExpression) IsExpression() {}
 func (self *BinaryExpression) IsStatement()  {}
 
@@ -36,11 +30,6 @@ type UnaryExpression struct {
 	Left Expr
 }
 
-func (self *UnaryExpression) GetChildren() []Node {
-	var result []Node
-	result = append(result, self.Left)
-	return result
-}
 func (self *UnaryExpression) IsExpression() {}
 func (self *UnaryExpression) IsStatement()  {}
 
@@ -51,11 +40,6 @@ type FieldAccessExpression struct {
 	StaticAccess   bool
 }
 
-func (self *FieldAccessExpression) GetChildren() []Node {
-	var result []Node
-	result = append(result, self.StructInstance)
-	return result
-}
 func (self *FieldAccessExpression) IsExpression() {}
 func (self *FieldAccessExpression) IsStatement()  {}
 
@@ -69,15 +53,6 @@ type IndexAccessExpression struct {
 	IsSlice bool
 }
 
-func (self *IndexAccessExpression) GetChildren() []Node {
-	var result []Node
-	result = append(result, self.Instance)
-	result = append(result, self.StartIndex)
-	if self.IsSlice {
-		result = append(result, self.EndIndex)
-	}
-	return result
-}
 func (self *IndexAccessExpression) IsExpression() {}
 
 type ExpressionList struct {
@@ -97,15 +72,6 @@ type CallExpression struct {
 	IsStaticAccess bool
 }
 
-func (self *CallExpression) GetChildren() []Node {
-	var result []Node
-	if self.Receiver != nil {
-		result = append(result, self.Receiver)
-	}
-	result = append(result, self.ArgumentList)
-
-	return result
-}
 func (self *CallExpression) IsStatement()  {}
 func (self *CallExpression) IsExpression() {}
 
@@ -126,10 +92,4 @@ type RangeExpression struct {
 	Right Expr
 }
 
-func (self *RangeExpression) GetChildren() []Node {
-	var result []Node
-	result = append(result, self.Left)
-	result = append(result, self.Right)
-	return result
-}
 func (self *RangeExpression) IsExpression() {}

@@ -281,9 +281,6 @@ func Walk(root Node, cb VisitFunc) {
 			}
 		case *HttpRouteBodyInjectionStatement:
 			{
-				if node.FromNode != nil && !visitFunc(node.FromNode, cb, visited) {
-					return false
-				}
 
 				// type skiped: From
 				// Info:
@@ -842,9 +839,6 @@ func WalkWithVisitEvent(root Node, cb VisitFuncWithEvent) {
 			}
 		case *HttpRouteBodyInjectionStatement:
 			{
-				if node.FromNode != nil && !visitFunc(node.FromNode, cb, visited) {
-					return false
-				}
 
 				// type skiped: From
 				// Info:

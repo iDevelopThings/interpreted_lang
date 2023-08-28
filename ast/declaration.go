@@ -14,16 +14,6 @@ type ObjectDeclaration struct {
 	Methods map[string]*FunctionDeclaration
 }
 
-func (self *ObjectDeclaration) GetChildren() []Node {
-	nodes := []Node{}
-	for _, field := range self.Fields {
-		nodes = append(nodes, field)
-	}
-	for _, method := range self.Methods {
-		nodes = append(nodes, method)
-	}
-	return nodes
-}
 func (self *ObjectDeclaration) IsTopLevelStatement()      {}
 func (self *ObjectDeclaration) IsStatement()              {}
 func (self *ObjectDeclaration) IsDeclaration()            {}
@@ -55,18 +45,6 @@ type FunctionDeclaration struct {
 	HasVariadicArgs bool
 }
 
-func (self *FunctionDeclaration) GetChildren() []Node {
-	nodes := []Node{}
-	for _, arg := range self.Args {
-		nodes = append(nodes, arg)
-	}
-	nodes = append(nodes, self.Body)
-	nodes = append(nodes, self.ReturnType)
-	if self.Receiver != nil {
-		nodes = append(nodes, self.Receiver)
-	}
-	return nodes
-}
 func (self *FunctionDeclaration) IsTopLevelStatement()                        {}
 func (self *FunctionDeclaration) IsStatement()                                {}
 func (self *FunctionDeclaration) IsDeclaration()                              {}

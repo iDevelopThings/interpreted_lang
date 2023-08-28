@@ -121,7 +121,7 @@ func (self *Evaluator) Eval(n any) *Result {
 	case *ast.Block:
 		return self.evalBlock(node)
 	default:
-		if node, ok := n.(*ast.AstNode); ok {
+		if node, ok := n.(ast.Node); ok {
 			NewErrorAtNode(node, "Unhandled AST Node Type: %T - Content: %s", node, node.GetToken())
 			return nil
 		}

@@ -7,16 +7,6 @@ type ArrayInstantiation struct {
 	Values []Expr
 }
 
-func (self *ArrayInstantiation) GetChildren() []Node {
-	var nodes []Node
-	if self.Type != nil {
-		nodes = append(nodes, self.Type)
-	}
-	for _, value := range self.Values {
-		nodes = append(nodes, value)
-	}
-	return nodes
-}
 func (self *ArrayInstantiation) IsExpression() {}
 func (self *ArrayInstantiation) IsStatement()  {}
 
@@ -27,14 +17,6 @@ type ObjectInstantiation struct {
 	Fields   map[string]Expr
 }
 
-func (self *ObjectInstantiation) GetChildren() []Node {
-	var nodes []Node
-	nodes = append(nodes, self.TypeName)
-	for _, field := range self.Fields {
-		nodes = append(nodes, field)
-	}
-	return nodes
-}
 func (self *ObjectInstantiation) IsExpression() {}
 
 type DictionaryInstantiation struct {
@@ -42,11 +24,4 @@ type DictionaryInstantiation struct {
 	Fields map[string]Expr
 }
 
-func (self *DictionaryInstantiation) GetChildren() []Node {
-	var nodes []Node
-	for _, field := range self.Fields {
-		nodes = append(nodes, field)
-	}
-	return nodes
-}
 func (self *DictionaryInstantiation) IsExpression() {}

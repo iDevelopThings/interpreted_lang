@@ -36,9 +36,6 @@ type Literal struct {
 	Value any
 }
 
-func (self *Literal) GetChildren() []Node {
-	return []Node{}
-}
 func (self *Literal) MarshalJSON() ([]byte, error) {
 	return json.Marshal(self.Value)
 }
