@@ -11,12 +11,8 @@ permissions:
 
 jobs:
   golangci:
-    strategy:
-      matrix:
-        go: ['1.21']
-        os: [macos-latest, windows-latest]
     name: lint
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
