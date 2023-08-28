@@ -5,10 +5,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/charmbracelet/log"
 	"github.com/goccy/go-json"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/suite"
+
+	"arc/log"
 )
 
 var update = flag.Bool("update", false, "update the .golden files")

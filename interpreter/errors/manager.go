@@ -3,7 +3,7 @@ package errors
 import (
 	"os"
 
-	"github.com/charmbracelet/log"
+	"arc/log"
 
 	"arc/interpreter/config"
 )

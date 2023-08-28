@@ -6,8 +6,9 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/charmbracelet/log"
 	"github.com/jessevdk/go-flags"
+
+	"arc/log"
 )
 
 var CliConfig *CliArgsConfig = &CliArgsConfig{}

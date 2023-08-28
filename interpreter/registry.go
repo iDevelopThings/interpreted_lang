@@ -1,9 +1,8 @@
 package interpreter
 
 import (
-	"github.com/charmbracelet/log"
-
 	"arc/ast"
+	"arc/log"
 )
 
 var Registry *RegistryInstance = NewRegistry()

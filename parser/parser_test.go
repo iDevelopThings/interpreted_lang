@@ -4,9 +4,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/charmbracelet/log"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/suite"
+
+	"arc/log"
 
 	"arc/ast"
 	"arc/lexer"

@@ -3,8 +3,9 @@ package interpreter
 import (
 	"net/http"
 
-	"github.com/charmbracelet/log"
 	"github.com/goccy/go-json"
+
+	"arc/log"
 
 	"arc/ast"
 	"arc/http_server"

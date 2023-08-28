@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/log"
+	"arc/log"
 
 	"arc/ast"
 	"arc/interpreter/errors"

@@ -14,8 +14,9 @@ import (
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/log"
 	"github.com/muesli/termenv"
+
+	"arc/log"
 
 	"arc/ast"
 	"arc/http_server"

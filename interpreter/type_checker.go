@@ -1,10 +1,9 @@
 package interpreter
 
 import (
-	"github.com/charmbracelet/log"
-
 	"arc/ast"
 	"arc/interpreter/diagnostics"
+	"arc/log"
 )
 
 type TypeCheckerInstance struct {

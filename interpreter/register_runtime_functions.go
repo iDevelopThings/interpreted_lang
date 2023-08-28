@@ -5,9 +5,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/charmbracelet/log"
-
 	"arc/ast"
+	"arc/log"
 )
 
 func getValueArgIndexes(fmtString string) []int {

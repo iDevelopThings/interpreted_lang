@@ -12,7 +12,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/charmbracelet/log"
+	"arc/log"
 )
 
 type mockResponseWriter struct{}

@@ -3,7 +3,7 @@ package utilities
 import (
 	"time"
 
-	"github.com/charmbracelet/log"
+	"arc/log"
 )
 
 type Timer struct {

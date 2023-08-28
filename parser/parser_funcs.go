@@ -90,7 +90,6 @@ func (p *Parser) prevIs(t ...lexer.TokenType) bool {
 }
 
 func (p *Parser) expect(t ...lexer.TokenType) *lexer.Token {
-	// log.Log.MarkAsHelperFunc(1)
 	if !p.is(t...) {
 		p.error("expected %s, got %s instead", t, p.curr)
 		return nil
@@ -102,7 +101,6 @@ func (p *Parser) expect(t ...lexer.TokenType) *lexer.Token {
 
 //nolint:unused
 func (p *Parser) expectPeek(t ...lexer.TokenType) {
-	// log.Log.MarkAsHelperFunc(1)
 	if !p.peekIs(t...) {
 		p.error("expected next token to be one of %s, got %s instead", t, p.peek)
 		return
@@ -140,13 +138,13 @@ func (p *Parser) tokenError(token *lexer.Token, fmt string, args ...any) {
 		Parser: p,
 	}
 
-	log.Log.MarkAsHelperFunc(1)
-	err.Info = log.Log.CallerInfo(1)
+	log.Helper()
+	err.Info = log.GetCallerInfo()
 
 	panic(err)
 }
 func (p *Parser) error(fmt string, args ...any) {
-	log.Log.MarkAsHelperFunc(1)
+	log.Helper()
 	p.tokenError(p.curr, fmt, args...)
 }
 

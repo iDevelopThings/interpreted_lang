@@ -3,7 +3,7 @@ package ast
 import (
 	"sync/atomic"
 
-	"github.com/charmbracelet/log"
+	"arc/log"
 
 	"arc/lexer"
 	"arc/utilities"

@@ -1,8 +1,9 @@
 package utilities
 
 import (
-	"github.com/charmbracelet/log"
 	"github.com/goccy/go-json"
+
+	"arc/log"
 )
 
 func ToJson(data any) []byte {

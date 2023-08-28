@@ -4,9 +4,8 @@ import (
 	"slices"
 	"sync/atomic"
 
-	"github.com/charmbracelet/log"
-
 	"arc/ast"
+	"arc/log"
 	"arc/utilities"
 )
 

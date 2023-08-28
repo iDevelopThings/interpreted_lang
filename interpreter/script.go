@@ -3,9 +3,8 @@ package interpreter
 import (
 	"os"
 
-	"github.com/charmbracelet/log"
-
 	"arc/ast"
+	"arc/log"
 	"arc/utilities"
 )
 

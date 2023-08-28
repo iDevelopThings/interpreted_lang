@@ -1,7 +1,7 @@
 package interpreter
 
 import (
-	"github.com/charmbracelet/log"
+	"arc/log"
 
 	"arc/ast"
 )

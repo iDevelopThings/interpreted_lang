@@ -6,9 +6,8 @@ import (
 	"net/http"
 	"sync/atomic"
 
-	"github.com/charmbracelet/log"
-
 	"arc/http_server"
+	"arc/log"
 )
 
 var runtimeObjectUid = atomic.Int64{}

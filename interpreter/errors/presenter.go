@@ -6,9 +6,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/charmbracelet/log"
 	"github.com/fatih/color"
 	"github.com/goccy/go-json"
+
+	"arc/log"
 
 	"arc/interpreter/config"
 )
@@ -81,7 +82,6 @@ func (self *DiagnosticPresenter) Print(format config.OutputFormat) {
 
 func (self *DiagnosticPresenter) prettyPrint() {
 	PresenterLogger.Helper()
-	// log.SetFlags(0)
 
 	lines, _, _ := self.process()
 
@@ -92,7 +92,6 @@ func (self *DiagnosticPresenter) prettyPrint() {
 
 	// callerInfo := Log.CallerInfo(2)
 	// d, _ := os.Getwd()
-
 	// log.Printf("  --> %s:%d\n\n", strings.Replace(callerInfo.File, d, "", 1), callerInfo.Line)
 
 	for _, line := range lines {

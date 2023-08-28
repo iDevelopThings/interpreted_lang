@@ -6,10 +6,10 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/charmbracelet/log"
 	"github.com/goccy/go-json"
 
 	"arc/ast"
+	"arc/log"
 )
 
 var (

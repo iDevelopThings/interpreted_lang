@@ -6,7 +6,7 @@ import (
 	"runtime/pprof"
 	"syscall"
 
-	"github.com/charmbracelet/log"
+	"arc/log"
 
 	"arc/interpreter"
 	"arc/interpreter/config"
