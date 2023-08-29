@@ -178,6 +178,7 @@ func NewRuntimeObject(decl Declaration) *RuntimeValue {
 func NewRuntimeDictionary() *RuntimeValue {
 	rv := newRuntimeValue(nil)
 
+	rv.TypeName = "dict"
 	rv.Value = map[string]*RuntimeValue{}
 	rv.Kind = RuntimeValueKindDict
 	rv.Methods = map[string]*FunctionDeclaration{}

@@ -91,6 +91,10 @@ func (self *TypeCheckerInstance) DoEqual(lhs, rhs ast.Node) (bool, ast.Type, ast
 	lhsType := self.FindType(lhs)
 	rhsType := self.FindType(rhs)
 	if rhsType == nil || lhsType == nil {
+		if IsAnyNode[*ast.DictionaryInstantiation](lhs, rhs) {
+			return true, nil, nil
+		}
+
 		lhsType = self.FindType(lhs)
 		rhsType = self.FindType(rhs)
 		return false, nil, nil
@@ -139,7 +143,7 @@ func (self *TypeCheckerInstance) MustEqual(mainNode ast.Node, lhs, rhs ast.Node)
 			}
 		}
 
-		NewErrorAtNode(mainNode, "Expected type '%s', but '%s' given", lhsName, rhsName)
+		NewWarningAtNode(mainNode, "Failed to verify type equality(likely a bug/unhandled case); Expected type '%s', but '%s' given", lhsName, rhsName)
 	}
 
 	return doEqual
@@ -708,6 +712,9 @@ func (self *TypeCheckerInstance) typeCheckFieldAccessExpression(node *ast.FieldA
 	if instanceType == nil {
 		NewErrorAtNode(node, "[VisitFieldAccessExpression]: Failed to find type for variable '%s'", node.StructInstance.GetToken().String())
 	}
+	if instanceNode == nil && instanceType.TypeName() == "dict" {
+		return
+	}
 	if instanceNode == nil {
 		// NewErrorAtNode(node, "[VisitFieldAccessExpression]: Field '%s' does not exist on type '%s'", node.FieldName, instanceType.TypeName())
 		NewDiagnosticAtNode(node, diagnostics.ObjectFieldNotDefined, node.FieldName, instanceType.TypeName())
@@ -731,4 +738,13 @@ func (self *TypeCheckerInstance) typeCheckHttpRouteBodyInjectionStatement(node *
 
 	self.Scope.Insert(node.Var.Identifier, node.Var.TypeReference)
 
+}
+
+func IsAnyNode[T any](nodes ...ast.Node) bool {
+	for _, node := range nodes {
+		if _, ok := node.(T); ok {
+			return true
+		}
+	}
+	return false
 }

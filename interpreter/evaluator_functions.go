@@ -205,7 +205,7 @@ func (self *Evaluator) executeWrappedFunction(
 	fnArgs := make([]any, 0)
 	if len(fn.Args) > 0 {
 		var declArg *ast.TypedIdentifier
-		var varArgList []any
+
 		for i, arg := range node.ArgumentList.Entries {
 			if declArg == nil || !declArg.TypeReference.IsVariadic {
 				declArg = fn.Args[i]
@@ -215,7 +215,7 @@ func (self *Evaluator) executeWrappedFunction(
 			if declArg.TypeReference.IsVariadic {
 				fnArgs = append(fnArgs, argValue)
 				if self.Env.LookupVar(declArg.Name) == nil {
-					self.Env.SetVar(declArg.Name, varArgList)
+					self.Env.SetVar(declArg.Name, argValue)
 				}
 			} else {
 				self.Env.SetVar(declArg.Name, argValue)

@@ -1,15 +1,17 @@
 package interpreter
 
 import (
+	"context"
 	"fmt"
-	"io"
-	"net/http"
-	"os"
 	"reflect"
 	"strings"
+	"time"
+
+	gohttpclient "github.com/bozd4g/go-http-client"
 
 	"arc/ast"
 	"arc/log"
+	"arc/utilities"
 )
 
 func getValueArgIndexes(fmtString string) []int {
@@ -311,11 +313,7 @@ func formatLogRuntimeValue(value any) any {
 var runtimeBindingFuncs = map[string]func(args ...any){}
 
 func RegisterRuntimeFunctions(env *Environment) {
-	// for _, kind := range ast.AllLiteralKinds {
-	// 	env.SetObject(&ast.ObjectDeclaration{Name: string(kind)})
-	// }
 
-	// registerHttpObject(env)
 	bindStaticRuntimeType(new(RT_fmt))
 	bindStaticRuntimeType(new(RT_error))
 	bindStaticRuntimeType(new(RT_string))
@@ -381,31 +379,6 @@ func RegisterRuntimeFunctions(env *Environment) {
 
 }
 
-func registerHttpObject(env *Environment) {
-
-	obj := &ast.ObjectDeclaration{
-		AstNode: ast.NewAstNode(nil),
-		Name:    ast.NewIdentifierWithValue(nil, "http"),
-		Fields:  nil,
-		Methods: make(map[string]*ast.FunctionDeclaration),
-	}
-
-	obj.Methods["get"] = &ast.FunctionDeclaration{
-		AstNode:         ast.NewAstNode(nil),
-		Name:            "get",
-		Args:            nil,
-		ReturnType:      nil,
-		Receiver:        nil,
-		Body:            nil,
-		CustomFuncCb:    nil,
-		IsStatic:        false,
-		IsBuiltin:       false,
-		IsAnonymous:     false,
-		HasVariadicArgs: false,
-	}
-
-}
-
 func init() {
 	runtimeBindingFuncs["http"] = func(args ...any) {
 		// objDecl := args[0].(*ast.ObjectDeclaration)
@@ -414,29 +387,126 @@ func init() {
 		switch fnDecl.Name {
 
 		case "get":
-			{
-				fnDecl.CustomFuncCb = func(args ...any) any {
-					_ = args[0].(*Environment)
-					url := args[1].(*ast.RuntimeValue)
-
-					// requestOptions := args[1].(*ast.RuntimeValue)
-
-					response, err := http.Get(url.Value.(string))
-					if err != nil {
-						fmt.Print(err.Error())
-						os.Exit(1)
-					}
-					defer response.Body.Close()
-
-					responseData, err := io.ReadAll(response.Body)
-					if err != nil {
-						log.Fatal(err)
-					}
-
-					return ast.NewRuntimeLiteral(string(responseData))
-				}
-			}
-
+			fnDecl.CustomFuncCb = func(args ...any) any { return handleRequest("GET", args...) }
+		case "post":
+			fnDecl.CustomFuncCb = func(args ...any) any { return handleRequest("POST", args...) }
+		case "put":
+			fnDecl.CustomFuncCb = func(args ...any) any { return handleRequest("PUT", args...) }
+		case "patch":
+			fnDecl.CustomFuncCb = func(args ...any) any { return handleRequest("PATCH", args...) }
+		case "delete":
+			fnDecl.CustomFuncCb = func(args ...any) any { return handleRequest("DELETE", args...) }
+		default:
+			log.Warnf("http: unsupported method %s", fnDecl.Name)
 		}
 	}
+}
+
+func handleRequest(method string, args ...any) any {
+	t := utilities.NewTimer("http." + method)
+	defer t.StopAndLog()
+
+	_ = args[0].(*Environment)
+	if len(args) < 2 {
+		log.Warnf("http.get: no arguments")
+		return nil
+	}
+	url, ok := args[1].(*ast.RuntimeValue)
+	if !ok {
+		log.Warnf("http.get: argument 1 is not a runtime value")
+		return nil
+	}
+
+	callExpr := ast.FindFirstParentOfType[*ast.CallExpression](url.OriginalNode)
+	if callExpr == nil {
+		log.Warnf("http.get: cannot find outer call expression")
+		return nil
+	}
+
+	var requestOptions *ast.RuntimeValue
+	if len(args) > 2 {
+		requestOptions, ok = args[2].(*ast.RuntimeValue)
+		if !ok {
+			log.Warnf("http.get: argument 2 is not a runtime value")
+			return nil
+		}
+
+		if !requestOptions.IsDictKind() {
+			log.Warnf("http.get: argument 2 is not a dict")
+			return nil
+		}
+	}
+
+	var clientOptions []gohttpclient.ClientOption
+	var options []gohttpclient.Option
+
+	if requestOptions != nil {
+		optsDict := ast.RuntimeValueAs[map[string]*ast.RuntimeValue](requestOptions)
+
+		if headers, ok := optsDict["headers"]; ok && headers.IsDictKind() {
+			headersDict := ast.RuntimeValueAs[map[string]*ast.RuntimeValue](headers)
+			for k, v := range headersDict {
+				if v.IsStringKind() {
+					options = append(options, gohttpclient.WithHeader(k, v.Value.(string)))
+				}
+			}
+		}
+
+		if timeout, ok := optsDict["timeout"]; ok && timeout.IsIntegerKind() {
+			clientOptions = append(clientOptions, gohttpclient.WithTimeout(time.Duration(timeout.Value.(int))*time.Millisecond))
+		}
+
+		if body, ok := optsDict["body"]; ok {
+			bodyBytes, err := MarshalRuntimeValue(body)
+			if err != nil {
+				log.Warnf("http.get: cannot marshal body: %v", err)
+				return nil
+			}
+			options = append(options, gohttpclient.WithBody(bodyBytes))
+		}
+
+	}
+
+	ctx := context.Background()
+	client := gohttpclient.New("", clientOptions...)
+
+	var response *gohttpclient.Response
+	var err error
+	switch method {
+	case "GET":
+		response, err = client.Get(ctx, url.Value.(string), options...)
+	case "POST":
+		response, err = client.Post(ctx, url.Value.(string), options...)
+	case "PUT":
+		response, err = client.Put(ctx, url.Value.(string), options...)
+	case "PATCH":
+		response, err = client.Patch(ctx, url.Value.(string), options...)
+	case "DELETE":
+		response, err = client.Delete(ctx, url.Value.(string), options...)
+	default:
+		log.Warnf("http.get: unsupported method %s", method)
+		return nil
+	}
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+	if response == nil {
+		log.Warnf("http.get: response is nil")
+		return nil
+	}
+
+	defer response.Get().Body.Close()
+
+	assignment, ok := callExpr.GetParent().(*ast.AssignmentStatement)
+	if !ok {
+		log.Warnf("http.get: cannot find assignment statement, to automatically handle unmarshal to type")
+		return nil
+	}
+	val, err := UnmarshalRuntimeValueAs(response.Body(), assignment.Type)
+	if err != nil {
+		log.Warnf("http.get: cannot unmarshal response body: %v", err)
+		return nil
+	}
+
+	return val
 }

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="dc1c4613-f951-4ef2-bc7e-7c0d33ccb2d3" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/ArcInterpreter.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/ArcInterpreter.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/golinter.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/jsonSchemas.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ast/runtime_object.go" beforeDir="false" afterPath="$PROJECT_DIR$/ast/runtime_object.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ast/type.go" beforeDir="false" afterPath="$PROJECT_DIR$/ast/type.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/readme.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/readme.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interpreter/data_marshaller.go" beforeDir="false" afterPath="$PROJECT_DIR$/interpreter/data_marshaller.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interpreter/environment.go" beforeDir="false" afterPath="$PROJECT_DIR$/interpreter/environment.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interpreter/errors/manager.go" beforeDir="false" afterPath="$PROJECT_DIR$/interpreter/errors/manager.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interpreter/evaluator.go" beforeDir="false" afterPath="$PROJECT_DIR$/interpreter/evaluator.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interpreter/evaluator_functions.go" beforeDir="false" afterPath="$PROJECT_DIR$/interpreter/evaluator_functions.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interpreter/inference.go" beforeDir="false" afterPath="$PROJECT_DIR$/interpreter/inference.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interpreter/register_runtime_functions.go" beforeDir="false" afterPath="$PROJECT_DIR$/interpreter/register_runtime_functions.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/interpreter/type_checker.go" beforeDir="false" afterPath="$PROJECT_DIR$/interpreter/type_checker.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lexer/testdata/Test_ArgList_TEST.golden" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lexer/testdata/Test_Identifiers_TEST.golden" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lexer/testdata/Test_LexerInput_Comments_TEST.golden" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lexer/testdata/Test_LexerInput_MassInput_TEST.golden" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lexer/testdata/Test_LexerInput_MassInput_TEST_INPUT.arc" beforeDir="false" afterPath="$PROJECT_DIR$/lexer/testdata/Test_LexerInput_MassInput_TEST_INPUT.arc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lexer/testdata/Test_LexerInput_TEST.golden" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lexer/testdata/Test_Range_TEST.golden" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/parser/testdata/Test_Defer_TEST.golden" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/parser/testdata/Test_Enums_TEST.golden" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/parser/testdata/Test_Errors_TEST.golden" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/parser/testdata/Test_ParserInput_TEST_INPUT.arc" beforeDir="false" afterPath="$PROJECT_DIR$/parser/testdata/Test_ParserInput_TEST_INPUT.arc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/parser/testdata/Test_TokenGrouping_TEST.golden" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/parser/testdata/Test_TokenGrouping_TEST_INPUT.arc" beforeDir="false" afterPath="$PROJECT_DIR$/parser/testdata/Test_TokenGrouping_TEST_INPUT.arc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_data/expressions.arc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_data/extern_bindings.arc" beforeDir="false" afterPath="$PROJECT_DIR$/test_data/extern_bindings.arc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_data/http_basic_test.arc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_data/imports.arc" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="GOROOT" url="file:///opt/homebrew/opt/go/libexec" />
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 2
+}</component>
+  <component name="ProjectId" id="2Uey1k82cGw1qj9ZfDoFMGe89qy" />
+  <component name="ProjectViewState">
+    <option name="autoscrollToSource" value="true" />
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.migrated.go.modules.settings&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.modules.go.list.on.any.changes.was.set&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
+    &quot;go.sdk.automatically.set&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/sam&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
+  }
+}</component>
+  <component name="RunManager" selected="Go Build.arc" />
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VgoProject">
+    <settings-migrated>true</settings-migrated>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/interpreter/evaluator_functions.go</url>
+          <line>291</line>
+          <option name="timeStamp" value="12" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/interpreter/type_coercion.go</url>
+          <line>181</line>
+          <option name="timeStamp" value="13" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/interpreter/type_coercion.go</url>
+          <line>39</line>
+          <option name="timeStamp" value="14" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/interpreter/environment.go</url>
+          <line>63</line>
+          <option name="timeStamp" value="15" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>

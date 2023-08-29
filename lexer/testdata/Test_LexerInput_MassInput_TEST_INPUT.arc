@@ -1,6 +1,4 @@
-import "imports.sl"
-import "dictionaries.sl"
-import "http_basic_test.sl"
+
 
 func pls() {
 	var value = {

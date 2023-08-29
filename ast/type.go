@@ -82,6 +82,10 @@ var (
 		AstNode: NewAstNode(nil),
 		Name:    "none",
 	}
+	DictionaryType = &BasicType{
+		AstNode: NewAstNode(nil),
+		Name:    "dict",
+	}
 	VoidType = &BasicType{
 		AstNode: NewAstNode(nil),
 		Name:    "void",
@@ -99,5 +103,6 @@ var BasicTypes = map[string]Type{
 	"float":  FloatType,
 	"none":   NoneType,
 	"void":   VoidType,
+	"dict":   DictionaryType,
 	"any":    AnyType,
 }

@@ -213,6 +213,10 @@ func (self *Environment) GetRoot() *Environment {
 	return self.parent.GetRoot()
 }
 
+// func (self *Environment) IsEvaluating(outer ast.Node, evalNode ast.Node) {
+// 	self.evaluationState[evalNode.GetId()] = outer
+// }
+
 // func (self *Environment) SetEnum(t *ast.EnumDeclaration, evaluator *Evaluator) {
 // 	if _, found := self.enums[t.Name.Name]; found {
 // 		log.Errorf("Enum already defined: %s - enum will be ignored", t.Name.Name)

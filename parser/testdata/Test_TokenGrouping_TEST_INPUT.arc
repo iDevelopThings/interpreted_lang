@@ -1,5 +1,3 @@
-import "...";
-import "..."
 
 object User {
   name string

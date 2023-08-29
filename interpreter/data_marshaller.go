@@ -128,6 +128,50 @@ func UnmarshalRuntimeValue(value any) (*ast.RuntimeValue, error) {
 
 	return nil, fmt.Errorf("%w: %v", CannotMarshalRuntimeValueError, value)
 }
+func UnmarshalRuntimeValueAs(value []byte, typ ast.Type) (*ast.RuntimeValue, error) {
+	if value == nil {
+		return nil, fmt.Errorf("%w: %v", CannotMarshalRuntimeValueError, value)
+	}
+
+	// d := map[string]any{}
+	var d any
+	if err := json.Unmarshal(value, &d); err != nil {
+		return nil, err
+	}
+
+	return UnmarshalRuntimeValue(d)
+
+	// decl := Registry.LookupType(typ.TypeName())
+	// if t, ok := ast.BasicTypes[typ.TypeName()]; ok {
+	// 	decl = t
+	// }
+
+	/*switch typ := decl.(type) {
+	case *ast.BasicType:
+		switch typ.Name {
+		case "dict":
+			d := map[string]any{}
+			if err := json.Unmarshal(value, &d); err != nil {
+				return nil, err
+			}
+			return UnmarshalRuntimeDictionary(d), nil
+		default:
+			var d any
+			if err := json.Unmarshal(value, &d); err != nil {
+				return nil, err
+			}
+			return ast.NewRuntimeValueFromLiteral(ast.NewLiteral(nil, d)), nil
+		}
+	case *ast.ObjectDeclaration:
+		d := map[string]any{}
+		if err := json.Unmarshal(value, &d); err != nil {
+			return nil, err
+		}
+		return UnmarshalRuntimeObject(typ, d), nil
+	default:
+		return nil, fmt.Errorf("cannot unmarshal runtime value as %s", typ.TypeName())
+	}*/
+}
 
 func UnmarshalRuntimeArray(value []any) *ast.RuntimeValue {
 	array := ast.NewRuntimeArray(nil)

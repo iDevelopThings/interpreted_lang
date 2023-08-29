@@ -92,7 +92,8 @@ func (self *DiagnosticManagerInstance) onNew(e CodeDiagnostic) {
 	PresenterLogger.Helper()
 
 	fileData := self.pushDiagnostic(e)
-	self.printDiagnostics(fileData)
+	shouldIgnoreStrategy := e.Severity == WarningDiagnostic
+	self.printDiagnostics(fileData, shouldIgnoreStrategy)
 }
 
 func (self *DiagnosticManagerInstance) printDiagnostics(fileData *FileDiagnosticData, shouldIgnoreStrategy ...bool) bool {

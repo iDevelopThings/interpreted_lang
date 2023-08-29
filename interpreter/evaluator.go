@@ -449,6 +449,15 @@ func (self *Evaluator) evalLoopStatement(node *ast.LoopStatement) *Result {
 func (self *Evaluator) evalAssignmentStatement(node *ast.AssignmentStatement) *Result {
 	r := NewResult()
 
+	// self.Env.IsEvaluating(node, node.Value)
+
+	// self.currentlyEvaluating = node
+	// defer func() {
+	// 	if self.currentlyEvaluating == node {
+	// 		self.currentlyEvaluating = nil
+	// 	}
+	// }()
+
 	var value any
 	if node.Value != nil {
 		value = self.MustEval(node.Value)

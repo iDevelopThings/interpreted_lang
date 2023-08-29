@@ -1,6 +1,9 @@
 <component name="InspectionProjectProfileManager">
   <profile version="1.0">
     <option name="myName" value="Project Default" />
+    <inspection_tool class="GoCommentStart" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="GoErrorStringFormat" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="GoNameStartsWithPackageName" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="GoReceiverNames" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="GoUnhandledErrorResult" enabled="true" level="WARNING" enabled_by_default="true">
       <functions>
@@ -12,7 +15,29 @@
         <function importPath="fmt" name="Fprintln" />
         <function importPath="io" name="Copy" />
         <function importPath="fmt" name="Fprintf" />
+        <function importPath="os" name="Setenv" />
       </functions>
+      <methods>
+        <method importPath="bytes" receiver="*Buffer" name="WriteRune" />
+        <method importPath="strings" receiver="*Builder" name="WriteString" />
+        <method importPath="math/rand" receiver="*Rand" name="Read" />
+        <method importPath="strings" receiver="*Builder" name="Write" />
+        <method importPath="bytes" receiver="*Buffer" name="WriteByte" />
+        <method importPath="bytes" receiver="*Buffer" name="Write" />
+        <method importPath="strings" receiver="*Builder" name="WriteRune" />
+        <method importPath="bytes" receiver="*Buffer" name="WriteString" />
+        <method importPath="hash" receiver="Hash" name="Write" />
+        <method importPath="strings" receiver="*Builder" name="WriteByte" />
+        <method importPath="arc/utilities" receiver="*IndentWriter" name="Write" />
+        <method importPath="io" receiver="ReadCloser" name="Close" />
+      </methods>
+    </inspection_tool>
+    <inspection_tool class="GrazieInspection" enabled="true" level="TEXT ATTRIBUTES" enabled_by_default="true" editorAttributes="NOT_USED_ELEMENT_ATTRIBUTES" />
+    <inspection_tool class="LanguageDetectionInspection" enabled="true" level="TEXT ATTRIBUTES" enabled_by_default="true" editorAttributes="NOT_USED_ELEMENT_ATTRIBUTES" />
+    <inspection_tool class="SpellCheckingInspection" enabled="true" level="TEXT ATTRIBUTES" enabled_by_default="true" editorAttributes="NOT_USED_ELEMENT_ATTRIBUTES">
+      <option name="processCode" value="true" />
+      <option name="processLiterals" value="true" />
+      <option name="processComments" value="true" />
     </inspection_tool>
   </profile>
 </component>

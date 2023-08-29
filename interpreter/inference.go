@@ -28,6 +28,9 @@ func (self *InferenceInstance) FindType(node ast.Node, typeCheckerLookupCb ...fu
 		case *ast.Literal:
 			return node
 
+		case *ast.DictionaryInstantiation:
+			return nil
+
 		case *ast.ReturnStatement:
 			if node.Value == nil {
 				return nil
