@@ -35,6 +35,7 @@ type AstNodeLocator struct {
 	Dir                    string
 	ExcludedFileSuffixes   []string
 	Structs                map[string]*AstStruct
+	StructDeclarations     map[string]*dst.GenDecl
 	Interfaces             map[string]*dst.InterfaceType
 	ExcludedInterfaceNames []string
 	ExcludedStructNames    []string
@@ -50,6 +51,7 @@ func NewAstNodeLocator(dir string, checker func(typ *dst.TypeSpec) bool) *AstNod
 		Dir:                  filepath.Dir(dir),
 		ExcludedFileSuffixes: []string{},
 		Structs:              make(map[string]*AstStruct),
+		StructDeclarations:   make(map[string]*dst.GenDecl),
 		Interfaces:           make(map[string]*dst.InterfaceType),
 		Checker:              checker,
 	}
@@ -231,6 +233,7 @@ func (self *AstNodeLocator) Locate() {
 							log.Fatalf("Duplicate struct name: %s\n", typeSpec.Name.Name)
 						}
 
+						self.StructDeclarations[typeSpec.Name.Name] = genDecl
 						self.Structs[typeSpec.Name.Name] = &AstStruct{
 							Name: typeSpec.Name.Name,
 							st:   structType,

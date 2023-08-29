@@ -226,12 +226,5 @@ type CallerInfo struct {
 }
 
 func GetCallerInfo() CallerInfo {
-	formatted, file, line, fn := defaultLogger.GetCallerInfo()
-
-	return CallerInfo{
-		FormattedString: formatted,
-		File:            file,
-		Line:            line,
-		Func:            fn,
-	}
+	return defaultLogger.GetCallerInfo()
 }

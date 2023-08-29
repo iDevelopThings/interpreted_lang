@@ -14,6 +14,53 @@ type BasicType struct {
 func (self *BasicType) TypeName() string          { return self.Name }
 func (self *BasicType) GetEnvBindingName() string { return self.Name }
 
+func (self *BasicType) IsCompatibleWith(typ Type) bool {
+	if self.TypeName() == typ.TypeName() {
+		return true
+	}
+
+	if t, ok := typ.(*Literal); ok {
+		typ = t.GetBasicType()
+	}
+
+	if t, ok := typ.(*BasicType); ok {
+		if t.TypeName() == "any" {
+			return true
+		}
+
+		return true
+	}
+
+	// switch {
+	//
+	// case self.TypeName() == "string":
+	// 	{
+	// 		switch typ.TypeName() {
+	// 		case "int", "float", "bool":
+	// 			return true
+	// 		default:
+	// 			return false
+	// 		}
+	// 	}
+	//
+	// case self.TypeName() == "int":
+	// 	{
+	// 		switch typ.TypeName() {
+	// 		case "float", "bool", "string":
+	// 			return true
+	// 		default:
+	// 			return false
+	// 		}
+	// 	}
+	//
+	// case self.TypeName() == "float":
+	// 	{
+	//
+	// 	}
+
+	return false
+}
+
 var (
 	IntType = &BasicType{
 		AstNode: NewAstNode(nil),

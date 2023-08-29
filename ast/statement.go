@@ -6,6 +6,7 @@ type ImportStatement struct {
 }
 
 func (self *ImportStatement) IsStatement()         {}
+func (self *ImportStatement) IsDeclaration()       {}
 func (self *ImportStatement) IsTopLevelStatement() {}
 
 type IfStatement struct {

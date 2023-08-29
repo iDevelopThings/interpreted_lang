@@ -34,6 +34,42 @@ func (self *InferenceInstance) FindType(node ast.Node, typeCheckerLookupCb ...fu
 			}
 			return resolveType(node.Value)
 
+		case *ast.BinaryExpression:
+			lhs := resolveType(node.Left)
+			rhs := resolveType(node.Right)
+
+			if lhs == nil || rhs == nil {
+				return nil
+			}
+			if lhs.TypeName() != rhs.TypeName() {
+				switch l := lhs.(type) {
+				case *ast.BasicType:
+					if l.IsCompatibleWith(rhs) {
+						return rhs
+					}
+				case *ast.Literal:
+					lbt := l.GetBasicType()
+					if lbt != nil && lbt.(*ast.BasicType).IsCompatibleWith(rhs) {
+						return rhs
+					}
+				}
+				switch l := rhs.(type) {
+				case *ast.BasicType:
+					if l.IsCompatibleWith(lhs) {
+						return lhs
+					}
+				case *ast.Literal:
+					lbt := l.GetBasicType()
+					if lbt != nil && lbt.(*ast.BasicType).IsCompatibleWith(lhs) {
+						return lhs
+					}
+				}
+
+				return nil
+			}
+
+			return lhs
+
 		case *ast.CallExpression:
 			recvType := self.FindType(node.Receiver)
 			if recvType == nil {

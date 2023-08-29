@@ -147,7 +147,8 @@ const (
 	// Keywords
 	//
 
-	TokenKeywordFunc     = "KEYWORD_FUNC" //nolint:gosec
+	TokenKeywordFunc     = "KEYWORD_FUNC"   //nolint:gosec
+	TokenKeywordExtern   = "KEYWORD_EXTERN" //nolint:gosec
 	TokenKeywordObject   = "KEYWORD_OBJECT"
 	TokenKeywordImport   = "KEYWORD_IMPORT"
 	TokenKeywordEnum     = "KEYWORD_ENUM" //nolint:gosec
@@ -239,6 +240,7 @@ var symbolMatchTable = []tokenMatch{
 
 var keywordMatchTable = []tokenMatch{
 	{"func", TokenKeywordFunc},
+	{"extern", TokenKeywordExtern},
 	{"object", TokenKeywordObject},
 	{"import", TokenKeywordImport},
 	{"enum", TokenKeywordEnum},

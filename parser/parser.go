@@ -79,11 +79,17 @@ func (p *Parser) parseProgram() *ast.Program {
 
 		if decl, ok := node.(ast.Declaration); ok {
 			program.Declarations = append(program.Declarations, decl)
-		} else {
-			panic("Expected declaration but got " + node.GetToken().Value)
 		}
 
-		program.Statements = append(program.Statements, node)
+		switch n := node.(type) {
+		case ast.TopLevelStatement:
+			program.Statements = append(program.Statements, n)
+		case *ast.ImportStatement:
+			program.Imports = append(program.Imports, n)
+
+		default:
+			panic("Unknown top level statement type")
+		}
 
 	}
 
@@ -121,7 +127,7 @@ func (p *Parser) parseTopLevelStatement() ast.TopLevelStatement {
 	case p.is(lexer.TokenKeywordObject):
 		return p.parseObjectDeclaration()
 
-	case p.is(lexer.TokenKeywordFunc):
+	case p.is(lexer.TokenKeywordFunc) || (p.is(lexer.TokenKeywordExtern) && p.peekIs(lexer.TokenKeywordFunc)):
 		return p.parseFunctionDeclaration()
 
 	case p.is(lexer.TokenKeywordHttp):

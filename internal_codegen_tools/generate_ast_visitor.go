@@ -173,6 +173,23 @@ func (self *AstVisitorGenerator) buildData() {
 		spew.Config.MaxDepth = 4
 		spew.Config.DisablePointerAddresses = true
 
+		if self.DebugDataDumpStructsFields {
+			tmpFile := &dst.File{Name: dst.NewIdent("ast")}
+			for _, s := range self.Locator.StructDeclarations {
+
+				tmpFile.Decls = append(tmpFile.Decls, s)
+				// buf := new(bytes.Buffer)
+				// if err := format.Node(buf, token.NewFileSet(), s.AstStruct.st); err != nil {
+				// 	log.Fatalf("format.Node: %s", err)
+				// }
+				// fmt.Printf("%s:\n%s\n", s.Name, buf.String())
+			}
+
+			decorator.Print(tmpFile)
+
+			os.Exit(0)
+		}
+
 		log.Debugf("StructsData: ")
 		spew.Dump(self.StructsData)
 		log.Debugf("VisitorMethods: ")
@@ -197,7 +214,6 @@ func (self *AstVisitorGenerator) makeGoAstFromTemplate() {
 	writer.WriteString(buf.String())
 
 	fset := token.NewFileSet()
-
 	f, err := decorator.ParseFile(fset, "", writer.String(), parser.ParseComments)
 	if err != nil {
 		log.Debugf("template: %s", writer.String())

@@ -84,6 +84,10 @@ func (p *Parser) parseImportStatement() ast.TopLevelStatement {
 	node.Path = p.parseStringLiteral()
 	node.AddChildren(node, node.Path)
 
+	// if node.Path.Value.(string) == "" {
+	// 	p.tokenError(node.Token, "Empty import path given")
+	// }
+
 	p.skipSemi()
 
 	return node

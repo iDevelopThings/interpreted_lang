@@ -1,3 +1,6 @@
+
+// import "imports/nope.arc"
+
 object MyTestingObject {
   name string
   age  int
@@ -5,12 +8,14 @@ object MyTestingObject {
 }
 
 func testOption() ?string {
+  fmt::printf("");
   return none
 }
 
 func (ob MyTestingObject) String() string {
   return "hi..."
 }
+
 func (ob MyTestingObject) TestSettingData(testing string) {
   ob.name = ".."
   //    ob.age = ".."
@@ -21,6 +26,7 @@ func (ob MyTestingObject) Yayeeet(pls string, string bool) {
 
 
 func main() {
+
 
   var obj MyTestingObject = MyTestingObject{
 	name : "Bruce"

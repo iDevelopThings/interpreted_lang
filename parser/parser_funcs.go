@@ -163,6 +163,11 @@ func (p *Parser) safeLoop(predicate func() bool, cb func()) {
 	}
 }
 
-func (p *Parser) unexpectedToken(curr *lexer.Token) {
-	p.error(fmt.Sprintf("Unexpected token %s", curr))
+func (p *Parser) unexpectedToken(curr *lexer.Token, reason ...string) {
+	r := ""
+	if len(reason) > 0 {
+		r = reason[0]
+		r = " - " + r
+	}
+	p.error(fmt.Sprintf("Unexpected token %s%s", curr, r))
 }

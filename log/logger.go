@@ -47,11 +47,16 @@ type Logger struct {
 	helpers *sync.Map
 }
 
-func (l *Logger) GetCallerInfo() (string, string, int, string) {
+func (l *Logger) GetCallerInfo() CallerInfo {
 	file, line, fn := l.fillLoc(l.callerOffset + 2)
 	caller := l.callerFormatter(file, line, fn)
 
-	return caller, file, line, fn
+	return CallerInfo{
+		FormattedString: caller,
+		File:            file,
+		Line:            line,
+		Func:            fn,
+	}
 }
 
 func (l *Logger) log(level Level, msg interface{}, keyvals ...interface{}) {

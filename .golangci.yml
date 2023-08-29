@@ -13,6 +13,7 @@ linters:
   disable:
     - ineffassign
     - staticcheck
+    - goimports
   enable:
      - goimports
      - exportloopref

@@ -1,5 +1,9 @@
 package ast
 
+import (
+	"arc/log"
+)
+
 type Declaration interface {
 	Node
 	IsDeclaration()
@@ -9,9 +13,10 @@ type Declaration interface {
 
 type ObjectDeclaration struct {
 	*AstNode
-	Name    *Identifier
-	Fields  []*TypedIdentifier
-	Methods map[string]*FunctionDeclaration
+	Name     *Identifier
+	Fields   []*TypedIdentifier
+	Methods  map[string]*FunctionDeclaration
+	IsExtern bool
 }
 
 func (self *ObjectDeclaration) IsTopLevelStatement()      {}
@@ -31,6 +36,33 @@ func (self *ObjectDeclaration) GetMethod(name string) *FunctionDeclaration {
 	return nil
 }
 
+func (self *ObjectDeclaration) Merge(object *ObjectDeclaration) {
+	for _, field := range object.Fields {
+		hasExisting := false
+		for _, identifier := range self.Fields {
+			if identifier.Name == field.Name {
+				log.Warnf("Field %s already exists in object %s", identifier.Name, self.Name.Name)
+				hasExisting = true
+				continue
+			}
+		}
+		if !hasExisting {
+			self.Fields = append(self.Fields, field)
+		}
+	}
+
+	for _, method := range object.Methods {
+		if self.Methods == nil {
+			self.Methods = make(map[string]*FunctionDeclaration)
+		}
+		if _, ok := self.Methods[method.Name]; ok {
+			log.Warnf("Method %s already exists in object %s", method.Name, self.Name.Name)
+			continue
+		}
+		self.Methods[method.Name] = method
+	}
+}
+
 type FunctionDeclaration struct {
 	*AstNode
 	Name            string
@@ -42,6 +74,7 @@ type FunctionDeclaration struct {
 	IsStatic        bool
 	IsBuiltin       bool
 	IsAnonymous     bool
+	IsExtern        bool
 	HasVariadicArgs bool
 }
 

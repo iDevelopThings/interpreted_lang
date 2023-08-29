@@ -147,15 +147,21 @@ func (p *Parser) parseEnumDeclaration() ast.TopLevelStatement {
 }
 
 func (p *Parser) parseFunctionDeclaration() ast.TopLevelStatement {
+	s := p.curr
+	isExtern := p.is(lexer.TokenKeywordExtern)
+	if isExtern {
+		p.expect(lexer.TokenKeywordExtern)
+	}
 	p.expect(lexer.TokenKeywordFunc)
 
 	node := &ast.FunctionDeclaration{
-		AstNode:    ast.NewAstNode(p.prev),
+		AstNode:    ast.NewAstNode(s),
 		Name:       "",
 		Args:       make([]*ast.TypedIdentifier, 0),
 		ReturnType: nil,
 		Receiver:   nil,
 		Body:       nil,
+		IsExtern:   isExtern,
 	}
 	defer node.SetRuleRange(node.Token, p.prev)
 
@@ -213,7 +219,7 @@ func (p *Parser) parseFunctionDeclaration() ast.TopLevelStatement {
 	}
 
 	// returnType = <returnType=ident>?
-	if p.is(lexer.TokenLCurly) {
+	if p.is(lexer.TokenLCurly) && !isExtern {
 		node.ReturnType = &ast.TypeReference{
 			AstNode: ast.NewAstNode(p.curr),
 			Type:    "void",
@@ -224,8 +230,14 @@ func (p *Parser) parseFunctionDeclaration() ast.TopLevelStatement {
 		node.AddChildren(node, node.ReturnType)
 	}
 
-	node.Body = p.parseBlock()
-	node.AddChildren(node, node.Body)
+	if !isExtern {
+		node.Body = p.parseBlock()
+		node.AddChildren(node, node.Body)
+	} else {
+		if p.is(lexer.TokenLCurly) {
+			p.unexpectedToken(p.curr, "extern functions should not have a body")
+		}
+	}
 
 	return node
 }

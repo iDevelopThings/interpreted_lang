@@ -306,13 +306,13 @@ func Walk(root Node, cb VisitFunc) {
 				if node.Path != nil && !visitFunc(node.Path, cb, visited) {
 					return false
 				}
-				if node.Body != nil && !visitFunc(node.Body, cb, visited) {
-					return false
-				}
 				for _, item := range node.Injections {
 					if !visitFunc(item, cb, visited) {
 						return false
 					}
+				}
+				if node.Body != nil && !visitFunc(node.Body, cb, visited) {
+					return false
 				}
 
 				// type skiped: HandlerFunc
@@ -864,13 +864,13 @@ func WalkWithVisitEvent(root Node, cb VisitFuncWithEvent) {
 				if node.Path != nil && !visitFunc(node.Path, cb, visited) {
 					return false
 				}
-				if node.Body != nil && !visitFunc(node.Body, cb, visited) {
-					return false
-				}
 				for _, item := range node.Injections {
 					if !visitFunc(item, cb, visited) {
 						return false
 					}
+				}
+				if node.Body != nil && !visitFunc(node.Body, cb, visited) {
+					return false
 				}
 
 				// type skiped: HandlerFunc

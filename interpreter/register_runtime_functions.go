@@ -2,6 +2,9 @@ package interpreter
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+	"os"
 	"reflect"
 	"strings"
 
@@ -19,6 +22,14 @@ func getValueArgIndexes(fmtString string) []int {
 		}
 	}
 	return indexes
+}
+
+//goland:noinspection GoSnakeCaseUsage
+type RT_string struct{}
+
+//goland:noinspection GoSnakeCaseUsage
+func (t *RT_string) Static_to(env *Environment, args ...any) (interface{}, string) {
+	return TypeCoercion.MustCast(ast.NewRuntimeLiteral(args[0]), ast.StringType), ""
 }
 
 //goland:noinspection GoSnakeCaseUsage
@@ -123,12 +134,19 @@ func bindStaticRuntimeType(t any) {
 			panic("not implemented")
 		}
 
-		if m.Type.NumOut() > 0 {
-			ident := ast.NewIdentifierWithValue(nil, m.Type.Out(0).Name())
-			methodDecl.ReturnType = &ast.TypeReference{
-				AstNode: ast.NewAstNode(nil),
-				Type:    ident.Name,
+		if m.Type.NumOut() > 1 {
+			// Output types are in groups of two
+			// any{} & go type name
+			// only so we can convert it to a runtime value with type
+
+			for i := 0; i < m.Type.NumOut(); i += 2 {
+				ident := ast.NewIdentifierWithValue(nil, m.Type.Out(i+1).Name())
+				methodDecl.ReturnType = &ast.TypeReference{
+					AstNode: ast.NewAstNode(nil),
+					Type:    ident.Name,
+				}
 			}
+
 		}
 
 		if argsC := m.Type.NumIn(); argsC > 1 {
@@ -245,7 +263,7 @@ func bindStaticRuntimeType(t any) {
 		objDecl.Methods[methodDecl.Name] = methodDecl
 	}
 
-	Registry.SetObject(objDecl)
+	Registry.SetObject(objDecl, true)
 
 	// log.Debugf("Registered runtime bound type %s", objName)
 
@@ -290,13 +308,17 @@ func formatLogRuntimeValue(value any) any {
 	}
 }
 
+var runtimeBindingFuncs = map[string]func(args ...any){}
+
 func RegisterRuntimeFunctions(env *Environment) {
 	// for _, kind := range ast.AllLiteralKinds {
 	// 	env.SetObject(&ast.ObjectDeclaration{Name: string(kind)})
 	// }
 
+	// registerHttpObject(env)
 	bindStaticRuntimeType(new(RT_fmt))
 	bindStaticRuntimeType(new(RT_error))
+	bindStaticRuntimeType(new(RT_string))
 
 	/*env.DefineCustomFunctionWithReceiver(
 		ast.NewTypedIdentifierCustom("fmt", "fmt"),
@@ -356,4 +378,65 @@ func RegisterRuntimeFunctions(env *Environment) {
 			return nil
 		},
 	)*/
+
+}
+
+func registerHttpObject(env *Environment) {
+
+	obj := &ast.ObjectDeclaration{
+		AstNode: ast.NewAstNode(nil),
+		Name:    ast.NewIdentifierWithValue(nil, "http"),
+		Fields:  nil,
+		Methods: make(map[string]*ast.FunctionDeclaration),
+	}
+
+	obj.Methods["get"] = &ast.FunctionDeclaration{
+		AstNode:         ast.NewAstNode(nil),
+		Name:            "get",
+		Args:            nil,
+		ReturnType:      nil,
+		Receiver:        nil,
+		Body:            nil,
+		CustomFuncCb:    nil,
+		IsStatic:        false,
+		IsBuiltin:       false,
+		IsAnonymous:     false,
+		HasVariadicArgs: false,
+	}
+
+}
+
+func init() {
+	runtimeBindingFuncs["http"] = func(args ...any) {
+		// objDecl := args[0].(*ast.ObjectDeclaration)
+		fnDecl := args[1].(*ast.FunctionDeclaration)
+
+		switch fnDecl.Name {
+
+		case "get":
+			{
+				fnDecl.CustomFuncCb = func(args ...any) any {
+					_ = args[0].(*Environment)
+					url := args[1].(*ast.RuntimeValue)
+
+					// requestOptions := args[1].(*ast.RuntimeValue)
+
+					response, err := http.Get(url.Value.(string))
+					if err != nil {
+						fmt.Print(err.Error())
+						os.Exit(1)
+					}
+					defer response.Body.Close()
+
+					responseData, err := io.ReadAll(response.Body)
+					if err != nil {
+						log.Fatal(err)
+					}
+
+					return ast.NewRuntimeLiteral(string(responseData))
+				}
+			}
+
+		}
+	}
 }

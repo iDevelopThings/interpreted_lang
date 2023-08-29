@@ -31,8 +31,8 @@ type HttpRouteDeclaration struct {
 	*AstNode
 	Method      HttpMethod
 	Path        *Literal
-	Body        *Block
 	Injections  []*HttpRouteBodyInjectionStatement
+	Body        *Block
 	HandlerFunc func(writer http.ResponseWriter, request *http.Request, params http_server.Params)
 }
 

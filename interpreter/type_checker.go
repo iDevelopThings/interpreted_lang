@@ -216,6 +216,13 @@ func (self *TypeCheckerInstance) TypeCheckTree(program *ast.Program, env *Enviro
 		case *ast.IndexAccessExpression:
 			self.typeCheckIndexAccessExpression(node)
 			return true, nil
+
+		case *ast.HttpRouteDeclaration:
+			cb := self.typeCheckHttpRouteDeclaration(node)
+			return true, cb
+
+		case *ast.HttpRouteBodyInjectionStatement:
+			self.typeCheckHttpRouteBodyInjectionStatement(node)
 		}
 
 		return true, nil
@@ -237,12 +244,13 @@ func (self *TypeCheckerInstance) typeCheckFunctionDeclaration(node *ast.Function
 
 	if node.Args != nil && len(node.Args) > 0 {
 		for _, arg := range node.Args {
-			if Registry.LookupObject(arg.TypeReference.Type) == nil {
+			argType := Registry.LookupObject(arg.TypeReference.Type)
+			if argType == nil {
 				NewErrorAtNode(arg.TypeReference, "Type '%s' is not defined", arg.TypeReference.Type)
 			}
 
 			if !self.Scope.IsDefined(arg.Name) {
-				self.Scope.Insert(arg.Identifier, arg.TypeReference.GetBasicType())
+				self.Scope.Insert(arg.Identifier, argType)
 			}
 		}
 	}
@@ -321,14 +329,18 @@ func (self *TypeCheckerInstance) typeCheckCallExpression(node *ast.CallExpressio
 		maxLen := max(len(node.ArgumentList.Entries), len(fnDecl.Args))
 		argumentInfoList := make([]map[string]any, maxLen)
 
+		varArgsIdx := -1
 		for i, arg := range fnDecl.Args {
 			argumentInfoList[i] = map[string]any{
 				"isDeclared": true,
 				"name":       arg.Name,
 				"type":       arg.TypeReference.Type,
 			}
-		}
 
+			if arg.TypeReference.IsVariadic && varArgsIdx == -1 {
+				varArgsIdx = i
+			}
+		}
 		for i, arg := range node.ArgumentList.Entries {
 			argData := map[string]any{
 				"isDeclared": false,
@@ -336,15 +348,16 @@ func (self *TypeCheckerInstance) typeCheckCallExpression(node *ast.CallExpressio
 				"type":       "",
 			}
 			if argumentInfoList[i] == nil {
-				argumentInfoList[i] = argData
+				if varArgsIdx != -1 {
+					argData = argumentInfoList[varArgsIdx]
+				} else {
+					argumentInfoList[i] = argData
+				}
 			} else {
 				argData = argumentInfoList[i]
 			}
 
-			if i < len(fnDecl.Args) {
-				argData["name"] = fnDecl.Args[i].Name
-				argData["type"] = fnDecl.Args[i].TypeReference.Type
-			} else {
+			if i > len(fnDecl.Args) {
 				argData["isDeclared"] = false
 
 				argType := Inference.InferExpressionType(arg)
@@ -360,17 +373,18 @@ func (self *TypeCheckerInstance) typeCheckCallExpression(node *ast.CallExpressio
 			argumentInfoList[i] = argData
 		}
 
-		extraDiagnosticMeta["argumentInfo"] = argumentInfoList
-
-		diagnostic.AddDiagnostic(
-			node.ArgumentList,
-			diagnostics.FunctionCallArgCountMismatch,
-			node.Function.Name,
-			len(fnDecl.Args),
-			len(node.ArgumentList.Entries),
-		)
-		diagnostic.AttachMeta(extraDiagnosticMeta)
-		diagnostic.Push()
+		if varArgsIdx == -1 || (varArgsIdx != -1 && len(node.ArgumentList.Entries) < len(fnDecl.Args)-1) {
+			extraDiagnosticMeta["argumentInfo"] = argumentInfoList
+			diagnostic.AddDiagnostic(
+				node.ArgumentList,
+				diagnostics.FunctionCallArgCountMismatch,
+				node.Function.Name,
+				len(fnDecl.Args),
+				len(node.ArgumentList.Entries),
+			)
+			diagnostic.AttachMeta(extraDiagnosticMeta)
+			diagnostic.Push()
+		}
 	}
 
 	var declArg *ast.TypedIdentifier
@@ -441,10 +455,12 @@ func (self *TypeCheckerInstance) typeCheckBinaryExpression(node *ast.BinaryExpre
 			rightType := TypeChecker.FindType(node.Right)
 			if rightType == nil {
 				NewErrorAtNode(node.Right, "Failed to resolve right operand of assignment expression")
+				return
 			}
 			if leftType != nil {
 				if leftType.TypeName() != rightType.TypeName() {
 					NewErrorAtNode(node.Right, "Cannot assign type '%s' to type '%s'", rightType.TypeName(), leftType.TypeName())
+					return
 				}
 				return
 			}
@@ -524,7 +540,7 @@ func (self *TypeCheckerInstance) typeCheckAssignmentStatement(node *ast.Assignme
 		}
 
 	case *ast.CallExpression:
-		result := TypeChecker.FindType(v.Receiver)
+		result := self.FindType(v.Receiver)
 		switch result.(type) {
 		// Our enum value `constructor`s are seen as call expressions,
 		// so we need to handle them here
@@ -532,12 +548,23 @@ func (self *TypeCheckerInstance) typeCheckAssignmentStatement(node *ast.Assignme
 			if !self.Scope.IsDefined(node.Name.Name) {
 				self.Scope.Insert(node.Name, result)
 			}
+
 		default:
+			result = self.FindType(v)
 			if result == nil {
 				NewErrorAtNode(v, "[VisitAssignmentStatement-CallExpression]: Failed to infer type of '%s'", v.GetToken())
 			}
 
-			NewErrorAtNode(node, "[VisitAssignmentStatement-CallExpression]: I don't know what dragons lay here... %T", result)
+			if varType.TypeName() != result.TypeName() {
+				NewErrorAtNode(node, "[VisitAssignmentStatement-CallExpression]: Type '%s' does not match defined type of '%s'", node.Type.Type, result.TypeName())
+				return
+			}
+
+			if !self.Scope.IsDefined(node.Name.Name) {
+				self.Scope.Insert(node.Name, result)
+			}
+			// NewErrorAtNode(node, "[VisitAssignmentStatement-CallExpression]: I don't know what dragons lay here... %T", result)
+
 		}
 
 	default:
@@ -679,11 +706,29 @@ func (self *TypeCheckerInstance) typeCheckFieldAccessExpression(node *ast.FieldA
 
 	instanceType, instanceNode := TypeChecker.FindDeclaration(node)
 	if instanceType == nil {
-		NewErrorAtNode(node, "[VisitFieldAccessExpression]: Failed to find associated variable instance for '%s'", node.StructInstance.GetToken().String())
+		NewErrorAtNode(node, "[VisitFieldAccessExpression]: Failed to find type for variable '%s'", node.StructInstance.GetToken().String())
 	}
 	if instanceNode == nil {
 		// NewErrorAtNode(node, "[VisitFieldAccessExpression]: Field '%s' does not exist on type '%s'", node.FieldName, instanceType.TypeName())
 		NewDiagnosticAtNode(node, diagnostics.ObjectFieldNotDefined, node.FieldName, instanceType.TypeName())
 	}
+
+}
+
+func (self *TypeCheckerInstance) typeCheckHttpRouteDeclaration(node *ast.HttpRouteDeclaration) func(node ast.Node) {
+	self.Scope.Push()
+
+	return func(node ast.Node) {
+		self.Scope.Pop()
+	}
+}
+
+func (self *TypeCheckerInstance) typeCheckHttpRouteBodyInjectionStatement(node *ast.HttpRouteBodyInjectionStatement) {
+
+	if self.Scope.IsDefined(node.Var.Name) {
+		NewErrorAtNode(node.Var, "Variable '%s' already defined", node.Var.Name)
+	}
+
+	self.Scope.Insert(node.Var.Identifier, node.Var.TypeReference)
 
 }

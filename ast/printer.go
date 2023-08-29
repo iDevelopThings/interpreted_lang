@@ -41,6 +41,7 @@ func (self *FunctionDeclaration) PrintTree(s *utilities.IndentWriter) {
 
 	w := s.ChildWriter()
 	w.WriteString(fmt.Sprintf("IsStatic: %v\n", self.IsStatic))
+	w.WriteString(fmt.Sprintf("IsExtern: %v\n", self.IsExtern))
 	w.WriteString(fmt.Sprintf("IsBuiltin: %v\n", self.IsBuiltin))
 	w.WriteString(fmt.Sprintf("IsAnonymous: %v\n", self.IsAnonymous))
 	w.WriteString(fmt.Sprintf("HasVariadicArgs: %v\n", self.HasVariadicArgs))
@@ -56,7 +57,10 @@ func (self *FunctionDeclaration) PrintTree(s *utilities.IndentWriter) {
 	for _, arg := range self.Args {
 		arg.PrintTree(w.ChildWriter())
 	}
-	self.Body.PrintTree(w)
+
+	if self.Body != nil {
+		self.Body.PrintTree(w)
+	}
 }
 
 func (self *BinaryExpression) PrintTree(s *utilities.IndentWriter) {

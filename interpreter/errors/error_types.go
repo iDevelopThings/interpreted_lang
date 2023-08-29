@@ -6,6 +6,7 @@ import (
 	"arc/ast"
 	"arc/interpreter/diagnostics"
 	"arc/lexer"
+	"arc/log"
 )
 
 type TokenRangeLike interface {
@@ -24,6 +25,9 @@ type NodeLike interface {
 	GetRuleRange() *ast.ParserRuleRange
 }
 
+type ErrorWithCallerInfo interface {
+	GetCallerInfo() log.CallerInfo
+}
 type PresentableError interface {
 	GetMessage() string
 	GetPosition() *lexer.TokenPosition

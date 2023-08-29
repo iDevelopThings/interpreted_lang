@@ -77,10 +77,19 @@ func (self *RegistryInstance) SetFunction(function *ast.FunctionDeclaration) {
 		SourceFile:  sf,
 		Declaration: function,
 	}
+
+	if function.IsExtern {
+		self.onExternFunction(function)
+	}
 }
 
-func (self *RegistryInstance) SetObject(object *ast.ObjectDeclaration) {
-	if _, found := self.objects[object.Name.Name]; found {
+func (self *RegistryInstance) SetObject(object *ast.ObjectDeclaration, forceTypeMerging ...bool) {
+	if original, found := self.objects[object.Name.Name]; found {
+		if len(forceTypeMerging) > 0 && forceTypeMerging[0] {
+			log.Debugf("Merging object %s, %#v", object.Name.Name, original)
+			original.Declaration.Merge(object)
+		}
+
 		log.Errorf("Object already defined: %s - object will be ignored", object.Name.Name)
 		return
 	}
@@ -166,4 +175,28 @@ func (self *RegistryInstance) LookupType(t string) ast.Type {
 		return enum
 	}
 	return nil
+}
+
+func (self *RegistryInstance) onExternFunction(decl *ast.FunctionDeclaration) {
+	objDecl := self.LookupObject(decl.Receiver.TypeReference.Type)
+	if objDecl == nil {
+		log.Errorf("Extern function receiver type not found: %s", decl.Receiver.TypeReference.Type)
+		return
+	}
+
+	fn, ok := objDecl.Methods[decl.Name]
+	if !ok {
+		log.Errorf("Extern function not bound to registry: %s", decl.Name)
+		return
+	}
+
+	objDecl.IsExtern = true
+	fn.Receiver.Identifier = ast.NewIdentifierWithValue(nil, "")
+
+	if binder, ok := runtimeBindingFuncs[objDecl.Name.Name]; ok {
+		binder(objDecl, fn)
+	} else {
+		log.Errorf("No runtime binding function found for object: %s", objDecl.Name.Name)
+	}
+
 }

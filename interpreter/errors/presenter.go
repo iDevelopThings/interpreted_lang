@@ -81,9 +81,26 @@ func (self *DiagnosticPresenter) prettyPrint() {
 
 	lines, _, _ := self.process()
 
+	var callerLines []string
+	for _, diagnostic := range self.Diagnostics {
+		if diagnostic.CallerInfo.FormattedString != "" {
+			callerLines = append(callerLines, diagnostic.CallerInfo.FormattedString)
+		}
+	}
+
+	if len(callerLines) > 0 {
+		PresenterLogger.SetReportCaller(false)
+		defer PresenterLogger.SetReportCaller(true)
+	}
+
 	_, _ = os.Stderr.WriteString("\n")
 	PresenterLogger.Print("")
 	PresenterLogger.Printf("  --> %s:%d", self.Path, self.firstErrorLineNumber+1)
+
+	for _, line := range callerLines {
+		PresenterLogger.Printf("  --> %s", line)
+	}
+
 	PresenterLogger.Print("")
 
 	// callerInfo := Log.CallerInfo(2)

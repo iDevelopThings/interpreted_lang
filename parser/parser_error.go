@@ -28,3 +28,7 @@ func (p ParserError) GetPosition() *lexer.TokenPosition {
 func (p ParserError) GetSeverity() errors.DiagnosticSeverityKind {
 	return errors.ErrorDiagnostic
 }
+
+func (p ParserError) GetCallerInfo() log.CallerInfo {
+	return p.Info
+}

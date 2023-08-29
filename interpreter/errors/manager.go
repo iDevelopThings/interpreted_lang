@@ -131,6 +131,12 @@ func (self *DiagnosticManagerInstance) AddPresentableError(err PresentableError)
 	e.Severity = err.GetSeverity()
 	e.AddMessage(err.GetMessage())
 
+	if err, ok := err.(ErrorWithCallerInfo); ok {
+		e.SetCallerInfo(err.GetCallerInfo())
+	} else {
+		e.SetCallerInfo(PresenterLogger.GetCallerInfo())
+	}
+
 	self.onNew(*e)
 }
 func (self *DiagnosticManagerInstance) AddNodeDiagnostic(err PresentableNodeError) {
@@ -140,6 +146,12 @@ func (self *DiagnosticManagerInstance) AddNodeDiagnostic(err PresentableNodeErro
 	e.Severity = err.GetSeverity()
 	e.Code = err.GetCode()
 	e.AddMessage(err.GetMessage())
+
+	if err, ok := err.(ErrorWithCallerInfo); ok {
+		e.SetCallerInfo(err.GetCallerInfo())
+	} else {
+		e.SetCallerInfo(PresenterLogger.GetCallerInfo())
+	}
 
 	self.onNew(*e)
 }
@@ -156,6 +168,7 @@ func (self *DiagnosticManagerInstance) pushTempBuilder(builder *TempDiagnosticBu
 }
 
 func (self *DiagnosticManagerInstance) HandlePanic(err any) bool {
+	log.Helper()
 	switch e := err.(type) {
 	case PresentableError:
 		self.AddPresentableError(e)
@@ -183,6 +196,9 @@ func TryDumpDiagnostics() bool {
 	numPrinted := 0
 	if Manager.strategy == AccumulateAll {
 		for _, fileData := range Manager.fileDiagnostics {
+			if len(fileData.Presenter.Diagnostics) == 0 {
+				continue
+			}
 			Manager.printDiagnostics(fileData, true)
 			numPrinted++
 		}

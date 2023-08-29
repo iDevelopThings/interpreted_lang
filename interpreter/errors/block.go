@@ -128,6 +128,8 @@ type CodeDiagnostic struct {
 	Processed         bool
 	DidAddReasonBlock bool
 	Meta              map[string]any
+
+	CallerInfo log.CallerInfo
 }
 
 //	func NewCodeError(rule *ast.ParserRuleRange) *CodeDiagnostic {
@@ -285,4 +287,8 @@ func (self *CodeDiagnostic) CanDisplayAtLine(lineNumber int) bool {
 	}
 
 	return lineNumber >= self.Start.Line && lineNumber <= self.End.Line
+}
+
+func (self *CodeDiagnostic) SetCallerInfo(info log.CallerInfo) {
+	self.CallerInfo = info
 }

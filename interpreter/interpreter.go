@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"arc/interpreter/diagnostics"
 	"arc/log"
 
 	"arc/ast"
@@ -73,7 +74,26 @@ func (self *InterpreterEngine) Load() {
 	}
 
 	errors.Manager.ConfigureLogger(config.CliConfig.LogOutputMode)
+}
 
+func (self *InterpreterEngine) isValidSourcePath(path string) bool {
+	if !strings.HasSuffix(path, ".arc") {
+		return false
+	}
+
+	if filepath.IsAbs(path) {
+		if !strings.HasPrefix(path, config.CliConfig.WorkingDirectory) {
+			return false
+		}
+	} else {
+		path = filepath.Join(config.CliConfig.WorkingDirectory, path)
+	}
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	}
+
+	return true
 }
 
 func (self *InterpreterEngine) LoadSource(path string) *SourceFile {
@@ -154,7 +174,9 @@ func (self *InterpreterEngine) parseSource(source *SourceFile) {
 			if !errors.Manager.HandlePanic(r) {
 				panic(r)
 			}
+			errors.TryDumpDiagnostics()
 		}
+
 	}()
 
 	l := lexer.NewLexer(source.Source)
@@ -201,14 +223,22 @@ func (self *InterpreterEngine) constructASTs() {
 
 		importedScripts[source.Path] = source
 
-		if len(source.Program.Imports) > 0 {
-			for _, importPath := range source.Program.Imports {
-				ip := importPath.Path.Value.(string)
-				relativePath := path.Join(path.Dir(source.Path), ip)
-				if _, ok := importedScripts[relativePath]; !ok {
-					log.Debugf("Queueing imported source for processing : %s", relativePath)
-					sourcesToParse.Push(self.LoadSource(relativePath))
-				}
+		if len(source.Program.Imports) == 0 {
+			return
+		}
+
+		for _, importPath := range source.Program.Imports {
+			ip := importPath.Path.Value.(string)
+			relativePath := path.Join(path.Dir(source.Path), ip)
+
+			if !self.isValidSourcePath(relativePath) {
+				NewDiagnosticAtNode(importPath.Path, diagnostics.InvalidImportFilePath, ip)
+				continue
+			}
+
+			if _, ok := importedScripts[relativePath]; !ok {
+				log.Debugf("Queueing imported source for processing : %s", relativePath)
+				sourcesToParse.Push(self.LoadSource(relativePath))
 			}
 		}
 	}
